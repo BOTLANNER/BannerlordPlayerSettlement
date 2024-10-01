@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<base xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" type="string">
+    <tags>
+        <tag language="English" />
+    </tags>
+    <strings>
+        <string id="player_settlement_01" text="Player Settlement" />
+        <string id="player_settlement_02" text="Create Player Settlement" />
+        <string id="player_settlement_03" text="What would you like to name your settlement?" />
+        <string id="player_settlement_04" text="Build a Town" />
+        <string id="player_settlement_05" text="Are you sure you want to build your town here?" />
+        <string id="player_settlement_06" text="This town is currently still under construction." />
+        <string id="player_settlement_07" text="{TOWN} construction has completed!" />
+        <string id="player_settlement_08" text="A player town has been created on a later save. Older saves are not supported and could cause save corruption or town 'ghosting'." />
+    </strings>
+</base>

@@ -1,0 +1,142 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <ModuleName>$(MSBuildProjectName)</ModuleName>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <Platforms>x64</Platforms>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <Configurations>Stable_Debug;Stable_Release;Beta_Debug;Beta_Release</Configurations>
+  </PropertyGroup>
+
+  <!-- Versions of Major Dependencies (For Package References & SubModule.xml Substitution) -->
+  <PropertyGroup>
+    <BuildResourcesVersion>1.1.0.108</BuildResourcesVersion>
+    <HarmonyVersion>2.3.3</HarmonyVersion>
+    <MCM_V5>true</MCM_V5>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <MCMVersion Condition="$(MCM_V5) == 'true'">5.10.2</MCMVersion>
+  </PropertyGroup>
+
+  <!-- Game Versions for Stable and Beta -->
+  <PropertyGroup>
+    <GameVersion Condition="$(IsStable) == 'true'">1.0.0.3729</GameVersion>
+    <GameVersion Condition="$(IsBeta) == 'true'">1.0.0.3729</GameVersion>
+  </PropertyGroup>
+
+  <!-- Game Folder(s) -->
+  <PropertyGroup>
+    <!--
+    Bannerlord's Root Folder. Leave empty if you want to try autoresolution. Recommended setup is to set, as an
+    environment variable, BANNERLORD_GAME_DIR in the common case that you have only one game folder. If you have
+    separate game folders for the stable and beta versions of the game, likewise set BANNERLORD_STABLE_DIR and
+    BANNERLORD_BETA_DIR.
+    -->
+    <GameFolder Condition="$(IsStable) == 'true'">$(BANNERLORD_STABLE_DIR)</GameFolder>
+    <GameFolder Condition="$(IsBeta) == 'true'">$(BANNERLORD_BETA_DIR)</GameFolder>
+    <GameFolder Condition="$(GameFolder) == ''">$(BANNERLORD_GAME_DIR)</GameFolder>
+  </PropertyGroup>
+
+  <!-- Automatic Game Folder Resolution -->
+  <PropertyGroup>
+    <!--Windows-->
+    <!--Get from Registry (not working with dotnet right now)-->
+    <GameFolder Condition="!Exists($(GameFolder)) AND $(OS) == 'Windows_NT'">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 261550@InstallLocation)</GameFolder>
+    <!--Set a default value if registry value is missing-->
+    <GameFolder Condition="!Exists($(GameFolder)) AND $(OS) == 'Windows_NT'">C:\Program Files (x86)\Steam\steamapps\common\Mount &amp; Blade II Bannerlord</GameFolder>
+    <!--Unix-->
+    <GameFolder Condition="!Exists($(GameFolder)) AND $(OS) == 'Unix'">~/.steam/root/steamapps/common/Mount &amp; Blade II Bannerlord</GameFolder>
+  </PropertyGroup>
+
+  <!-- STABLE, BETA, and e.g., e156 Constants Defined in Code -->
+  <PropertyGroup>
+    <GameVersionConstant>e$([System.String]::Copy('$(GameVersion)').Replace('.',''))</GameVersionConstant>
+    <MCMUseConstant Condition="$(MCM_V5) == 'true'">MCM_v5</MCMUseConstant>
+    <DefineConstants>$(DefineConstants);$(GameVersionConstant);$(MCMUseConstant)</DefineConstants>
+    <RootNamespace>BannerlordPlayerSettlement</RootNamespace>
+    <AssemblyName>PlayerSettlement</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Extra Substitution Variables to Use in SubModule.xml -->
+  <ItemGroup>
+    <SubModuleOverrides Include="MCMVersion">
+      <Regex>\$mcmversion\$</Regex>
+      <Replacement>$(MCMVersion)</Replacement>
+    </SubModuleOverrides>
+  </ItemGroup>
+
+  <!-- NuGet References -->
+  <ItemGroup>
+    <PackageReference Include="Bannerlord.BuildResources" Version="$(BuildResourcesVersion)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Bannerlord.MCM" Version="$(MCMVersion)" />
+    <PackageReference Include="Lib.Harmony" Version="$(HarmonyVersion)" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" IncludeAssets="compile" />
+    <!-- Enable NET5 Features on NET472 -->
+    <PackageReference Include="IsExternalInit" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Nullable" Version="1.3.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bannerlord Native Assemblies -->
+    <Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.*.dll" Exclude="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Native.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\Newtonsoft.*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- Bannerlord Module Assemblies  -->
+    <Reference Include="$(GameFolder)\Modules\Native\bin\Win64_Shipping_Client\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\SandBox\bin\Win64_Shipping_Client\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\SandBoxCore\bin\Win64_Shipping_Client\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\StoryMode\bin\Win64_Shipping_Client\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\Bannerlord.UIExtenderEx\bin\Win64_Shipping_Client\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="PlayerSettlementBehaviour.cs~RF3fe6d45.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Update="$(GameFolder)\bin\Win64_Shipping_Client\Newtonsoft.Json.dll">
+      <Private>true</Private>
+      <SpecificVersion>false</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /s /y &quot;$(ProjectDir)_Module\&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.dll&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\bin\Win64_Shipping_Client\&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.pdb&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\bin\Win64_Shipping_Client\&quot;" />
+  </Target>
+
+</Project>

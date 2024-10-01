@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<base xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" type="string">
+    <tags>
+        <tag language="English" />
+    </tags>
+    <strings>
+        <string id="player_settlement_h_01" text="Player Settlement" />
+        <string id="player_settlement_h_02" text="Not in an active game!" />
+        <string id="player_settlement_h_03" text="Clan tier too low. {TIER} required" />
+        <string id="player_settlement_h_04" text="Player Settlement not enabled" />
+        <string id="player_settlement_h_05" text="Not enough funds ({CURRENT_FUNDS}/{REQUIRED_FUNDS})" />
+    </strings>
+</base>

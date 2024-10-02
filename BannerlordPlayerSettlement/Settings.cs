@@ -65,6 +65,24 @@ namespace BannerlordPlayerSettlement
         [SettingPropertyGroup("Player Settlements")]
         public bool ForcePlayerCulture { get; set; } = false;
 
+        private const string RequireVillageGold_Hint = "Requires a specified cost in local currency to build new village.  [ Default: ON ]";
+
+        [SettingPropertyBool("Require Village Cost", HintText = RequireVillageGold_Hint, RequireRestart = false, Order = 8, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool RequireVillageGold { get; set; } = true;
+
+        private const string RequiredVillageGold_Hint = "Specified cost in local currency to build new village.  [ Default: 3 000 ]";
+
+        [SettingPropertyInteger("Required Village Cost", 1, 1_000_000, HintText = RequiredVillageGold_Hint, RequireRestart = false, Order = 9)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int RequiredVillageGold { get; set; } = 3_000;
+
+        private const string AutoAllocateVillageType_Hint = "Will automatically determine the type of village, which determines its primary product. By default when this is OFF, the type can be chosen.  [ Default: OFF ]";
+
+        [SettingPropertyBool("Auto Allocate Village Type", HintText = AutoAllocateVillageType_Hint, RequireRestart = false, Order = 10, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AutoAllocateVillageType { get; set; } = false;
+
         private const string HideButtonUntilReady_Hint = "Always hides the build town button until requirements are met.  [ Default: OFF ]";
 
         [SettingPropertyBool("Always Hide Until Ready", HintText = HideButtonUntilReady_Hint, RequireRestart = false, Order = 0, IsToggle = false)]

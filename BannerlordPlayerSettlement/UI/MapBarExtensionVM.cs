@@ -148,7 +148,16 @@ namespace BannerlordPlayerSettlement.UI
                     }
                 }
 
-                if (Main.Settings.RequireGold)
+                if (PlayerSettlementInfo.Instance?.PlayerSettlement != null && Main.Settings.RequireVillageGold)
+                {
+                    if ((Hero.MainHero?.Gold ?? 0) < Main.Settings.RequiredVillageGold)
+                    {
+                        disableReason ??= new TextObject("{=player_settlement_h_05}Not enough funds ({CURRENT_FUNDS}/{REQUIRED_FUNDS})");
+                        disableReason.SetTextVariable("CURRENT_FUNDS", Hero.MainHero?.Gold ?? 0);
+                        disableReason.SetTextVariable("REQUIRED_FUNDS", Main.Settings.RequiredVillageGold); 
+                    }
+                }
+                else if (PlayerSettlementInfo.Instance?.PlayerSettlement == null && Main.Settings.RequireGold)
                 {
                     if ((Hero.MainHero?.Gold ?? 0) < Main.Settings.RequiredGold)
                     {

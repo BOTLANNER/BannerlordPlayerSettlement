@@ -143,12 +143,18 @@ namespace BannerlordPlayerSettlement
                 string identifier;
                 float buildTime;
 
+                string? savedModuleVersionRaw;
                 string savedModuleVersion;
+
+                int villageCount;
+                List<PlayerSettlementItem> villages = new();
 
                 var metaFile = Path.Combine(ConfigDir, $"meta.bin");
                 if (File.Exists(metaFile))
                 {
                     string metaText = File.ReadAllText(metaFile);
+                    string originalMetaText = "" + metaText;
+
                     var parts = metaText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
                     identifier = parts[0].Base64Decode();
                     displayName = parts[1].Base64Decode();
@@ -158,7 +164,29 @@ namespace BannerlordPlayerSettlement
                         PlayerSettlementBehaviour.OldSaveLoaded = true;
                         return;
                     }
+                    savedModuleVersionRaw = parts.Length > 3 ? parts[3] : null;
                     savedModuleVersion = parts.Length > 3 ? parts[3].Base64Decode() : "0.0.0";
+                    villageCount = parts.Length > 4 ? int.TryParse(parts[4].Base64Decode(), out villageCount) ? villageCount : 0 : 0;
+                    if (villageCount > 0 && parts.Length > 5)
+                    {
+                        var villagesContents = parts[5].Base64Decode().Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                        for (int i = 0; i < villagesContents.Length; i++)
+                        {
+                            var villageParts = villagesContents[i].Base64Decode().Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+
+                            string vIdentifier = villageParts[0].Base64Decode();
+                            string vName = villageParts[1].Base64Decode();
+                            float vBuiltTime = float.Parse(villageParts[2].Base64Decode());
+
+                            villages.Add(new PlayerSettlementItem
+                            {
+                                ItemIdentifier = vIdentifier,
+                                SettlementName = vName,
+                                BuiltAt = vBuiltTime,
+
+                            });
+                        }
+                    }
 
                     if (savedModuleVersion != Version)
                     {
@@ -186,14 +214,19 @@ namespace BannerlordPlayerSettlement
                         }
 
                         // Save with latest version to indicate compatibility
-                        metaText = "";
-                        metaText += identifier.Base64Encode();
-                        metaText += "\r\n";
-                        metaText += displayName.Base64Encode();
-                        metaText += "\r\n";
-                        metaText += buildTime.ToString().Base64Encode();
-                        metaText += "\r\n";
-                        metaText += Main.Version.Base64Encode();
+                        if (parts.Length > 3)
+                        {
+                            parts[3] = Main.Version.Base64Encode();
+                            metaText = string.Join("\r\n", parts);
+                        }
+                        else
+                        {
+                            metaText += "\r\n";
+                            // Line 4: Mod version
+                            metaText += Main.Version.Base64Encode();
+                        }
+                        File.WriteAllText(metaFile + ".bak", originalMetaText);
+
                         File.WriteAllText(metaFile, metaText);
 
                         InformationManager.DisplayMessage(new InformationMessage($"Updated {DisplayName} to {Version}", ImportantTextColor));
@@ -239,10 +272,52 @@ namespace BannerlordPlayerSettlement
                     {
                         playerSettlement.Name = new TextObject(displayName);
                     }
-                    if (PlayerSettlementInfo.Instance != null)
+                    //if (PlayerSettlementInfo.Instance != null)
+                    //{
+                    //    PlayerSettlementInfo.Instance.PlayerSettlement = playerSettlement;
+                    //    PlayerSettlementInfo.Instance.PlayerSettlementIdentifier = identifier;
+                    //}
+                }
+
+                for (int i = 0; i < villages.Count; i++)
+                {
+                    var village = villages[i];
+
+                    if (village.BuiltAt - 5 > Campaign.CurrentTime)
                     {
-                        PlayerSettlementInfo.Instance.PlayerSettlement = playerSettlement;
-                        PlayerSettlementInfo.Instance.PlayerSettlementIdentifier = identifier;
+                        // A player settlement has been made in a different save.
+                        // This is an older save than the config is for.
+                        PlayerSettlementBehaviour.OldSaveLoaded = true;
+                        continue;
+                    }
+
+                    var villageNumber = i + 1;
+
+                    var villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(village.ItemIdentifier);
+
+                    if (villageSettlement == null || !villageSettlement.IsReady)
+                    {
+                        var configFile = Path.Combine(ConfigDir, $"PlayerSettlementVillage_{villageNumber}.xml");
+                        MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+
+                        villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(village.ItemIdentifier);
+
+                        if (villageSettlement != null && !villageSettlement.IsReady)
+                        {
+                            MBObjectManager.Instance.UnregisterObject(villageSettlement);
+                            MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+
+                            villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(village.ItemIdentifier);
+                        }
+                    }
+
+
+                    if (villageSettlement != null)
+                    {
+                        if (!string.IsNullOrEmpty(village.SettlementName))
+                        {
+                            villageSettlement.Name = new TextObject(village.SettlementName);
+                        }
                     }
                 }
             }

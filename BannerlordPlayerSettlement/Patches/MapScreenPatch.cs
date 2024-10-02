@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -70,7 +71,7 @@ namespace BannerlordPlayerSettlement.Patches
                 bool isPreparationComplete = playerSiegeEvent?.BesiegerCamp?.IsPreparationComplete ?? false;
                 Settlement? besiegedSettlement = playerSiegeEvent?.BesiegedSettlement;
 
-                if (!(besiegedSettlement != null && besiegedSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier))
+                if (!(besiegedSettlement.IsPlayerBuilt()))
                 {
                     return true;
                 }

@@ -1,5 +1,6 @@
 ﻿
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -19,7 +20,7 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (settlement != null && settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (settlement.IsPlayerBuilt())
                 {
                     __result = 0f;
                     return false;

@@ -69,6 +69,9 @@ namespace BannerlordPlayerSettlement.Saves
             }
         }
 
+        [SaveableField(111)]
+        public List<PlayerSettlementItem> PlayerVillages = new List<PlayerSettlementItem>();
+
         public PlayerSettlementInfo()
         {
         }

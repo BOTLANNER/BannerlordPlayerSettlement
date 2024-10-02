@@ -51,14 +51,15 @@ namespace BannerlordPlayerSettlement.Behaviours
         public const string PlayerSettlementUnderConstructionMenu = "player_settlement_construction";
 
         public static string PlayerSettlementIdentifier => PlayerSettlementInfo.Instance?.PlayerSettlementIdentifier ?? "player_settlement_town_01";
+        public static IReadOnlyList<PlayerSettlementItem> PlayerVillages => (PlayerSettlementInfo.Instance?.PlayerVillages ?? new()).AsReadOnly();
 
         public static PlayerSettlementBehaviour? Instance = null;
 
         public static bool OldSaveLoaded = false;
         public static bool TriggerSaveAfterUpgrade = false;
 
-        //internal static string PlayerSettlementTemplate = ResourcePrefab.Load("BannerlordPlayerSettlement.Behaviours.player_settlement_template.xml").OuterXml;
         internal static string PlayerSettlementTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_template.xml");
+        internal static string PlayerSettlementVillageTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_village_template.xml");
 
         public bool CreateSettlement = false;
 
@@ -247,7 +248,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 return;
             }
             if (PlayerSettlementBehaviour.TriggerSaveAfterUpgrade)
-            { 
+            {
                 PlayerSettlementBehaviour.TriggerSaveAfterUpgrade = false;
                 SaveHandler.SaveOnly(overwrite: true);
                 return;
@@ -265,6 +266,31 @@ namespace BannerlordPlayerSettlement.Behaviours
                     TextObject message = new TextObject("{=player_settlement_07}{TOWN} construction has completed!", null);
                     message.SetTextVariable("TOWN", PlayerSettlementInfo.Instance.PlayerSettlementName);
                     MBInformationManager.AddQuickInformation(message, 0, null, "");
+                }
+                else if (PlayerSettlementInfo.Instance != null)
+                {
+                    var villages = PlayerSettlementInfo.Instance.PlayerVillages;
+                    if (villages == null)
+                    {
+                        villages = (PlayerSettlementInfo.Instance.PlayerVillages = new List<PlayerSettlementItem>());
+                    }
+                    if (villages.Count < 3)
+                    {
+                        // Recheck daily whether player is eligible to build village.
+                        MapBarExtensionVM.Current?.OnRefresh();
+                    }
+
+                    for (int i = 0; i < villages.Count; i++)
+                    {
+                        var village = villages[i];
+                        if (!village.BuildComplete && !village.BuildEnd.IsFuture)
+                        {
+                            village.BuildComplete = true;
+                            TextObject message = new TextObject("{=player_settlement_07}{TOWN} construction has completed!", null);
+                            message.SetTextVariable("TOWN", village.SettlementName);
+                            MBInformationManager.AddQuickInformation(message, 0, null, "");
+                        }
+                    }
                 }
             }
         }
@@ -486,6 +512,201 @@ namespace BannerlordPlayerSettlement.Behaviours
                             MapBarExtensionVM.Current?.OnRefresh();
                         }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
 
+                }
+                else if (CreateSettlement && (PlayerSettlementInfo.Instance?.PlayerVillages?.Count ?? 0) < 3)
+                {
+                    CreateSettlement = false;
+                    var villageNumber = (PlayerSettlementInfo.Instance?.PlayerVillages?.Count ?? 0) + 1;
+
+                    if (PlayerSettlementInfo.Instance!.PlayerVillages == null)
+                    {
+                        PlayerSettlementInfo.Instance.PlayerVillages = new();
+                    }
+
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+
+                    InformationManager.ShowTextInquiry(new TextInquiryData(new TextObject("{=player_settlement_02}Create Player Settlement").ToString(), new TextObject("{=player_settlement_03}What would you like to name your settlement?").ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                        (string settlementName) =>
+                        {
+                            Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+
+                            if (string.IsNullOrEmpty(settlementName))
+                            {
+                                settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
+                            }
+
+                            Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                            {
+                                var xml = "" + PlayerSettlementVillageTemplate;
+                                xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
+                                xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
+                                xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
+                                // The full identifier is used here, not just the uniqueness number, so a larger replace is done
+                                xml = xml.Replace("player_settlement_town_{{TOWN_IDENTIFIER}}", PlayerSettlementIdentifier);
+                                xml = xml.Replace("{{SETTLEMENT_NAME}}", settlementName);
+                                xml = xml.Replace("{{VILLAGE_NUMBER}}", villageNumber.ToString());
+
+                                switch (villageNumber)
+                                {
+                                    case 1:
+                                        xml = xml.Replace("{{VILLAGE_TYPE}}", "swine_farm");
+                                        break;
+                                    case 2:
+                                        xml = xml.Replace("{{VILLAGE_TYPE}}", "lumberjack");
+                                        break;
+                                    case 3:
+                                        xml = xml.Replace("{{VILLAGE_TYPE}}", "iron_mine");
+                                        break;
+                                }
+
+                                var identifier = "player_settlement_town_{{TOWN_IDENTIFIER}}_village_{{VILLAGE_NUMBER}}"
+                                    // The full identifier is used here, not just the uniqueness number, so a larger replace is done
+                                    .Replace("player_settlement_town_{{TOWN_IDENTIFIER}}", PlayerSettlementIdentifier)
+                                    .Replace("{{VILLAGE_NUMBER}}", villageNumber.ToString());
+
+                                var villageItem = new PlayerSettlementItem
+                                {
+                                    ItemXML = xml,
+                                    ItemIdentifier = identifier,
+                                    SettlementName = settlementName,
+
+                                };
+                                PlayerSettlementInfo.Instance!.PlayerVillages!.Add(villageItem);
+
+                                var doc = new XmlDocument();
+                                doc.LoadXml(xml);
+                                MBObjectManager.Instance.LoadXml(doc);
+                                var villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(villageItem.ItemIdentifier);
+                                villageItem.Settlement = villageSettlement;
+
+                                villageSettlement.SetBound(PlayerSettlementInfo.Instance.PlayerSettlement!);
+
+                                villageSettlement.Name = new TextObject(settlementName);
+
+                                villageSettlement.Party.SetLevelMaskIsDirty();
+                                villageSettlement.IsVisible = true;
+                                villageSettlement.IsInspected = true;
+                                villageSettlement.Party.SetVisualAsDirty();
+
+                                PartyVisualManager.Current.AddNewPartyVisualForParty(villageSettlement.Party);
+
+                                villageSettlement.OnGameCreated();
+                                villageSettlement.OnGameInitialized();
+                                villageSettlement.OnFinishLoadState();
+
+                                var village = villageSettlement.Village;
+
+                                villageItem.BuiltAt = Campaign.CurrentTime;
+
+                                if (Main.Settings.RequireGold)
+                                {
+                                    GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, PlayerSettlementInfo.Instance.PlayerSettlement, Main.Settings.RequiredGold, true);
+                                }
+
+                                SaveHandler.SaveLoad((saveName) =>
+                                {
+                                    var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
+                                    var moduleName = Main.Name;
+
+                                    var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
+
+                                    if (!Directory.Exists(ConfigDir))
+                                    {
+                                        Directory.CreateDirectory(ConfigDir);
+                                    }
+
+                                    var configFile = Path.Combine(ConfigDir, $"PlayerSettlementVillage_{villageNumber}.xml");
+                                    File.WriteAllText(configFile, villageItem.ItemXML);
+
+                                    var metaFile = Path.Combine(ConfigDir, $"meta.bin");
+                                    var metaText = "";
+                                    // Line 1: Town identifier
+                                    metaText += PlayerSettlementInfo.Instance.PlayerSettlementIdentifier.Base64Encode();
+                                    metaText += "\r\n";
+                                    // Line 2: Town display name
+                                    metaText += PlayerSettlementInfo.Instance.PlayerSettlementName.Base64Encode();
+                                    metaText += "\r\n";
+                                    // Line 3: Town build time
+                                    metaText += PlayerSettlementInfo.Instance.BuiltAt.ToString().Base64Encode();
+                                    metaText += "\r\n";
+                                    // Line 4: Mod version
+                                    metaText += Main.Version.Base64Encode();
+                                    metaText += "\r\n";
+                                    // Line 5: Village count
+                                    metaText += PlayerSettlementInfo.Instance.PlayerVillages.Count.ToString().Base64Encode();
+
+                                    var villagesMeta = "";
+                                    for (int i = 0; i < PlayerSettlementInfo.Instance.PlayerVillages.Count; i++)
+                                    {
+                                        var v = PlayerSettlementInfo.Instance.PlayerVillages[i];
+
+                                        var villageMeta = "";
+                                        // Line 1: Village identifier
+                                        villageMeta += v.ItemIdentifier.Base64Encode();
+                                        villageMeta += "\r\n";
+                                        // Line 2: Village display name
+                                        villageMeta += v.SettlementName.Base64Encode();
+                                        villageMeta += "\r\n";
+                                        // Line 3: Village build time
+                                        villageMeta += v.BuiltAt.ToString().Base64Encode();
+
+                                        // Each village meta amounts to one line of villages meta
+                                        if (i > 0)
+                                        {
+                                            villagesMeta += "\r\n";
+                                        }
+                                        villagesMeta += villageMeta.Base64Encode();
+                                    }
+                                    // Line 6: Villages meta
+                                    metaText += "\r\n";
+                                    metaText += villagesMeta.Base64Encode();
+                                    File.WriteAllText(metaFile, metaText);
+                                });
+                            };
+
+
+                            if (Main.Settings.ForcePlayerCulture)
+                            {
+                                apply(settlementName, Hero.MainHero.Culture);
+                                return;
+                            }
+
+                            var titleText = new TextObject("{=player_settlement_11}Choose village culture");
+                            var descriptionText = new TextObject("{=player_settlement_12}Choose the culture for {VILLAGE}");
+                            descriptionText.SetTextVariable("VILLAGE", settlementName);
+
+
+                            List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+
+                            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                                titleText: titleText.ToString(),
+                                descriptionText: descriptionText.ToString(),
+                                inquiryElements: inquiryElements1,
+                                isExitShown: false,
+                                maxSelectableOptionCount: 1,
+                                minSelectableOptionCount: 0,
+                                affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
+                                negativeText: null,
+                                affirmativeAction: (List<InquiryElement> args) =>
+                                {
+                                    List<InquiryElement> source = args;
+                                    InformationManager.HideInquiry();
+
+                                    CultureObject culture = (args?.FirstOrDefault()?.Identifier as CultureObject) ?? Hero.MainHero.Culture;
+
+                                    apply(settlementName, culture);
+                                },
+                                negativeAction: null,
+                                soundEventPath: "")
+                                ,
+                                false,
+                                false);
+                        },
+                        () =>
+                        {
+                            InformationManager.HideInquiry();
+                            MapBarExtensionVM.Current?.OnRefresh();
+                        }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
                 }
             }
         }

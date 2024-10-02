@@ -1,4 +1,6 @@
 ﻿
+using System.Linq;
+
 using BannerlordPlayerSettlement.Behaviours;
 
 using HarmonyLib;
@@ -21,6 +23,14 @@ namespace BannerlordPlayerSettlement.Patches
                 {
                     //name = "town_EW1";
                     name = "player_settlement_town_1";
+                }
+
+                var eId = name;
+                if (PlayerSettlementBehaviour.PlayerVillages.Any(pv => pv.ItemIdentifier == eId))
+                {
+                    //entityId = "town_EW1";
+                    var number = PlayerSettlementBehaviour.PlayerVillages.FindIndex(pv => pv.ItemIdentifier == eId) + 1;
+                    name = $"player_settlement_town_village_{number}";
                 }
             }
             catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }

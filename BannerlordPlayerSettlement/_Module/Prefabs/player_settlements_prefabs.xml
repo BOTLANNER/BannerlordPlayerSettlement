@@ -5051,4 +5051,402 @@
       </game_entity>
     </children>
   </game_entity>
+  <game_entity name="player_settlement_town_village_1" old_prefab_name="map_village_emp_all_40" mobility="1">
+    <tags>
+      <tag name="village"/>
+    </tags>
+    <!--<transform position="-9.474, 8.968, -12.697" rotation_euler="-0.017, 0.158, 0.023" scale="1.000, 1.000, 1.250"/>-->
+    <transform position="0.000, 0.000, 0.000" rotation_euler="-0.017, 0.158, 0.023" scale="1.000, 1.000, 1.250"/>
+    <scripts>
+      <script name="Town Entity Manager">
+        <variables>
+          <variable name="Override Factor Color" value="false"/>
+          <variable name="Factor Color" value="1.000, 1.000, 1.000, 1.000"/>
+        </variables>
+      </script>
+    </scripts>
+    <children>
+      <game_entity name="map_icons_empire_village_l2" old_prefab_name="map_icons_empire_village_l2" mobility="1">
+        <transform position="-0.309, 0.155, 0.019" non_orthogonal_rotation_mat="0.999483, -0.002607, 0.032035, -0.000000, 0.998647, 0.052003, -0.050065, -0.080995, 0.995456" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_2"/>
+        </components>
+        <levels>
+          <level name="level_2"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_l3" old_prefab_name="map_icons_empire_village_l3" mobility="1">
+        <transform position="-0.139, 0.044, 0.006" non_orthogonal_rotation_mat="0.999989, -0.000532, 0.004713, 0.000072, 0.998058, 0.062295, -0.007380, -0.097061, 0.995251" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_3"/>
+        </components>
+        <levels>
+          <level name="level_3"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="_bo" old_prefab_name="_bo" mobility="1">
+        <transform position="-0.005, 0.004, -0.031" rotation_euler="0.000, 0.000, 1.500" scale="4.200, 4.200, 4.200"/>
+        <physics shape="bo_barrier_sphere">
+          <body_flags>
+            <body_flag name="only_collide_with_raycast"/>
+          </body_flags>
+        </physics>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_l1" old_prefab_name="map_icons_empire_village_l1" mobility="1">
+        <transform position="-0.408, 0.152, 0.024" non_orthogonal_rotation_mat="0.999336, -0.003406, 0.036266, 0.000000, 0.998198, 0.060004, -0.056682, -0.093364, 0.994017" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_1"/>
+        </components>
+        <levels>
+          <level name="level_1"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_looted" old_prefab_name="map_icons_empire_village_looted" mobility="1">
+        <transform position="-0.460, 0.120, 0.060" rotation_euler="0.000, 0.000, 0.020" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_1">
+            <mesh name="village_empire_1.0" factor="4282598211"/>
+            <mesh name="village_empire_1.1" factor="4282598211"/>
+            <mesh name="village_empire_1.2" factor="4282598211"/>
+            <mesh name="village_empire_1.3" factor="4282598211"/>
+            <mesh name="village_empire_1.4" factor="4282598211"/>
+            <mesh name="village_empire_1.5" factor="4282598211"/>
+          </meta_mesh_component>
+        </components>
+        <levels>
+          <level name="level_1"/>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="looted"/>
+        </levels>
+      </game_entity>
+    </children>
+    <levels>
+      <level name="level_1"/>
+      <level name="level_2"/>
+      <level name="level_3"/>
+      <level name="civilian"/>
+      <level name="siege"/>
+      <level name="looted"/>
+    </levels>
+  </game_entity>
+  <game_entity name="player_settlement_town_village_2" old_prefab_name="map_village_emp_all_40" mobility="1">
+    <tags>
+      <tag name="village"/>
+    </tags>
+    <transform position="15.344, -24.788, -9.793" rotation_euler="0.181, -0.331, -0.109" scale="1.000, 1.000, 1.250"/>
+    <scripts>
+      <script name="Town Entity Manager">
+        <variables>
+          <variable name="Override Factor Color" value="false"/>
+          <variable name="Factor Color" value="1.000, 1.000, 1.000, 1.000"/>
+        </variables>
+      </script>
+    </scripts>
+    <children>
+      <game_entity name="map_icons_empire_village_l2" old_prefab_name="map_icons_empire_village_l2" mobility="1">
+        <transform position="-0.310, 0.100, 0.040" rotation_euler="0.000, 0.000, 0.000" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_2"/>
+        </components>
+        <levels>
+          <level name="level_2"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_l3" old_prefab_name="map_icons_empire_village_l3" mobility="1">
+        <transform position="-0.145, 0.034, 0.031" non_orthogonal_rotation_mat="0.998307, 0.004351, -0.058001, -0.003430, 0.999942, 0.010229, 0.090465, -0.015605, 0.995777" scale="0.400, 0.400, 0.401"/>
+        <components>
+          <meta_mesh_component name="village_empire_3"/>
+        </components>
+        <levels>
+          <level name="level_3"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="_bo" old_prefab_name="_bo" mobility="1">
+        <transform position="-0.005, 0.004, -0.031" rotation_euler="0.000, 0.000, 1.500" scale="4.200, 4.200, 4.200"/>
+        <physics shape="bo_barrier_sphere">
+          <body_flags>
+            <body_flag name="only_collide_with_raycast"/>
+          </body_flags>
+        </physics>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_l1" old_prefab_name="map_icons_empire_village_l1" mobility="1">
+        <transform position="-0.410, 0.150, 0.050" rotation_euler="0.000, 0.000, 0.000" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_1"/>
+        </components>
+        <levels>
+          <level name="level_1"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_looted" old_prefab_name="map_icons_empire_village_looted" mobility="1">
+        <transform position="-0.460, 0.120, 0.016" rotation_euler="0.000, 0.000, 0.020" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_1">
+            <mesh name="village_empire_1.0" factor="4282598211"/>
+            <mesh name="village_empire_1.1" factor="4282598211"/>
+            <mesh name="village_empire_1.2" factor="4282598211"/>
+            <mesh name="village_empire_1.3" factor="4282598211"/>
+            <mesh name="village_empire_1.4" factor="4282598211"/>
+            <mesh name="village_empire_1.5" factor="4282598211"/>
+          </meta_mesh_component>
+        </components>
+        <levels>
+          <level name="level_1"/>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="looted"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_production_lumberjack_a" old_prefab_name="map_icons_production_lumberjack_a" mobility="1">
+        <transform position="-1.439, 1.506, 0.030" non_orthogonal_rotation_mat="-0.855191, 0.499460, 0.138521, -0.472694, -0.870034, 0.140005, 0.289517, 0.082477, 0.953613" scale="0.643, 0.643, 0.526"/>
+        <components>
+          <meta_mesh_component name="mi_lumberjack_a"/>
+        </components>
+        <scripts>
+          <script name="sound_emitter">
+            <variables>
+              <variable name="Event Path" value="event:/map/ambient/node/settlements/lumberjack"/>
+              <variable name="Play On Startup" value="true"/>
+              <variable name="Is Static" value="false"/>
+              <variable name="Override Sound" value="false"/>
+              <variable name="Overrided Max Distance" value="40.000000"/>
+              <variable name="Overrided Min Distance" value="2.000000"/>
+              <variable name="Sound Preset" value="Speakers"/>
+            </variables>
+          </script>
+        </scripts>
+        <levels>
+          <level name="level_1"/>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="civilian"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_production_lumberjack_b" old_prefab_name="map_icons_production_lumberjack_b" mobility="1">
+        <transform position="2.189, -0.239, -0.195" non_orthogonal_rotation_mat="0.747974, -0.655497, -0.104205, 0.597456, 0.751348, -0.280219, 0.385082, 0.216575, 0.897110" scale="0.683, 0.672, 0.569"/>
+        <components>
+          <meta_mesh_component name="mi_lumberjack_b"/>
+        </components>
+        <scripts>
+          <script name="sound_emitter">
+            <variables>
+              <variable name="Event Path" value="event:/map/ambient/node/settlements/lumberjack"/>
+              <variable name="Play On Startup" value="true"/>
+              <variable name="Is Static" value="false"/>
+              <variable name="Override Sound" value="false"/>
+              <variable name="Overrided Max Distance" value="40.000000"/>
+              <variable name="Overrided Min Distance" value="2.000000"/>
+              <variable name="Sound Preset" value="Speakers"/>
+            </variables>
+          </script>
+        </scripts>
+        <levels>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="civilian"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_production_lumberjack_d" old_prefab_name="map_icons_production_lumberjack_d" mobility="1">
+        <transform position="0.539, -3.136, -0.070" non_orthogonal_rotation_mat="0.985960, -0.052849, -0.158398, 0.068507, 0.995828, 0.060270, 0.236624, -0.107594, 0.965626" scale="0.665, 0.669, 0.543"/>
+        <components>
+          <meta_mesh_component name="mi_lumberjack_d"/>
+        </components>
+        <scripts>
+          <script name="sound_emitter">
+            <variables>
+              <variable name="Event Path" value="event:/map/ambient/node/settlements/lumberjack"/>
+              <variable name="Play On Startup" value="true"/>
+              <variable name="Is Static" value="false"/>
+              <variable name="Override Sound" value="false"/>
+              <variable name="Overrided Max Distance" value="40.000000"/>
+              <variable name="Overrided Min Distance" value="2.000000"/>
+              <variable name="Sound Preset" value="Speakers"/>
+            </variables>
+          </script>
+        </scripts>
+        <levels>
+          <level name="level_3"/>
+          <level name="civilian"/>
+        </levels>
+      </game_entity>
+    </children>
+    <levels>
+      <level name="level_1"/>
+      <level name="level_2"/>
+      <level name="level_3"/>
+      <level name="civilian"/>
+      <level name="siege"/>
+      <level name="looted"/>
+    </levels>
+  </game_entity>
+  <game_entity name="player_settlement_town_village_3" old_prefab_name="map_village_emp_all_40" mobility="1">
+    <tags>
+      <tag name="village"/>
+      <tag name="castle"/>
+    </tags>
+    <transform position="17.931, 4.575, -14.743" rotation_euler="-0.044, 0.000, 0.729" scale="1.000, 1.000, 1.250"/>
+    <scripts>
+      <script name="Town Entity Manager">
+        <variables>
+          <variable name="Override Factor Color" value="false"/>
+          <variable name="Factor Color" value="1.000, 1.000, 1.000, 1.000"/>
+        </variables>
+      </script>
+    </scripts>
+    <children>
+      <game_entity name="map_icons_empire_village_l2" old_prefab_name="map_icons_empire_village_l2" mobility="1">
+        <transform position="-0.064, 0.023, 0.017" non_orthogonal_rotation_mat="0.999276, 0.002611, 0.037944, -0.002136, 0.999965, -0.008041, -0.059253, 0.012414, 0.998166" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_2"/>
+        </components>
+        <levels>
+          <level name="level_2"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_l3" old_prefab_name="map_icons_empire_village_l3" mobility="1">
+        <transform position="-0.102, 0.054, 0.017" non_orthogonal_rotation_mat="0.999403, -0.004510, 0.034253, 0.003854, 0.999917, 0.012287, -0.053552, -0.018963, 0.998385" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_3"/>
+        </components>
+        <levels>
+          <level name="level_3"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="_bo" old_prefab_name="_bo" mobility="1">
+        <transform position="-0.072, 0.026, -0.031" rotation_euler="0.000, 0.000, 1.500" scale="4.200, 4.200, 4.200"/>
+        <physics shape="bo_barrier_sphere">
+          <body_flags>
+            <body_flag name="only_collide_with_raycast"/>
+          </body_flags>
+        </physics>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_l1" old_prefab_name="map_icons_empire_village_l1" mobility="1">
+        <transform position="-0.092, -0.097, 0.008" non_orthogonal_rotation_mat="0.998875, -0.014724, 0.045074, 0.014521, 0.999890, 0.003093, -0.070389, -0.003799, 0.997512" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_1"/>
+        </components>
+        <levels>
+          <level name="level_1"/>
+          <level name="civilian"/>
+          <level name="siege"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_empire_village_looted" old_prefab_name="map_icons_empire_village_looted" mobility="1">
+        <transform position="-0.460, 0.120, 0.060" rotation_euler="0.000, 0.000, 0.020" scale="0.400, 0.400, 0.400"/>
+        <components>
+          <meta_mesh_component name="village_empire_1">
+            <mesh name="village_empire_1.0" factor="4282598211"/>
+            <mesh name="village_empire_1.1" factor="4282598211"/>
+            <mesh name="village_empire_1.2" factor="4282598211"/>
+            <mesh name="village_empire_1.3" factor="4282598211"/>
+            <mesh name="village_empire_1.4" factor="4282598211"/>
+            <mesh name="village_empire_1.5" factor="4282598211"/>
+          </meta_mesh_component>
+        </components>
+        <levels>
+          <level name="level_1"/>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="looted"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_production_horseranch_saddle_a" old_prefab_name="map_icons_production_horseranch_saddle_a" mobility="1">
+        <transform position="-0.484, -3.000, -0.073" non_orthogonal_rotation_mat="0.755373, -0.654113, -0.039339, 0.656230, 0.752134, 0.060468, -0.015512, -0.111289, 0.993667" scale="0.860, 0.859, 0.593"/>
+        <components>
+          <meta_mesh_component name="mi_saddle_horse_a"/>
+        </components>
+        <scripts>
+          <script name="sound_emitter">
+            <variables>
+              <variable name="Event Path" value="event:/map/ambient/node/settlements/horseranch"/>
+              <variable name="Play On Startup" value="true"/>
+              <variable name="Is Static" value="false"/>
+              <variable name="Override Sound" value="false"/>
+              <variable name="Overrided Max Distance" value="40.000000"/>
+              <variable name="Overrided Min Distance" value="2.000000"/>
+              <variable name="Sound Preset" value="Speakers"/>
+            </variables>
+          </script>
+        </scripts>
+        <levels>
+          <level name="level_1"/>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="civilian"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_production_horseranch_saddle_c" old_prefab_name="map_icons_production_horseranch_saddle_c" mobility="1">
+        <transform position="-1.684, 3.349, -0.188" non_orthogonal_rotation_mat="0.076963, -0.996489, -0.032946, 0.992487, 0.071526, 0.099266, -0.149701, -0.062537, 0.986752" scale="0.850, 0.848, 0.788"/>
+        <components>
+          <meta_mesh_component name="mi_saddle_horse_c"/>
+        </components>
+        <scripts>
+          <script name="sound_emitter">
+            <variables>
+              <variable name="Event Path" value="event:/map/ambient/node/settlements/horseranch"/>
+              <variable name="Play On Startup" value="true"/>
+              <variable name="Is Static" value="false"/>
+              <variable name="Override Sound" value="false"/>
+              <variable name="Overrided Max Distance" value="40.000000"/>
+              <variable name="Overrided Min Distance" value="2.000000"/>
+              <variable name="Sound Preset" value="Speakers"/>
+            </variables>
+          </script>
+        </scripts>
+        <levels>
+          <level name="level_3"/>
+          <level name="civilian"/>
+        </levels>
+      </game_entity>
+      <game_entity name="map_icons_production_horseranch_saddle_b" old_prefab_name="map_icons_production_horseranch_saddle_b" mobility="1">
+        <transform position="-2.775, 0.043, -0.202" non_orthogonal_rotation_mat="0.996421, 0.022056, 0.081607, -0.022018, 0.999757, -0.000875, -0.126903, -0.001439, 0.991914" scale="0.828, 0.830, 0.553"/>
+        <components>
+          <meta_mesh_component name="mi_saddle_horse_b"/>
+        </components>
+        <scripts>
+          <script name="sound_emitter">
+            <variables>
+              <variable name="Event Path" value="event:/map/ambient/node/settlements/horseranch"/>
+              <variable name="Play On Startup" value="true"/>
+              <variable name="Is Static" value="false"/>
+              <variable name="Override Sound" value="false"/>
+              <variable name="Overrided Max Distance" value="40.000000"/>
+              <variable name="Overrided Min Distance" value="2.000000"/>
+              <variable name="Sound Preset" value="Speakers"/>
+            </variables>
+          </script>
+        </scripts>
+        <levels>
+          <level name="level_2"/>
+          <level name="level_3"/>
+          <level name="civilian"/>
+        </levels>
+      </game_entity>
+    </children>
+    <levels>
+      <level name="level_1"/>
+      <level name="level_2"/>
+      <level name="level_3"/>
+      <level name="civilian"/>
+      <level name="siege"/>
+      <level name="looted"/>
+    </levels>
+  </game_entity>
 </prefabs>

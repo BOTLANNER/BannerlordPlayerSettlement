@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,12 +19,16 @@ namespace BannerlordPlayerSettlement.Saves
         {
             base.DefineClassTypes();
 
+            AddClassDefinition(typeof(PlayerSettlementItem), 3);
             AddClassDefinition(typeof(PlayerSettlementInfo), 2);
         }
 
         protected override void DefineContainerDefinitions()
         {
             base.DefineContainerDefinitions();
+
+            ConstructContainerDefinition(typeof(List<PlayerSettlementItem>));
+            ConstructContainerDefinition(typeof(PlayerSettlementItem[]));
         }
     }
 }

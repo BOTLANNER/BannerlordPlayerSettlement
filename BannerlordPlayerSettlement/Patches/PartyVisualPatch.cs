@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -55,8 +56,8 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement != null && __instance.PartyBase.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier);
-                bool playerSiegeEvent = (PlayerSiege.PlayerSiegeEvent != null && PlayerSiege.PlayerSiegeEvent.BesiegedSettlement != null && PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier);
+                bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsPlayerBuilt());
+                bool playerSiegeEvent = (PlayerSiege.PlayerSiegeEvent != null && PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt());
                 if (!playerSiegeEvent && !isPlayerSettlement)
                 {
                     return true;
@@ -89,7 +90,7 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement != null && __instance.PartyBase.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier);
+                bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsPlayerBuilt());
                 if (!isPlayerSettlement)
                 {
                     return true;

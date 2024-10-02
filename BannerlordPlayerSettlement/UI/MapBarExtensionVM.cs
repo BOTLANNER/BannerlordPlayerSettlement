@@ -26,11 +26,13 @@ namespace BannerlordPlayerSettlement.UI
     {
         public static MapBarExtensionVM? Current = null;
 
-        [DataSourceProperty]
-        public WeakReference<MapBarExtensionVM> Mixin => new(this);
+        //[DataSourceProperty]
+        //public WeakReference<MapBarExtensionVM> Mixin => new(this);
 
         private bool _isCreatePlayerSettlementEnabled = true;
         private bool _isCreatePlayerSettlementVisible = true;
+
+        private bool forceHide = false;
 
         private HintViewModel? _disableReasonHint;
 
@@ -61,7 +63,7 @@ namespace BannerlordPlayerSettlement.UI
         {
             get
             {
-                return this._isCreatePlayerSettlementVisible;
+                return this._isCreatePlayerSettlementVisible && !forceHide;
             }
             set
             {
@@ -78,7 +80,9 @@ namespace BannerlordPlayerSettlement.UI
         {
             get
             {
-                return new TextObject("{=player_settlement_04}Build a Town").ToString();
+                return PlayerSettlementInfo.Instance?.PlayerSettlement != null ?
+                    new TextObject("{=player_settlement_13}Build a Village").ToString() :
+                    new TextObject("{=player_settlement_04}Build a Town").ToString();
             }
         }
 
@@ -99,11 +103,25 @@ namespace BannerlordPlayerSettlement.UI
             }
         }
 
+        public void Tick(float dt)
+        {
+            if (ViewModel?.MapTimeControl != null)
+            {
+                if (forceHide == ViewModel.MapTimeControl.IsCenterPanelEnabled)
+                {
+                    OnRefresh();
+
+                    forceHide = !ViewModel.MapTimeControl.IsCenterPanelEnabled;
+                    ViewModel.OnPropertyChangedWithValue(IsCreatePlayerSettlementVisible, "IsCreatePlayerSettlementVisible");
+                }
+            }
+        }
+
         private void CalculateEnabled()
         {
             TextObject? disableReason = null;
 
-            if (PlayerSettlementInfo.Instance?.PlayerSettlement != null || (PlayerSettlementBehaviour.Instance?.CreateSettlement ?? false))
+            if ((PlayerSettlementInfo.Instance?.PlayerSettlement != null && (PlayerSettlementInfo.Instance.PlayerVillages?.Count ?? 0) == 3) || (PlayerSettlementBehaviour.Instance?.CreateSettlement ?? false))
             {
                 disableReason ??= new TextObject("<Already Created or About to Create>");
                 IsCreatePlayerSettlementAllowed = false;
@@ -174,7 +192,10 @@ namespace BannerlordPlayerSettlement.UI
         [DataSourceMethod]
         public void ExecuteCreatePlayerSettlement()
         {
-            var confirm = new TextObject("{=player_settlement_05}Are you sure you want to build your town here?");
+            var confirm = PlayerSettlementInfo.Instance?.PlayerSettlement != null ?
+                new TextObject("{=player_settlement_14}Are you sure you want to build your village here?") :
+                new TextObject("{=player_settlement_05}Are you sure you want to build your town here?");
+
             InformationManager.ShowInquiry(new InquiryData(CreatePlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
                 () =>
                 {

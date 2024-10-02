@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -35,8 +36,8 @@ namespace BannerlordPlayerSettlement.Patches
                 Settlement? settlement = PlayerEncounter.LocationEncounter?.Settlement;
                 bool isPlayerSettlement =
                 (
-                    (settlement != null && settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier) ||
-                    (____settlement != null && ____settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                    (settlement.IsPlayerBuilt()) ||
+                    (____settlement.IsPlayerBuilt())
                 );
                 if (!isPlayerSettlement)
                 {
@@ -100,8 +101,8 @@ namespace BannerlordPlayerSettlement.Patches
                 Settlement? settlement = PlayerEncounter.LocationEncounter?.Settlement;
                 bool isPlayerSettlement =
                 (
-                    (settlement != null && settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier) ||
-                    (____settlement != null && ____settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                    (settlement.IsPlayerBuilt()) ||
+                    (____settlement.IsPlayerBuilt())
                 );
                 if (!isPlayerSettlement)
                 {

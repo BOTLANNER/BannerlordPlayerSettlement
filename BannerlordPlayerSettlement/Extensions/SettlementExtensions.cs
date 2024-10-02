@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
+using BannerlordPlayerSettlement.Behaviours;
+
 using HarmonyLib;
 
 using TaleWorlds.CampaignSystem.Settlements;
@@ -14,8 +16,8 @@ namespace BannerlordPlayerSettlement.Extensions
 {
     public static class SettlementExtensions
     {
-        static MethodInfo Position2DSetter = AccessTools.Property(typeof(Settlement), "Position2D").SetMethod; 
-        static MethodInfo GatePositionSetter = AccessTools.Property(typeof(Settlement), "GatePosition").SetMethod; 
+        static MethodInfo Position2DSetter = AccessTools.Property(typeof(Settlement), "Position2D").SetMethod;
+        static MethodInfo GatePositionSetter = AccessTools.Property(typeof(Settlement), "GatePosition").SetMethod;
         public static void SetPosition2D(this Settlement settlement, Vec2 position, Vec2? gatePosition)
         {
             Position2DSetter.Invoke(settlement, new object[] { position });
@@ -23,6 +25,39 @@ namespace BannerlordPlayerSettlement.Extensions
             {
                 GatePositionSetter.Invoke(settlement, new object[] { gatePosition });
             }
+        }
+
+        static MethodInfo BoundSetter = AccessTools.Property(typeof(Village), nameof(Village.Bound)).SetMethod;
+
+        public static void SetBound(this Settlement settlement, Settlement boundTarget)
+        {
+            settlement.Village.SetBound(boundTarget);
+        }
+
+        public static void SetBound(this Village village, Settlement boundTarget)
+        {
+            BoundSetter.Invoke(village, new object[] { boundTarget });
+        }
+
+        public static bool IsPlayerBuilt(this Settlement? settlement)
+        {
+            return settlement?.StringId?.IsPlayerBuiltStringId() ?? false;
+        }
+
+        public static bool IsPlayerBuiltStringId(this string? stringId)
+        {
+            if (string.IsNullOrEmpty(stringId))
+            {
+                return false;
+            }
+
+            if (PlayerSettlementBehaviour.PlayerSettlementIdentifier == stringId)
+            {
+                return true;
+            }
+
+
+            return (PlayerSettlementBehaviour.PlayerVillages != null && PlayerSettlementBehaviour.PlayerVillages.Any(pv => pv.ItemIdentifier == stringId));
         }
     }
 }

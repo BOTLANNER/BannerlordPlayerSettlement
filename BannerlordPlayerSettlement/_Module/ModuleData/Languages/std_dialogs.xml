@@ -14,5 +14,9 @@
         <string id="player_settlement_08" text="A player town has been created on a later save. Older saves are not supported and could cause save corruption or town 'ghosting'." />
         <string id="player_settlement_09" text="Choose town culture" />
         <string id="player_settlement_10" text="Choose the culture for {TOWN}" />
+        <string id="player_settlement_11" text="Choose village culture" />
+        <string id="player_settlement_12" text="Choose the culture for {VILLAGE}" />
+        <string id="player_settlement_13" text="Build a Village" />
+        <string id="player_settlement_14" text="Are you sure you want to build your village here?" />
     </strings>
 </base>

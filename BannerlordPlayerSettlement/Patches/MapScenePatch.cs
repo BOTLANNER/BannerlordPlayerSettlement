@@ -1,4 +1,6 @@
 ﻿
+using System.Linq;
+
 using BannerlordPlayerSettlement.Behaviours;
 
 using HarmonyLib;
@@ -17,7 +19,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(AddNewEntityToMapScene))]
-        public static bool AddNewEntityToMapScene(ref MapScene __instance, ref Scene ____scene, ref string entityId,ref Vec2 position)
+        public static bool AddNewEntityToMapScene(ref MapScene __instance, ref Scene ____scene, ref string entityId, ref Vec2 position)
         {
             try
             {
@@ -25,6 +27,25 @@ namespace BannerlordPlayerSettlement.Patches
                 {
                     //entityId = "town_EW1";
                     entityId = "player_settlement_town_1";
+                    GameEntity gameEntity = GameEntity.Instantiate(____scene, entityId, true);
+                    if (gameEntity != null)
+                    {
+                        Vec3 vec3 = new Vec3(position.x, position.y, 0f, -1f)
+                        {
+                            z = ____scene.GetGroundHeightAtPosition(position.ToVec3(0f), BodyFlags.CommonCollisionExcludeFlags)
+                        };
+                        gameEntity.SetLocalPosition(vec3);
+                    }
+
+                    return false;
+                }
+
+                var eId = entityId;
+                if (PlayerSettlementBehaviour.PlayerVillages.Any(pv => pv.ItemIdentifier == eId))
+                {
+                    //entityId = "town_EW1";
+                    var number = PlayerSettlementBehaviour.PlayerVillages.FindIndex(pv => pv.ItemIdentifier == eId) + 1;
+                    entityId = $"player_settlement_town_village_{number}";
                     GameEntity gameEntity = GameEntity.Instantiate(____scene, entityId, true);
                     if (gameEntity != null)
                     {

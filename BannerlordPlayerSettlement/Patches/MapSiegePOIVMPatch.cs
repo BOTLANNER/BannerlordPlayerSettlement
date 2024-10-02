@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -34,7 +35,7 @@ namespace BannerlordPlayerSettlement.Patches
                     __result = null;
                     return true;
                 }
-                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement != null && PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier))
+                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt()))
                 {
                     return true;
                 }
@@ -116,7 +117,7 @@ namespace BannerlordPlayerSettlement.Patches
                     ____bindMaxHitpoints = 0f;
                     return true;
                 }
-                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement != null && PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier))
+                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt()))
                 {
                     return true;
                 }

@@ -2,6 +2,7 @@
 using System;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -23,12 +24,12 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (fromSettlement != null && fromSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (fromSettlement.IsPlayerBuilt())
                 {
                     __result = float.MaxValue;
                     return false;
                 }
-                if (toSettlement != null && toSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toSettlement.IsPlayerBuilt())
                 {
                     __result = float.MaxValue;
                     return false;
@@ -44,12 +45,12 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (fromParty != null && fromParty.Party != null && fromParty.Party.Settlement != null && fromParty.Party.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (fromParty != null && fromParty.Party != null && fromParty.Party.Settlement.IsPlayerBuilt())
                 {
                     __result = float.MaxValue;
                     return false;
                 }
-                if (toSettlement != null && toSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toSettlement.IsPlayerBuilt())
                 {
                     __result = float.MaxValue;
                     return false;
@@ -65,12 +66,12 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (fromParty != null && fromParty.Party != null && fromParty.Party.Settlement != null && fromParty.Party.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (fromParty != null && fromParty.Party != null && fromParty.Party.Settlement != null && fromParty.Party.Settlement.IsPlayerBuilt())
                 {
                     __result = float.MaxValue;
                     return false;
                 }
-                if (toParty != null && toParty.Party != null && toParty.Party.Settlement != null && toParty.Party.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toParty != null && toParty.Party != null && toParty.Party.Settlement != null && toParty.Party.Settlement.IsPlayerBuilt())
                 {
                     __result = float.MaxValue;
                     return false;
@@ -88,13 +89,13 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (fromSettlement != null && fromSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (fromSettlement != null && fromSettlement.IsPlayerBuilt())
                 {
                     distance = float.MaxValue;
                     __result = false;
                     return false;
                 }
-                if (toSettlement != null && toSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toSettlement != null && toSettlement.IsPlayerBuilt())
                 {
                     distance = float.MaxValue;
                     __result = false;
@@ -112,13 +113,13 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (fromParty != null && fromParty.Party != null && fromParty.Party.Settlement != null && fromParty.Party.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (fromParty != null && fromParty.Party != null && fromParty.Party.Settlement != null && fromParty.Party.Settlement.IsPlayerBuilt())
                 {
                     distance = float.MaxValue;
                     __result = false;
                     return false;
                 }
-                if (toSettlement != null && toSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toSettlement != null && toSettlement.IsPlayerBuilt())
                 {
                     distance = float.MaxValue;
                     __result = false;
@@ -136,7 +137,7 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (toParty != null && toParty.Party != null && toParty.Party.Settlement != null && toParty.Party.Settlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toParty != null && toParty.Party != null && toParty.Party.Settlement != null && toParty.Party.Settlement.IsPlayerBuilt())
                 {
                     distance = float.MaxValue;
                     __result = false;
@@ -154,7 +155,7 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
-                if (toSettlement != null && toSettlement.StringId == PlayerSettlementBehaviour.PlayerSettlementIdentifier)
+                if (toSettlement != null && toSettlement.IsPlayerBuilt())
                 {
                     distance = float.MaxValue;
                     __result = false;

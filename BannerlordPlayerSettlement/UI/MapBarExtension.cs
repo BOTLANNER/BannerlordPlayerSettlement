@@ -9,7 +9,8 @@ using Bannerlord.UIExtenderEx.Prefabs2;
 
 namespace BannerlordPlayerSettlement.UI
 {
-    [PrefabExtension("MapBar", "/Prefab/Window/Widget/Children/MapCurrentTimeVisualWidget[@Id='CenterPanel']")]
+    //[PrefabExtension("MapBar", "/Prefab/Window/Widget/Children/MapCurrentTimeVisualWidget[@Id='CenterPanel']")]
+    [PrefabExtension("MapBar", "(/Prefab/Window/Widget/Children/MapCurrentTimeVisualWidget[@Id='CenterPanel'] | /Prefab/Window/Widget/Children/TimePanel)[1]")]
 
     public class MapBarExtension : PrefabExtensionInsertPatch
     {

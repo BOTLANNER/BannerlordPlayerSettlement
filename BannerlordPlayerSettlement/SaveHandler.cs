@@ -33,6 +33,10 @@ namespace BannerlordPlayerSettlement
         {
             Instance.SaveAndLoad(afterSave);
         }
+        public static void SaveOnly(bool overwrite = true)
+        {
+            Instance.Save(overwrite);
+        }
 
         public void SaveAndLoad(Action<string>? afterSave = null)
         {
@@ -44,10 +48,29 @@ namespace BannerlordPlayerSettlement
                 saveName = (string) GetNextAvailableSaveNameMethod.Invoke(null, new object[] { });
                 ActiveSaveSlotNameField.SetValue(null, saveName);
             }
-            //Campaign.Current.SaveHandler.SaveAs(saveName + new TextObject("{=player_settlement_n_02} (auto)").ToString());
+            Campaign.Current.SaveHandler.SaveAs(saveName + new TextObject("{=player_settlement_n_02} (auto)").ToString());
 
             // Save over current as previous saves will be corrupt!
-            Campaign.Current.SaveHandler.SaveAs(saveName);
+            //Campaign.Current.SaveHandler.SaveAs(saveName);
+        }
+
+        public void Save(bool overwrite = true)
+        {
+            string saveName = (string) ActiveSaveSlotNameField.GetValue(null);
+            if (saveName == null)
+            {
+                saveName = (string) GetNextAvailableSaveNameMethod.Invoke(null, new object[] { });
+                ActiveSaveSlotNameField.SetValue(null, saveName);
+            }
+
+            if (overwrite)
+            {
+                Campaign.Current.SaveHandler.SaveAs(saveName);
+            }
+            else
+            {
+                Campaign.Current.SaveHandler.SaveAs(saveName + new TextObject("{=player_settlement_n_02} (auto)").ToString());
+            }
         }
 
 

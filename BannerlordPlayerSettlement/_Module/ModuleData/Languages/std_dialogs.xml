@@ -12,5 +12,7 @@
         <string id="player_settlement_06" text="This town is currently still under construction." />
         <string id="player_settlement_07" text="{TOWN} construction has completed!" />
         <string id="player_settlement_08" text="A player town has been created on a later save. Older saves are not supported and could cause save corruption or town 'ghosting'." />
+        <string id="player_settlement_09" text="Choose town culture" />
+        <string id="player_settlement_10" text="Choose the culture for {TOWN}" />
     </strings>
 </base>

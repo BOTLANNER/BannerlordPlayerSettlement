@@ -55,6 +55,7 @@ namespace BannerlordPlayerSettlement.Behaviours
         public static PlayerSettlementBehaviour? Instance = null;
 
         public static bool OldSaveLoaded = false;
+        public static bool TriggerSaveAfterUpgrade = false;
 
         //internal static string PlayerSettlementTemplate = ResourcePrefab.Load("BannerlordPlayerSettlement.Behaviours.player_settlement_template.xml").OuterXml;
         internal static string PlayerSettlementTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_template.xml");
@@ -158,7 +159,7 @@ namespace BannerlordPlayerSettlement.Behaviours
         private static void game_menu_town_under_construction_on_init(MenuCallbackArgs args)
         {
             var settlement = Settlement.CurrentSettlement;
-            var textObject = ((settlement.OwnerClan != Clan.PlayerClan) ? new TextObject("{=UWzQsHA2}{SETTLEMENT_LINK} is governed by {LORD.LINK}, {FACTION_OFFICIAL} of the {FACTION_TERM}. {PROSPERITY_INFO} {MORALE_INFO}") :  new TextObject("{=kXVHwjoV}You have arrived at your fief of {SETTLEMENT_LINK}. {PROSPERITY_INFO} {MORALE_INFO}"));
+            var textObject = ((settlement.OwnerClan != Clan.PlayerClan) ? new TextObject("{=UWzQsHA2}{SETTLEMENT_LINK} is governed by {LORD.LINK}, {FACTION_OFFICIAL} of the {FACTION_TERM}. {PROSPERITY_INFO} {MORALE_INFO}") : new TextObject("{=kXVHwjoV}You have arrived at your fief of {SETTLEMENT_LINK}. {PROSPERITY_INFO} {MORALE_INFO}"));
 
             settlement.OwnerClan.Leader.SetPropertiesToTextObject(textObject, "LORD");
             string text = settlement.OwnerClan.Leader.MapFaction.Culture.StringId;
@@ -245,7 +246,13 @@ namespace BannerlordPlayerSettlement.Behaviours
                 PlayerSettlementBehaviour.OldSaveLoaded = false;
                 return;
             }
-            if (Main.Settings!= null && Main.Settings.Enabled)
+            if (PlayerSettlementBehaviour.TriggerSaveAfterUpgrade)
+            { 
+                PlayerSettlementBehaviour.TriggerSaveAfterUpgrade = false;
+                SaveHandler.SaveOnly(overwrite: true);
+                return;
+            }
+            if (Main.Settings != null && Main.Settings.Enabled)
             {
                 if (PlayerSettlementInfo.Instance?.PlayerSettlement == null)
                 {
@@ -270,160 +277,208 @@ namespace BannerlordPlayerSettlement.Behaviours
                 {
                     CreateSettlement = false;
 
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+
                     InformationManager.ShowTextInquiry(new TextInquiryData(new TextObject("{=player_settlement_02}Create Player Settlement").ToString(), new TextObject("{=player_settlement_03}What would you like to name your settlement?").ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
                         (string settlementName) =>
                         {
+                            Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+
                             if (string.IsNullOrEmpty(settlementName))
                             {
                                 settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                             }
 
-                            string identifierUniqueness = MBRandom.RandomInt().ToString();
-                            //MBObjectManager.Instance.LoadOneXmlFromFile(String.Concat(ModuleHelper.GetModuleFullPath("PlayerSettlement"), "ModuleData/player_settlements.xml"), null, true);
-                            PlayerSettlementInfo.Instance!.PlayerSettlementXML = PlayerSettlementTemplate;
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{G_POS_X}}", (MobileParty.MainParty.Position2D.X - 0.8578f).ToString());
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{G_POS_Y}}", (MobileParty.MainParty.Position2D.Y - 4.2689f).ToString());
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{PLAYER_CULTURE}}", Hero.MainHero.Culture.StringId);
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{PLAYER_CLAN}}", Hero.MainHero.Clan.StringId);
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{TOWN_IDENTIFIER}}", identifierUniqueness);
-                            PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{SETTLEMENT_NAME}}", settlementName);
-
-                            PlayerSettlementInfo.Instance.PlayerSettlementIdentifier = "player_settlement_town_{{TOWN_IDENTIFIER}}".Replace("{{TOWN_IDENTIFIER}}", identifierUniqueness);
-                            PlayerSettlementInfo.Instance.PlayerSettlementName = settlementName;
-
-                            var doc = new XmlDocument();
-                            doc.LoadXml(PlayerSettlementInfo.Instance.PlayerSettlementXML);
-                            MBObjectManager.Instance.LoadXml(doc);
-                            PlayerSettlementInfo.Instance.PlayerSettlement = MBObjectManager.Instance.GetObject<Settlement>(PlayerSettlementIdentifier);
-                            PlayerSettlementInfo.Instance.PlayerSettlement.Town.OwnerClan = Hero.MainHero.Clan;
-
-                            PlayerSettlementInfo.Instance.PlayerSettlement.Name = new TextObject(settlementName);
-
-                            PlayerSettlementInfo.Instance.PlayerSettlement.Party.SetLevelMaskIsDirty();
-                            PlayerSettlementInfo.Instance.PlayerSettlement.IsVisible = true;
-                            PlayerSettlementInfo.Instance.PlayerSettlement.IsInspected = true;
-                            PlayerSettlementInfo.Instance.PlayerSettlement.Town.FoodStocks = (float) PlayerSettlementInfo.Instance.PlayerSettlement.Town.FoodStocksUpperLimit();
-                            PlayerSettlementInfo.Instance.PlayerSettlement.Party.SetVisualAsDirty();
-
-                            PartyVisualManager.Current.AddNewPartyVisualForParty(PlayerSettlementInfo.Instance.PlayerSettlement.Party);
-
-                            PlayerSettlementInfo.Instance.PlayerSettlement.OnGameCreated();
-                            PlayerSettlementInfo.Instance.PlayerSettlement.OnGameInitialized();
-                            PlayerSettlementInfo.Instance.PlayerSettlement.OnFinishLoadState();
-
-                            var town = PlayerSettlementInfo.Instance.PlayerSettlement.Town;
-
-
-                            foreach (BuildingType buildingType in BuildingType.All)
+                            Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
                             {
-                                if (buildingType.BuildingLocation != BuildingLocation.Settlement || buildingType == DefaultBuildingTypes.Fortifications)
-                                {
-                                    continue;
-                                }
-                                var num = MBRandom.RandomInt(0, 7);
-                                bool flag;
-                                if (num < 4)
-                                {
-                                    flag = false;
-                                }
-                                else
-                                {
-                                    flag = true;
-                                    num -= 3;
+                                string identifierUniqueness = MBRandom.RandomInt().ToString();
+                                //MBObjectManager.Instance.LoadOneXmlFromFile(String.Concat(ModuleHelper.GetModuleFullPath("PlayerSettlement"), "ModuleData/player_settlements.xml"), null, true);
+                                PlayerSettlementInfo.Instance!.PlayerSettlementXML = PlayerSettlementTemplate;
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{G_POS_X}}", (MobileParty.MainParty.Position2D.X - 0.8578f).ToString());
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{G_POS_Y}}", (MobileParty.MainParty.Position2D.Y - 4.2689f).ToString());
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{PLAYER_CULTURE}}", culture.StringId);
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{PLAYER_CLAN}}", Hero.MainHero.Clan.StringId);
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{TOWN_IDENTIFIER}}", identifierUniqueness);
+                                PlayerSettlementInfo.Instance.PlayerSettlementXML = PlayerSettlementInfo.Instance.PlayerSettlementXML.Replace("{{SETTLEMENT_NAME}}", settlementName);
 
-                                }
-                                if (!flag)
+                                PlayerSettlementInfo.Instance.PlayerSettlementIdentifier = "player_settlement_town_{{TOWN_IDENTIFIER}}".Replace("{{TOWN_IDENTIFIER}}", identifierUniqueness);
+                                PlayerSettlementInfo.Instance.PlayerSettlementName = settlementName;
+
+                                var doc = new XmlDocument();
+                                doc.LoadXml(PlayerSettlementInfo.Instance.PlayerSettlementXML);
+                                MBObjectManager.Instance.LoadXml(doc);
+                                PlayerSettlementInfo.Instance.PlayerSettlement = MBObjectManager.Instance.GetObject<Settlement>(PlayerSettlementIdentifier);
+                                PlayerSettlementInfo.Instance.PlayerSettlement.Town.OwnerClan = Hero.MainHero.Clan;
+
+                                PlayerSettlementInfo.Instance.PlayerSettlement.Name = new TextObject(settlementName);
+
+                                PlayerSettlementInfo.Instance.PlayerSettlement.Party.SetLevelMaskIsDirty();
+                                PlayerSettlementInfo.Instance.PlayerSettlement.IsVisible = true;
+                                PlayerSettlementInfo.Instance.PlayerSettlement.IsInspected = true;
+                                PlayerSettlementInfo.Instance.PlayerSettlement.Town.FoodStocks = (float) PlayerSettlementInfo.Instance.PlayerSettlement.Town.FoodStocksUpperLimit();
+                                PlayerSettlementInfo.Instance.PlayerSettlement.Party.SetVisualAsDirty();
+
+                                PartyVisualManager.Current.AddNewPartyVisualForParty(PlayerSettlementInfo.Instance.PlayerSettlement.Party);
+
+                                PlayerSettlementInfo.Instance.PlayerSettlement.OnGameCreated();
+                                PlayerSettlementInfo.Instance.PlayerSettlement.OnGameInitialized();
+                                PlayerSettlementInfo.Instance.PlayerSettlement.OnFinishLoadState();
+
+                                var town = PlayerSettlementInfo.Instance.PlayerSettlement.Town;
+
+
+                                foreach (BuildingType buildingType in BuildingType.All)
                                 {
-                                    continue;
+                                    if (buildingType.BuildingLocation != BuildingLocation.Settlement || buildingType == DefaultBuildingTypes.Fortifications)
+                                    {
+                                        continue;
+                                    }
+                                    var num = MBRandom.RandomInt(0, 7);
+                                    bool flag;
+                                    if (num < 4)
+                                    {
+                                        flag = false;
+                                    }
+                                    else
+                                    {
+                                        flag = true;
+                                        num -= 3;
+
+                                    }
+                                    if (!flag)
+                                    {
+                                        continue;
+                                    }
+                                    if (num > 3)
+                                    {
+                                        num = 3;
+                                    }
+                                    town.Buildings.Add(new Building(buildingType, town, 0f, num));
                                 }
-                                if (num > 3)
+                                foreach (BuildingType all1 in BuildingType.All)
                                 {
-                                    num = 3;
+                                    if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1) || all1.BuildingLocation != BuildingLocation.Settlement)
+                                    {
+                                        continue;
+                                    }
+                                    town.Buildings.Add(new Building(all1, town, 0f, 0));
                                 }
-                                town.Buildings.Add(new Building(buildingType, town, 0f, num));
+                                int num1 = MBRandom.RandomInt(1, 4);
+                                int num2 = 1;
+                                foreach (BuildingType buildingType2 in BuildingType.All)
+                                {
+                                    if (buildingType2.BuildingLocation != BuildingLocation.Daily)
+                                    {
+                                        continue;
+                                    }
+                                    Building building = new Building(buildingType2, town, 0f, 1);
+                                    town.Buildings.Add(building);
+                                    if (num2 == num1)
+                                    {
+                                        building.IsCurrentlyDefault = true;
+                                    }
+                                    num2++;
+                                }
+                                foreach (Building building1 in
+                                    from k in town.Buildings
+                                    orderby k.CurrentLevel descending
+                                    select k)
+                                {
+                                    if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
+                                    {
+                                        continue;
+                                    }
+                                    town.BuildingsInProgress.Enqueue(building1);
+                                }
+
+                                if (PlayerSettlementInfo.Instance.PlayerSettlement.Town.CurrentDefaultBuilding == null)
+                                {
+                                    BuildingHelper.ChangeDefaultBuilding(PlayerSettlementInfo.Instance.PlayerSettlement.Town.Buildings.FirstOrDefault(), PlayerSettlementInfo.Instance.PlayerSettlement.Town);
+                                }
+
+                                var campaignGameStarter = SandBoxManager.Instance.GameStarter;
+                                var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
+                                craftingCampaignBehavior?.AddTown(town, out _);
+                                //craftingCampaignBehavior?.CraftingOrders?.AddItem(new KeyValuePair<Town, CraftingCampaignBehavior.CraftingOrderSlots>(town, new CraftingCampaignBehavior.CraftingOrderSlots()));
+
+                                _playerSettlementInfo.BuiltAt = Campaign.CurrentTime;
+
+                                if (Main.Settings.RequireGold)
+                                {
+                                    GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, PlayerSettlementInfo.Instance.PlayerSettlement, Main.Settings.RequiredGold, true);
+                                }
+
+                                // NB: This is to prevent leaking town details to older saves!
+                                UpdateUniqueGameId();
+
+                                SaveHandler.SaveLoad((saveName) =>
+                                {
+                                    var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
+                                    var moduleName = Main.Name;
+
+                                    //var Module = $"{moduleName}.{GetType().Name}";
+                                    var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
+
+                                    if (!Directory.Exists(ConfigDir))
+                                    {
+                                        Directory.CreateDirectory(ConfigDir);
+                                    }
+
+                                    var configFile = Path.Combine(ConfigDir, $"PlayerSettlement.xml");
+                                    File.WriteAllText(configFile, PlayerSettlementInfo.Instance.PlayerSettlementXML);
+
+                                    var metaFile = Path.Combine(ConfigDir, $"meta.bin");
+                                    var metaText = "";
+                                    metaText += PlayerSettlementInfo.Instance.PlayerSettlementIdentifier.Base64Encode();
+                                    metaText += "\r\n";
+                                    metaText += PlayerSettlementInfo.Instance.PlayerSettlementName.Base64Encode();
+                                    metaText += "\r\n";
+                                    metaText += PlayerSettlementInfo.Instance.BuiltAt.ToString().Base64Encode();
+                                    metaText += "\r\n";
+                                    metaText += Main.Version.Base64Encode();
+                                    File.WriteAllText(metaFile, metaText);
+                                });
+                            };
+
+
+                            if (Main.Settings.ForcePlayerCulture)
+                            {
+                                apply(settlementName, Hero.MainHero.Culture);
+                                return;
                             }
-                            foreach (BuildingType all1 in BuildingType.All)
-                            {
-                                if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1) || all1.BuildingLocation != BuildingLocation.Settlement)
+
+                            var titleText = new TextObject("{=player_settlement_09}Choose town culture");
+                            var descriptionText = new TextObject("{=player_settlement_10}Choose the culture for {TOWN}");
+                            descriptionText.SetTextVariable("TOWN", settlementName);
+
+
+                            List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+
+                            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                                titleText: titleText.ToString(),
+                                descriptionText: descriptionText.ToString(),
+                                inquiryElements: inquiryElements1,
+                                isExitShown: false,
+                                maxSelectableOptionCount: 1,
+                                minSelectableOptionCount: 0,
+                                affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
+                                negativeText: null,
+                                affirmativeAction: (List<InquiryElement> args) =>
                                 {
-                                    continue;
-                                }
-                                town.Buildings.Add(new Building(all1, town, 0f, 0));
-                            }
-                            int num1 = MBRandom.RandomInt(1, 4);
-                            int num2 = 1;
-                            foreach (BuildingType buildingType2 in BuildingType.All)
-                            {
-                                if (buildingType2.BuildingLocation != BuildingLocation.Daily)
-                                {
-                                    continue;
-                                }
-                                Building building = new Building(buildingType2, town, 0f, 1);
-                                town.Buildings.Add(building);
-                                if (num2 == num1)
-                                {
-                                    building.IsCurrentlyDefault = true;
-                                }
-                                num2++;
-                            }
-                            foreach (Building building1 in
-                                from k in town.Buildings
-                                orderby k.CurrentLevel descending
-                                select k)
-                            {
-                                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
-                                {
-                                    continue;
-                                }
-                                town.BuildingsInProgress.Enqueue(building1);
-                            }
+                                    List<InquiryElement> source = args;
+                                    InformationManager.HideInquiry();
 
-                            if (PlayerSettlementInfo.Instance.PlayerSettlement.Town.CurrentDefaultBuilding == null)
-                            {
-                                BuildingHelper.ChangeDefaultBuilding(PlayerSettlementInfo.Instance.PlayerSettlement.Town.Buildings.FirstOrDefault(), PlayerSettlementInfo.Instance.PlayerSettlement.Town);
-                            }
+                                    CultureObject culture = (args?.FirstOrDefault()?.Identifier as CultureObject) ?? Hero.MainHero.Culture;
 
-                            var campaignGameStarter = SandBoxManager.Instance.GameStarter;
-                            var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
-                            craftingCampaignBehavior?.AddTown(town, out _);
-                            //craftingCampaignBehavior?.CraftingOrders?.AddItem(new KeyValuePair<Town, CraftingCampaignBehavior.CraftingOrderSlots>(town, new CraftingCampaignBehavior.CraftingOrderSlots()));
-
-                            _playerSettlementInfo.BuiltAt = Campaign.CurrentTime;
-
-                            if (Main.Settings.RequireGold)
-                            {
-                                GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, PlayerSettlementInfo.Instance.PlayerSettlement, Main.Settings.RequiredGold, true);
-                            }
-
-                            SaveHandler.SaveLoad((saveName) =>
-                            {
-                                var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
-                                var moduleName = Main.Name;
-
-                                //var Module = $"{moduleName}.{GetType().Name}";
-                                var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
-
-                                if (!Directory.Exists(ConfigDir))
-                                {
-                                    Directory.CreateDirectory(ConfigDir);
-                                }
-
-                                var configFile = Path.Combine(ConfigDir, $"PlayerSettlement.xml");
-                                File.WriteAllText(configFile, PlayerSettlementInfo.Instance.PlayerSettlementXML);
-
-                                var metaFile = Path.Combine(ConfigDir, $"meta.bin");
-                                var metaText = "";
-                                metaText += PlayerSettlementInfo.Instance.PlayerSettlementIdentifier.Base64Encode();
-                                metaText += "\r\n";
-                                metaText += PlayerSettlementInfo.Instance.PlayerSettlementName.Base64Encode();
-                                metaText += "\r\n";
-                                metaText += PlayerSettlementInfo.Instance.BuiltAt.ToString().Base64Encode();
-                                metaText += "\r\n";
-                                metaText += Main.Version.Base64Encode();
-                                File.WriteAllText(metaFile, metaText);
-                            });
+                                    apply(settlementName, culture);
+                                },
+                                negativeAction: null,
+                                soundEventPath: "")
+                                ,
+                                false,
+                                false);
                         },
                         () =>
                         {
@@ -433,6 +488,28 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                 }
             }
+        }
+
+        public IEnumerable<CultureObject> GetCultures(bool mainOnly = false)
+        {
+            foreach (CultureObject objectTypeList in MBObjectManager.Instance.GetObjectTypeList<CultureObject>())
+            {
+                if (mainOnly && !objectTypeList.IsMainCulture)
+                {
+                    continue;
+                }
+                yield return objectTypeList;
+            }
+        }
+
+        static readonly FastInvokeHandler SetUniqueGameId = MethodInvoker.GetHandler(AccessTools.Property(typeof(Campaign), nameof(Campaign.UniqueGameId)).SetMethod);
+        public static (string oldId, string newId) UpdateUniqueGameId()
+        {
+            var oldId = Campaign.Current.UniqueGameId;
+            var newId = MiscHelper.GenerateCampaignId(12);
+            SetUniqueGameId(Campaign.Current, new object[] { newId });
+
+            return (oldId, Campaign.Current.UniqueGameId);
         }
 
         #endregion

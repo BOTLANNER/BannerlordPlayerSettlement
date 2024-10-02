@@ -123,6 +123,7 @@ namespace BannerlordPlayerSettlement
         public override void RegisterSubModuleObjects(bool isSavedCampaign)
         {
             PlayerSettlementBehaviour.OldSaveLoaded = false;
+            PlayerSettlementBehaviour.TriggerSaveAfterUpgrade = false;
             //return;
             if (MBObjectManager.Instance != null && isSavedCampaign)
             {
@@ -162,6 +163,27 @@ namespace BannerlordPlayerSettlement
                     if (savedModuleVersion != Version)
                     {
                         // TODO: Any version specific updates here
+                        if (savedModuleVersion == "1.0.0.0")
+                        {
+                            // Original version didnt split into separate campaign which caused save corruption.
+
+                            if (buildTime - 5 > Campaign.CurrentTime)
+                            {
+                                // A player settlement has been made in a different save.
+                                // This is an older save than the config is for.
+                                PlayerSettlementBehaviour.OldSaveLoaded = true;
+                                return;
+                            }
+
+                            PlayerSettlementBehaviour.UpdateUniqueGameId();
+                            var oldConfigDir = ConfigDir;
+                            ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
+                            Directory.Move(oldConfigDir, ConfigDir);
+
+                            metaFile = Path.Combine(ConfigDir, $"meta.bin");
+
+                            PlayerSettlementBehaviour.TriggerSaveAfterUpgrade = true;
+                        }
 
                         // Save with latest version to indicate compatibility
                         metaText = "";

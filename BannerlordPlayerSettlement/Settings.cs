@@ -59,6 +59,12 @@ namespace BannerlordPlayerSettlement
         [SettingPropertyGroup("Player Settlements")]
         public int BuildDurationDays { get; set; } = 7;
 
+        private const string ForcePlayerCulture_Hint = "Will use the player culture for the town. By default when this is OFF, the town culture can be chosen.  [ Default: OFF ]";
+
+        [SettingPropertyBool("Use Player Culture", HintText = ForcePlayerCulture_Hint, RequireRestart = false, Order = 7, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool ForcePlayerCulture { get; set; } = false;
+
         private const string HideButtonUntilReady_Hint = "Always hides the build town button until requirements are met.  [ Default: OFF ]";
 
         [SettingPropertyBool("Always Hide Until Ready", HintText = HideButtonUntilReady_Hint, RequireRestart = false, Order = 0, IsToggle = false)]

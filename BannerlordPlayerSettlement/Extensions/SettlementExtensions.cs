@@ -51,13 +51,7 @@ namespace BannerlordPlayerSettlement.Extensions
                 return false;
             }
 
-            if (PlayerSettlementBehaviour.PlayerSettlementIdentifier == stringId)
-            {
-                return true;
-            }
-
-
-            return (PlayerSettlementBehaviour.PlayerVillages != null && PlayerSettlementBehaviour.PlayerVillages.Any(pv => pv.ItemIdentifier == stringId));
+            return stringId!.StartsWith("player_settlement_town_") || stringId!.StartsWith("player_settlement_castle_");
         }
     }
 }

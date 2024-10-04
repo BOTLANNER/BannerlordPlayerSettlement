@@ -21,6 +21,9 @@ namespace BannerlordPlayerSettlement.Saves
 
             AddClassDefinition(typeof(PlayerSettlementItem), 3);
             AddClassDefinition(typeof(PlayerSettlementInfo), 2);
+
+            AddClassDefinition(typeof(SettlementMetaV3), 5);
+            AddClassDefinition(typeof(MetaV3), 7);
         }
 
         protected override void DefineContainerDefinitions()
@@ -29,6 +32,9 @@ namespace BannerlordPlayerSettlement.Saves
 
             ConstructContainerDefinition(typeof(List<PlayerSettlementItem>));
             ConstructContainerDefinition(typeof(PlayerSettlementItem[]));
+
+            ConstructContainerDefinition(typeof(List<SettlementMetaV3>));
+            ConstructContainerDefinition(typeof(SettlementMetaV3[]));
         }
     }
 }

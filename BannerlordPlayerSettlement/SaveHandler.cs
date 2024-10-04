@@ -29,16 +29,16 @@ namespace BannerlordPlayerSettlement
         static FieldInfo ActiveSaveSlotNameField = AccessTools.Field(typeof(MBSaveLoad), "ActiveSaveSlotName");
         static MethodInfo GetNextAvailableSaveNameMethod = AccessTools.Method(typeof(MBSaveLoad), "GetNextAvailableSaveName");
 
-        public static void SaveLoad(Action<string>? afterSave = null)
+        public static void SaveLoad(bool overwrite = true, Action<string>? afterSave = null)
         {
-            Instance.SaveAndLoad(afterSave);
+            Instance.SaveAndLoad(overwrite,afterSave);
         }
         public static void SaveOnly(bool overwrite = true)
         {
             Instance.Save(overwrite);
         }
 
-        public void SaveAndLoad(Action<string>? afterSave = null)
+        public void SaveAndLoad(bool overwrite = true, Action<string>? afterSave = null)
         {
             CampaignEvents.OnSaveOverEvent.AddNonSerializedListener(Instance, new Action<bool, string>((b, s) => Instance.ApplyInternal(b, s, afterSave)));
 
@@ -48,10 +48,15 @@ namespace BannerlordPlayerSettlement
                 saveName = (string) GetNextAvailableSaveNameMethod.Invoke(null, new object[] { });
                 ActiveSaveSlotNameField.SetValue(null, saveName);
             }
-            Campaign.Current.SaveHandler.SaveAs(saveName + new TextObject("{=player_settlement_n_02} (auto)").ToString());
 
-            // Save over current as previous saves will be corrupt!
-            //Campaign.Current.SaveHandler.SaveAs(saveName);
+            if (overwrite)
+            {
+                Campaign.Current.SaveHandler.SaveAs(saveName);
+            }
+            else
+            {
+                Campaign.Current.SaveHandler.SaveAs(saveName + new TextObject("{=player_settlement_n_02} (auto)").ToString());
+            }
         }
 
         public void Save(bool overwrite = true)

@@ -10,6 +10,7 @@ using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Saves;
 using BannerlordPlayerSettlement.UI;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -36,9 +37,7 @@ namespace BannerlordPlayerSettlement
         public static readonly string HarmonyDomain = "com.b0tlanner.bannerlord." + Name.ToLower();
         public static readonly string ModuleName = "PlayerSettlement";
 
-        internal static readonly Color ImportantTextColor = Color.FromUint(0x00F16D26); // orange
-
-        internal static Settings? Settings;
+        public static Settings? Settings;
 
         private bool _loaded;
         public static Harmony? Harmony;
@@ -92,7 +91,7 @@ namespace BannerlordPlayerSettlement
 
                 if (!_loaded)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage($"Loaded {DisplayName}", ImportantTextColor));
+                    InformationManager.DisplayMessage(new InformationMessage($"Loaded {DisplayName}", Colours.ImportantTextColor));
                     _loaded = true;
                 }
             }
@@ -127,163 +126,51 @@ namespace BannerlordPlayerSettlement
             //return;
             if (MBObjectManager.Instance != null && isSavedCampaign)
             {
-                Settlement? playerSettlement;
-
-                var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
-                var moduleName = Main.Name;
-
-                var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
-
-                if (!Directory.Exists(ConfigDir))
+                MetaV3? metaV3 = null;
+                if (PlayerSettlementBehaviour.Instance != null)
                 {
-                    return;
+                    var store = Campaign.Current.GetStore(PlayerSettlementBehaviour.Instance);
+
+                    PlayerSettlementBehaviour.Instance.LoadEarlySync(store);
+
+                    metaV3 = PlayerSettlementBehaviour.Instance.MetaV3;
                 }
 
-                string displayName;
-                string identifier;
-                float buildTime;
-
-                string? savedModuleVersionRaw;
-                string savedModuleVersion;
-
-                int villageCount;
-                List<PlayerSettlementItem> villages = new();
-
-                var metaFile = Path.Combine(ConfigDir, $"meta.bin");
-                if (File.Exists(metaFile))
+                if (metaV3 == null)
                 {
-                    string metaText = File.ReadAllText(metaFile);
-                    string originalMetaText = "" + metaText;
+                    var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
+                    var moduleName = Main.Name;
 
-                    var parts = metaText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                    identifier = parts[0].Base64Decode();
-                    displayName = parts[1].Base64Decode();
-                    if (!float.TryParse(parts[2].Base64Decode(), out buildTime) && !float.TryParse(parts[2], out buildTime))
+                    var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
+
+                    if (!Directory.Exists(ConfigDir))
                     {
-                        InformationManager.DisplayMessage(new InformationMessage($"Unable to read save data!", ImportantTextColor));
-                        PlayerSettlementBehaviour.OldSaveLoaded = true;
                         return;
                     }
-                    savedModuleVersionRaw = parts.Length > 3 ? parts[3] : null;
-                    savedModuleVersion = parts.Length > 3 ? parts[3].Base64Decode() : "0.0.0";
-                    villageCount = parts.Length > 4 ? int.TryParse(parts[4].Base64Decode(), out villageCount) ? villageCount : 0 : 0;
-                    if (villageCount > 0 && parts.Length > 5)
+
+
+                    //MetaV3? metaV3;
+
+                    var metaObj = MetaV1_2.ReadFile(userDir, moduleName, ref ConfigDir);
+                    if (metaObj != null)
                     {
-                        var villagesContents = parts[5].Base64Decode().Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                        for (int i = 0; i < villagesContents.Length; i++)
-                        {
-                            var villageParts = villagesContents[i].Base64Decode().Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
-                            string vIdentifier = villageParts[0].Base64Decode();
-                            string vName = villageParts[1].Base64Decode();
-                            float vBuiltTime = float.Parse(villageParts[2].Base64Decode());
-
-                            villages.Add(new PlayerSettlementItem
-                            {
-                                ItemIdentifier = vIdentifier,
-                                SettlementName = vName,
-                                BuiltAt = vBuiltTime,
-
-                            });
-                        }
+                        metaV3 = metaObj.Convert(ConfigDir);
                     }
 
-                    if (savedModuleVersion != Version)
+                    if (metaV3 == null)
                     {
-                        // TODO: Any version specific updates here
-                        if (savedModuleVersion == "1.0.0.0")
-                        {
-                            // Original version didnt split into separate campaign which caused save corruption.
-
-                            if (buildTime - 5 > Campaign.CurrentTime)
-                            {
-                                // A player settlement has been made in a different save.
-                                // This is an older save than the config is for.
-                                PlayerSettlementBehaviour.OldSaveLoaded = true;
-                                return;
-                            }
-
-                            PlayerSettlementBehaviour.UpdateUniqueGameId();
-                            var oldConfigDir = ConfigDir;
-                            ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
-                            Directory.Move(oldConfigDir, ConfigDir);
-
-                            metaFile = Path.Combine(ConfigDir, $"meta.bin");
-
-                            PlayerSettlementBehaviour.TriggerSaveAfterUpgrade = true;
-                        }
-
-                        // Save with latest version to indicate compatibility
-                        if (parts.Length > 3)
-                        {
-                            parts[3] = Main.Version.Base64Encode();
-                            metaText = string.Join("\r\n", parts);
-                        }
-                        else
-                        {
-                            metaText += "\r\n";
-                            // Line 4: Mod version
-                            metaText += Main.Version.Base64Encode();
-                        }
-                        File.WriteAllText(metaFile + ".bak", originalMetaText);
-
-                        File.WriteAllText(metaFile, metaText);
-
-                        InformationManager.DisplayMessage(new InformationMessage($"Updated {DisplayName} to {Version}", ImportantTextColor));
+                        return;
                     }
 
-
-                    playerSettlement = MBObjectManager.Instance.GetObject<Settlement>(identifier);
-                }
-                else
-                {
-                    // No player settlement has been made
-                    return;
+                    PlayerSettlementBehaviour.TriggerSaveAfterUpgrade = true;
                 }
 
-                if (buildTime - 5 > Campaign.CurrentTime)
+                for (int t = 0; t < metaV3.Towns.Count; t++)
                 {
-                    // A player settlement has been made in a different save.
-                    // This is an older save than the config is for.
-                    PlayerSettlementBehaviour.OldSaveLoaded = true;
-                    return;
-                }
+                    var townId = t + 1;
+                    var townMeta = metaV3.Towns[t];
 
-                if (playerSettlement == null || !playerSettlement.IsReady)
-                {
-                    var configFile = Path.Combine(ConfigDir, $"PlayerSettlement.xml");
-                    MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
-
-                    playerSettlement = MBObjectManager.Instance.GetObject<Settlement>(identifier);
-
-                    if (playerSettlement != null && !playerSettlement.IsReady)
-                    {
-                        MBObjectManager.Instance.UnregisterObject(playerSettlement);
-                        MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
-
-                        playerSettlement = MBObjectManager.Instance.GetObject<Settlement>(identifier);
-                    }
-                }
-
-
-                if (playerSettlement != null)
-                {
-                    if (!string.IsNullOrEmpty(displayName))
-                    {
-                        playerSettlement.Name = new TextObject(displayName);
-                    }
-                    //if (PlayerSettlementInfo.Instance != null)
-                    //{
-                    //    PlayerSettlementInfo.Instance.PlayerSettlement = playerSettlement;
-                    //    PlayerSettlementInfo.Instance.PlayerSettlementIdentifier = identifier;
-                    //}
-                }
-
-                for (int i = 0; i < villages.Count; i++)
-                {
-                    var village = villages[i];
-
-                    if (village.BuiltAt - 5 > Campaign.CurrentTime)
+                    if (townMeta.BuildTime - 5 > Campaign.CurrentTime)
                     {
                         // A player settlement has been made in a different save.
                         // This is an older save than the config is for.
@@ -291,32 +178,167 @@ namespace BannerlordPlayerSettlement
                         continue;
                     }
 
-                    var villageNumber = i + 1;
-
-                    var villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(village.ItemIdentifier);
-
-                    if (villageSettlement == null || !villageSettlement.IsReady)
+                    if (townMeta.settlement == null || !townMeta.settlement.IsReady)
                     {
-                        var configFile = Path.Combine(ConfigDir, $"PlayerSettlementVillage_{villageNumber}.xml");
-                        MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                        //var configFile = Path.Combine(ConfigDir, $"PlayerTown_{townId}.xml");
+                        //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                        MBObjectManager.Instance.LoadXml(townMeta.Document);
 
-                        villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(village.ItemIdentifier);
+                        string townStringId = $"player_settlement_town_{townMeta.Identifier}";
 
-                        if (villageSettlement != null && !villageSettlement.IsReady)
+                        townMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(townStringId);
+
+                        if (townMeta.settlement != null && !townMeta.settlement.IsReady)
                         {
-                            MBObjectManager.Instance.UnregisterObject(villageSettlement);
-                            MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                            MBObjectManager.Instance.UnregisterObject(townMeta.settlement);
+                            //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                            MBObjectManager.Instance.LoadXml(townMeta.Document);
 
-                            villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(village.ItemIdentifier);
+                            townMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(townStringId);
                         }
                     }
 
 
-                    if (villageSettlement != null)
+                    if (townMeta.settlement != null)
                     {
-                        if (!string.IsNullOrEmpty(village.SettlementName))
+                        if (!string.IsNullOrEmpty(townMeta.DisplayName))
                         {
-                            villageSettlement.Name = new TextObject(village.SettlementName);
+                            townMeta.settlement.Name = new TextObject(townMeta.DisplayName);
+                        }
+                    }
+
+                    for (int i = 0; i < townMeta.Villages.Count; i++)
+                    {
+                        var village = townMeta.Villages[i];
+
+                        if (village.BuildTime - 5 > Campaign.CurrentTime)
+                        {
+                            // A player settlement has been made in a different save.
+                            // This is an older save than the config is for.
+                            PlayerSettlementBehaviour.OldSaveLoaded = true;
+                            continue;
+                        }
+
+                        var villageNumber = i + 1;
+
+                        string villageStringId = $"player_settlement_town_{townMeta.Identifier}_village_{village.Identifier}";
+
+                        village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+
+                        if (village.settlement == null || !village.settlement.IsReady)
+                        {
+                            //var configFile = Path.Combine(ConfigDir, $"PlayerTown_{townId}_Village_{villageNumber}.xml");
+                            //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                            MBObjectManager.Instance.LoadXml(village.Document);
+
+                            village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+
+                            if (village.settlement != null && !village.settlement.IsReady)
+                            {
+                                //configFile = Path.Combine(ConfigDir, $"PlayerTown_{townMeta.Identifier}_Village_{villageNumber}.xml");
+                                //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                                MBObjectManager.Instance.LoadXml(village.Document);
+
+                                village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+                            }
+                        }
+
+
+                        if (village.settlement != null)
+                        {
+                            if (!string.IsNullOrEmpty(village.DisplayName))
+                            {
+                                village.settlement.Name = new TextObject(village.DisplayName);
+                            }
+                        }
+                    }
+                }
+
+                for (int c = 0; c < metaV3.Castles.Count; c++)
+                {
+                    var castleId = c + 1;
+                    var castleMeta = metaV3.Castles[c];
+
+                    if (castleMeta.BuildTime - 5 > Campaign.CurrentTime)
+                    {
+                        // A player settlement has been made in a different save.
+                        // This is an older save than the config is for.
+                        PlayerSettlementBehaviour.OldSaveLoaded = true;
+                        continue;
+                    }
+
+                    if (castleMeta.settlement == null || !castleMeta.settlement.IsReady)
+                    {
+                        var castleStringId = $"player_settlement_castle_{castleMeta.Identifier}";
+
+                        //var configFile = Path.Combine(ConfigDir, $"PlayerCastle_{castleId}.xml");
+                        //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                        MBObjectManager.Instance.LoadXml(castleMeta.Document);
+
+                        castleMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(castleStringId);
+
+                        if (castleMeta.settlement != null && !castleMeta.settlement.IsReady)
+                        {
+                            //MBObjectManager.Instance.UnregisterObject(castleMeta.settlement);
+                            //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                            MBObjectManager.Instance.LoadXml(castleMeta.Document);
+
+                            castleMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(castleStringId);
+                        }
+                    }
+
+
+                    if (castleMeta.settlement != null)
+                    {
+                        if (!string.IsNullOrEmpty(castleMeta.DisplayName))
+                        {
+                            castleMeta.settlement.Name = new TextObject(castleMeta.DisplayName);
+                        }
+                    }
+
+                    for (int i = 0; i < castleMeta.Villages.Count; i++)
+                    {
+                        var village = castleMeta.Villages[i];
+
+                        if (village.BuildTime - 5 > Campaign.CurrentTime)
+                        {
+                            // A player settlement has been made in a different save.
+                            // This is an older save than the config is for.
+                            PlayerSettlementBehaviour.OldSaveLoaded = true;
+                            continue;
+                        }
+
+                        var villageNumber = i + 1;
+
+                        string villageStringId = $"player_settlement_castle_{castleMeta.Identifier}_village_{village.Identifier}";
+
+                        village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+
+                        if (village.settlement == null || !village.settlement.IsReady)
+                        {
+                            //var configFile = Path.Combine(ConfigDir, $"PlayerCastle_{castleId}_Village_{villageNumber}.xml");
+                            //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                            MBObjectManager.Instance.LoadXml(village.Document);
+
+                            village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+
+                            if (village.settlement != null && !village.settlement.IsReady)
+                            {
+                                //MBObjectManager.Instance.UnregisterObject(village.settlement);
+                                //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
+                                MBObjectManager.Instance.LoadXml(village.Document);
+
+                                village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+                            }
+                        }
+
+
+                        if (village.settlement != null)
+                        {
+                            if (!string.IsNullOrEmpty(village.DisplayName))
+                            {
+                                village.settlement.Name = new TextObject(village.DisplayName);
+                            }
                         }
                     }
                 }

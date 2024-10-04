@@ -18,7 +18,7 @@ namespace BannerlordPlayerSettlement.Extensions
     {
         static FieldInfo _craftingOrdersField = AccessTools.Field(typeof(CraftingCampaignBehavior), "_craftingOrders");
 
-        public static bool AddTown(this CraftingCampaignBehavior craftingCampaignBehavior, Town town, out Dictionary<Town, CraftingOrderSlots> _craftingOrders)
+        public static bool AddTown(this CraftingCampaignBehavior craftingCampaignBehavior, Town town, out Dictionary<Town, CraftingOrderSlots>? _craftingOrders)
         {
             _craftingOrders = null;
             try

@@ -17,10 +17,22 @@ namespace BannerlordPlayerSettlement
         public override string FolderName => Main.Name;
         public override string FormatType => "json";
 
+        private const string CreateNewSave_Hint = "Create a new save when building. By default, the current active save will be overwritten instead.  [ Default: OFF ]";
+
+        [SettingPropertyBool("Create new save on build", HintText = CreateNewSave_Hint, RequireRestart = false, Order = 0, IsToggle = false)]
+        [SettingPropertyGroup("Saves", GroupOrder = 0)]
+        public bool CreateNewSave { get; set; } = false;
+
+        private const string HideButtonUntilReady_Hint = "Always hides the build town button until requirements are met.  [ Default: OFF ]";
+
+        [SettingPropertyBool("Always Hide Until Ready", HintText = HideButtonUntilReady_Hint, RequireRestart = false, Order = 0, IsToggle = false)]
+        [SettingPropertyGroup("User Interface", GroupOrder = 1)]
+        public bool HideButtonUntilReady { get; set; } = false;
+
         private const string Enabled_Hint = "Enables Player Settlement mod and adds the option map screen.  [ Default: ON ]";
 
         [SettingPropertyBool("Enabled", HintText = Enabled_Hint, RequireRestart = true, Order = 0, IsToggle = true)]
-        [SettingPropertyGroup("Player Settlements", GroupOrder = 0)]
+        [SettingPropertyGroup("Player Settlements", GroupOrder = 2)]
         public bool Enabled { get; set; } = true;
 
         private const string RequireClanTier_Hint = "Requires clan to be specified tier before being allowed to create a settlement.  [ Default: ON ]";
@@ -83,10 +95,62 @@ namespace BannerlordPlayerSettlement
         [SettingPropertyGroup("Player Settlements")]
         public bool AutoAllocateVillageType { get; set; } = false;
 
-        private const string HideButtonUntilReady_Hint = "Always hides the build town button until requirements are met.  [ Default: OFF ]";
+        private const string RequireCastleGold_Hint = "Requires a specified cost in local currency to build new castle.  [ Default: ON ]";
 
-        [SettingPropertyBool("Always Hide Until Ready", HintText = HideButtonUntilReady_Hint, RequireRestart = false, Order = 0, IsToggle = false)]
-        [SettingPropertyGroup("User Interface", GroupOrder = 1)]
-        public bool HideButtonUntilReady { get; set; } = false;
+        [SettingPropertyBool("Require Castle Cost", HintText = RequireCastleGold_Hint, RequireRestart = false, Order = 11, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool RequireCastleGold { get; set; } = true;
+
+        private const string RequiredCastleGold_Hint = "Specified cost in local currency to build new castle.  [ Default: 10 000 ]";
+
+        [SettingPropertyInteger("Required Castle Cost", 1, 1_000_000, HintText = RequiredCastleGold_Hint, RequireRestart = false, Order = 12)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int RequiredCastleGold { get; set; } = 10_000;
+
+        private const string MaxTowns_Hint = "Maximum number of player built towns allowed. At least one town is required.  [ Default: 10 ]";
+
+        [SettingPropertyInteger("Maximum Allowed Towns", 1, HardMaxTowns, HintText = MaxTowns_Hint, RequireRestart = false, Order = 13)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int MaxTowns { get; set; } = HardMaxTowns;
+
+        private const string MaxVillagesPerTown_Hint = "Maximum number of player built villages per town allowed.  [ Default: 5 ]";
+
+        [SettingPropertyInteger("Maximum Allowed Villages Per Town", 0, HardMaxVillagesPerTown, HintText = MaxVillagesPerTown_Hint, RequireRestart = false, Order = 14)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int MaxVillagesPerTown { get; set; } = HardMaxVillagesPerTown;
+
+        private const string MaxCastles_Hint = "Maximum number of player built castles allowed. At least one town is required first.  [ Default: 15 ]";
+
+        [SettingPropertyInteger("Maximum Allowed Castles", 0, HardMaxCastles, HintText = MaxCastles_Hint, RequireRestart = false, Order = 15)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int MaxCastles { get; set; } = HardMaxCastles;
+
+        private const string HardMaxVillagesPerCastle_Hint = "Maximum number of player built villages per castle allowed.  [ Default: 4 ]";
+
+        [SettingPropertyInteger("Maximum Allowed Villages Per Castle", 0, HardMaxVillagesPerCastle, HintText = HardMaxVillagesPerCastle_Hint, RequireRestart = false, Order = 16)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int MaxVillagesPerCastle { get; set; } = HardMaxVillagesPerCastle;
+
+        private const string CastleChance_Hint = @"Percentage used to determine chance of next build being either a town or castle. 
+Higher percentage means castle is more likely until maximum runs out. 
+Maximum village count per town or castle has to be reached before next castle or town can be built.  [ Default: 50% ]";
+
+        [SettingPropertyInteger("Castle Chance", 0, 100, HintText = CastleChance_Hint, RequireRestart = false, Order = 17)]
+        [SettingPropertyGroup("Player Settlements")]
+        public int CastleChance { get; set; } = 50;
+
+        private const string SingleConstruction_Hint = "Will require in progress construction to finish before being allowed to build next settlement. By default when this is OFF, multiple settlement construction can be done at once.  [ Default: OFF ]";
+
+        [SettingPropertyBool("Single Construction At a Time", HintText = SingleConstruction_Hint, RequireRestart = false, Order = 18, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool SingleConstruction { get; set; } = false;
+
+        // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
+        public const int HardMaxTowns = 10;
+        public const int HardMaxVillagesPerTown = 5;
+               
+        public const int HardMaxCastles = 15;
+        public const int HardMaxVillagesPerCastle = 4;
+
     }
 }

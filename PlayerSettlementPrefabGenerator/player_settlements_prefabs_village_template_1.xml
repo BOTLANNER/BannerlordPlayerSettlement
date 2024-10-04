@@ -1,0 +1,85 @@
+﻿<game_entity name="player_settlement_{{owner}}_{{X}}_village_{{Y}}" old_prefab_name="map_village_emp_all_40" mobility="1">
+  <tags>
+    <tag name="village"/>
+  </tags>
+  <!--<transform position="-9.474, 8.968, -12.697" rotation_euler="-0.017, 0.158, 0.023" scale="1.000, 1.000, 1.250"/>-->
+  <transform position="0.000, 0.000, 0.000" rotation_euler="-0.017, 0.158, 0.023" scale="1.000, 1.000, 1.250"/>
+  <scripts>
+    <script name="Town Entity Manager">
+      <variables>
+        <variable name="Override Factor Color" value="false"/>
+        <variable name="Factor Color" value="1.000, 1.000, 1.000, 1.000"/>
+      </variables>
+    </script>
+  </scripts>
+  <children>
+    <game_entity name="map_icons_empire_village_l2" old_prefab_name="map_icons_empire_village_l2" mobility="1">
+      <transform position="-0.309, 0.155, 0.019" non_orthogonal_rotation_mat="0.999483, -0.002607, 0.032035, -0.000000, 0.998647, 0.052003, -0.050065, -0.080995, 0.995456" scale="0.400, 0.400, 0.400"/>
+      <components>
+        <meta_mesh_component name="village_empire_2"/>
+      </components>
+      <levels>
+        <level name="level_2"/>
+        <level name="civilian"/>
+        <level name="siege"/>
+      </levels>
+    </game_entity>
+    <game_entity name="map_icons_empire_village_l3" old_prefab_name="map_icons_empire_village_l3" mobility="1">
+      <transform position="-0.139, 0.044, 0.006" non_orthogonal_rotation_mat="0.999989, -0.000532, 0.004713, 0.000072, 0.998058, 0.062295, -0.007380, -0.097061, 0.995251" scale="0.400, 0.400, 0.400"/>
+      <components>
+        <meta_mesh_component name="village_empire_3"/>
+      </components>
+      <levels>
+        <level name="level_3"/>
+        <level name="civilian"/>
+        <level name="siege"/>
+      </levels>
+    </game_entity>
+    <game_entity name="_bo" old_prefab_name="_bo" mobility="1">
+      <transform position="-0.005, 0.004, -0.031" rotation_euler="0.000, 0.000, 1.500" scale="4.200, 4.200, 4.200"/>
+      <physics shape="bo_barrier_sphere">
+        <body_flags>
+          <body_flag name="only_collide_with_raycast"/>
+        </body_flags>
+      </physics>
+    </game_entity>
+    <game_entity name="map_icons_empire_village_l1" old_prefab_name="map_icons_empire_village_l1" mobility="1">
+      <transform position="-0.408, 0.152, 0.024" non_orthogonal_rotation_mat="0.999336, -0.003406, 0.036266, 0.000000, 0.998198, 0.060004, -0.056682, -0.093364, 0.994017" scale="0.400, 0.400, 0.400"/>
+      <components>
+        <meta_mesh_component name="village_empire_1"/>
+      </components>
+      <levels>
+        <level name="level_1"/>
+        <level name="civilian"/>
+        <level name="siege"/>
+      </levels>
+    </game_entity>
+    <game_entity name="map_icons_empire_village_looted" old_prefab_name="map_icons_empire_village_looted" mobility="1">
+      <transform position="-0.460, 0.120, 0.060" rotation_euler="0.000, 0.000, 0.020" scale="0.400, 0.400, 0.400"/>
+      <components>
+        <meta_mesh_component name="village_empire_1">
+          <mesh name="village_empire_1.0" factor="4282598211"/>
+          <mesh name="village_empire_1.1" factor="4282598211"/>
+          <mesh name="village_empire_1.2" factor="4282598211"/>
+          <mesh name="village_empire_1.3" factor="4282598211"/>
+          <mesh name="village_empire_1.4" factor="4282598211"/>
+          <mesh name="village_empire_1.5" factor="4282598211"/>
+        </meta_mesh_component>
+      </components>
+      <levels>
+        <level name="level_1"/>
+        <level name="level_2"/>
+        <level name="level_3"/>
+        <level name="looted"/>
+      </levels>
+    </game_entity>
+  </children>
+  <levels>
+    <level name="level_1"/>
+    <level name="level_2"/>
+    <level name="level_3"/>
+    <level name="civilian"/>
+    <level name="siege"/>
+    <level name="looted"/>
+  </levels>
+</game_entity>

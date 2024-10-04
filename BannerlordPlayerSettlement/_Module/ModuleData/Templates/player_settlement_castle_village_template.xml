@@ -1,0 +1,38 @@
+﻿<Settlements>
+  <Settlement
+		id="player_settlement_castle_{{BASE_IDENTIFIER}}_village_{{VILLAGE_NUMBER}}"
+    name="{=player_settlement_n_01}Player Settlement"
+		posX="{{POS_X}}"
+		posY="{{POS_Y}}"
+    culture="Culture.{{PLAYER_CULTURE}}"
+    >
+    <Components>
+      <Village
+				id="player_settlement_castle_{{BASE_IDENTIFIER}}_village_comp_{{VILLAGE_NUMBER}}"
+				village_type="VillageType.{{VILLAGE_TYPE}}"
+				hearth="333"
+				bound="Settlement.player_settlement_castle_{{BASE_IDENTIFIER}}"
+				background_crop_position="0.0"
+				background_mesh="gui_bg_village_empire"
+				wait_mesh="wait_empire_village"
+				castle_background_mesh="gui_bg_castle_empire" />
+    </Components>
+    <Locations
+			complex_template="LocationComplexTemplate.village_complex">
+      <Location
+				id="village_center"
+				scene_name="empire_village_i" />
+    </Locations>
+    <CommonAreas>
+      <Area
+				type="Pasture"
+				name="{=fOUsLdZR}Pasture" />
+      <Area
+				type="Thicket"
+				name="{=66Mzk0NZ}Thicket" />
+      <Area
+				type="Bog"
+				name="{=iXA5SttU}Bog" />
+    </CommonAreas>
+  </Settlement>
+</Settlements>

@@ -9,5 +9,6 @@
         <string id="player_settlement_h_03" text="Clan tier too low. {TIER} required" />
         <string id="player_settlement_h_04" text="Player Settlement not enabled" />
         <string id="player_settlement_h_05" text="Not enough funds ({CURRENT_FUNDS}/{REQUIRED_FUNDS})" />
+        <string id="player_settlement_h_06" text="Construction in progress" />
     </strings>
 </base>

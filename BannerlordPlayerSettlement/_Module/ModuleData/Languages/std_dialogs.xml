@@ -20,5 +20,10 @@
         <string id="player_settlement_14" text="Are you sure you want to build your village here?" />
         <string id="player_settlement_15" text="Choose village type" />
         <string id="player_settlement_16" text="Choose the type of primary product for {VILLAGE}" />
+        <string id="player_settlement_17" text="Error saving settlement data!" />
+        <string id="player_settlement_18" text="Are you sure you want to build your castle here?" />
+        <string id="player_settlement_19" text="Build a Castle" />
+        <string id="player_settlement_20" text="Choose castle culture" />
+        <string id="player_settlement_21" text="Choose the culture for {CASTLE}" />
     </strings>
 </base>

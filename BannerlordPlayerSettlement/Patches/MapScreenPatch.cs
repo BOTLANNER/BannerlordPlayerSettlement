@@ -23,6 +23,8 @@ using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Objects;
 using TaleWorlds.MountAndBlade.Source.Objects;
 
+using static TaleWorlds.CampaignSystem.Siege.SiegeEvent;
+
 namespace BannerlordPlayerSettlement.Patches
 {
     [HarmonyPatch(typeof(MapScreen))]
@@ -74,6 +76,41 @@ namespace BannerlordPlayerSettlement.Patches
                 if (!(besiegedSettlement.IsPlayerBuilt()))
                 {
                     return true;
+                }
+
+                try
+                {
+                    SiegeEvent.SiegeEnginesContainer? defenderSiegeEngines = playerSiegeEvent!.GetSiegeEventSide(BattleSideEnum.Defender)?.SiegeEngines;
+                    //var defenderSiegeEngineConstructions = defenderSiegeEngines?.DeployedSiegeEngines;
+                    //if (defenderSiegeEngineConstructions != null && defenderSiegeEngineConstructions.Count < 4)
+                    //{
+                    //    defenderSiegeEngineConstructions.AddRange(Enumerable.Repeat<SiegeEngineConstructionProgress?>(null, 4 - defenderSiegeEngineConstructions.Count));
+                    //}
+                    var defenderDeployedRangedSiegeEngines = defenderSiegeEngines?.DeployedRangedSiegeEngines;
+                    if (defenderDeployedRangedSiegeEngines != null && defenderDeployedRangedSiegeEngines.Length < 4)
+                    {
+                        Array.Resize(ref defenderDeployedRangedSiegeEngines, 4);
+                    }
+
+                    SiegeEvent.SiegeEnginesContainer? attackerSiegeEngines = playerSiegeEvent!.GetSiegeEventSide(BattleSideEnum.Attacker)?.SiegeEngines;
+                    //var attackerSiegeEngineConstructions = attackerSiegeEngines?.DeployedSiegeEngines;
+                    //if (attackerSiegeEngineConstructions != null && attackerSiegeEngineConstructions.Count < 4)
+                    //{
+                    //    attackerSiegeEngineConstructions.AddRange(Enumerable.Repeat<SiegeEngineConstructionProgress?>(null, 4 - attackerSiegeEngineConstructions.Count));
+                    //}
+                    var attackerDeployedRangedSiegeEngines = attackerSiegeEngines?.DeployedRangedSiegeEngines;
+                    if (defenderDeployedRangedSiegeEngines != null && defenderDeployedRangedSiegeEngines.Length < 4)
+                    {
+                        Array.Resize(ref defenderDeployedRangedSiegeEngines, 4);
+                    }
+                    var attackerDeployedMeleeSiegeEngines = attackerSiegeEngines?.DeployedMeleeSiegeEngines;
+                    if (attackerDeployedMeleeSiegeEngines != null && attackerDeployedMeleeSiegeEngines.Length < 3)
+                    {
+                        Array.Resize(ref attackerDeployedMeleeSiegeEngines, 3);
+                    }
+                }
+                catch (Exception e)
+                {
                 }
 
                 PartyVisual visualOfParty = PartyVisualManager.Current.GetVisualOfParty(besiegedSettlement.Party);

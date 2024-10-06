@@ -18,6 +18,24 @@
       "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*BirthAndDeath*CustomBattle*Sandbox*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*Bannerlord.FamilyTree*BetterTime*CharacterManager*DeathForAll*DismembermentPlus*ExecutionAdjuster*FamilyControl*Nepotism*OpenSourceArmory*OpenSourceSaddlery*OpenSourceWeaponry*RighteousExecutions*SiegeLoadout*TimeLord*WhereTournaments*WhereTournamentsSelectTournamentPrize*WhereTournamentsLockTrackedPrize*PlayerSettlement*RestartPlus*zzCharacterCreation*_MODULES_",
       "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
     },
+    "WeatherIndicatorSupport": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*BirthAndDeath*CustomBattle*Sandbox*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*Bannerlord.FamilyTree*CharacterManager*DeathForAll*DismembermentPlus*ExecutionAdjuster*FamilyControl*Nepotism*OpenSourceArmory*OpenSourceSaddlery*OpenSourceWeaponry*RighteousExecutions*SiegeLoadout*TimeLord*WhereTournaments*WhereTournamentsSelectTournamentPrize*WhereTournamentsLockTrackedPrize*PlayerSettlement*WeatherIndicators*RestartPlus*zzCharacterCreation*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "CalradianPatrolsV2Support": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*BirthAndDeath*CustomBattle*Sandbox*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*Bannerlord.FamilyTree*CalradianPatrolsV2*CharacterManager*DeathForAll*DismembermentPlus*ExecutionAdjuster*FamilyControl*Nepotism*OpenSourceArmory*OpenSourceSaddlery*OpenSourceWeaponry*RighteousExecutions*SiegeLoadout*TimeLord*WhereTournaments*WhereTournamentsSelectTournamentPrize*WhereTournamentsLockTrackedPrize*PlayerSettlement*RestartPlus*zzCharacterCreation*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "CalradiaAtWarCustomSpawnsSupport": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*BirthAndDeath*CustomBattle*Sandbox*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*Bannerlord.FamilyTree*CustomSpawns*CalradiaAtWar*CharacterManager*DeathForAll*DismembermentPlus*ExecutionAdjuster*FamilyControl*Nepotism*OpenSourceArmory*OpenSourceSaddlery*OpenSourceWeaponry*RighteousExecutions*SiegeLoadout*TimeLord*WhereTournaments*WhereTournamentsSelectTournamentPrize*WhereTournamentsLockTrackedPrize*PlayerSettlement*RestartPlus*zzCharacterCreation*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
     "MyROTSetup": {
       "commandName": "Executable",
       "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",

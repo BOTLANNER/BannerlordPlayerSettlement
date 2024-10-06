@@ -72,6 +72,27 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         public MetaV3? MetaV3 => _metaV3;
 
+        private readonly MbEvent<Settlement> _settlementCreated = new MbEvent<Settlement>();
+
+        public static IMbEvent<Settlement>? SettlementCreatedEvent
+        {
+            get
+            {
+                return PlayerSettlementBehaviour.Instance?._settlementCreated;
+            }
+        }
+
+        private readonly MbEvent<Settlement> _settlementBuildComplete = new MbEvent<Settlement>();
+
+        public static IMbEvent<Settlement>? SettlementBuildCompleteEvent
+        {
+            get
+            {
+                return PlayerSettlementBehaviour.Instance?._settlementBuildComplete;
+            }
+        }
+
+
         private bool HasLoaded { get; set; }
         public bool ReachedMax
         {
@@ -394,6 +415,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             MBInformationManager.AddQuickInformation(message, 0, null, "");
             InformationManager.DisplayMessage(new InformationMessage(message.ToString(), Colours.Green));
 
+            _settlementBuildComplete.Invoke(item.Settlement!);
             Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
         }
 
@@ -582,6 +604,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, castleSettlement, Main.Settings.RequiredCastleGold, true);
                         }
 
+                        _settlementCreated.Invoke(castleItem.Settlement);
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
                     };
 
@@ -713,6 +736,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, villageSettlement, Main.Settings.RequiredVillageGold, true);
                         }
 
+                        _settlementCreated.Invoke(villageItem.Settlement);
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
                     };
 
@@ -965,6 +989,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         //    UpdateUniqueGameId();
                         //}
 
+                        _settlementCreated.Invoke(townItem.Settlement);
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
                     };
 

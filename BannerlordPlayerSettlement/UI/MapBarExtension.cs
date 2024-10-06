@@ -9,7 +9,11 @@ using Bannerlord.UIExtenderEx.Prefabs2;
 
 namespace BannerlordPlayerSettlement.UI
 {
+    // Base game | Better Time
     [PrefabExtension("MapBar", "(descendant::MapCurrentTimeVisualWidget | descendant::TimePanel)[1]")]
+    // Weather Indicators | Better Time
+    [PrefabExtension("NewAncientMapBar", "(descendant::MapCurrentTimeVisualWidget | descendant::TimePanel)[1]")]
+    [PrefabExtension("NewMapBar", "(descendant::MapCurrentTimeVisualWidget | descendant::TimePanel)[1]")]
 
     public class MapBarExtension : PrefabExtensionInsertPatch
     {

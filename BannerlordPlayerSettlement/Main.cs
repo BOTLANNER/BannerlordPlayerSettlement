@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 
 using Bannerlord.UIExtenderEx;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.Patches.Compatibility.Interfaces;
 using BannerlordPlayerSettlement.Saves;
 using BannerlordPlayerSettlement.UI;
 using BannerlordPlayerSettlement.Utils;
@@ -45,6 +48,8 @@ namespace BannerlordPlayerSettlement
 
         public static Main? Submodule = null;
 
+        private static List<ICompatibilityPatch> HarmonyCompatPatches = LoadCompatPatches().ToList();
+
         public Main()
         {
             //Ctor
@@ -58,6 +63,11 @@ namespace BannerlordPlayerSettlement
                 base.OnSubModuleLoad();
                 Harmony = new Harmony(HarmonyDomain);
                 Harmony.PatchAll();
+
+                foreach (var patch in HarmonyCompatPatches)
+                {
+                    patch.PatchSubmoduleLoad(Harmony);
+                }
 
                 _extender = UIExtender.Create(ModuleName); //HarmonyDomain);
                 _extender.Register(typeof(Main).Assembly);
@@ -93,6 +103,11 @@ namespace BannerlordPlayerSettlement
                 {
                     InformationManager.DisplayMessage(new InformationMessage($"Loaded {DisplayName}", Colours.ImportantTextColor));
                     _loaded = true;
+
+                    foreach (var patch in HarmonyCompatPatches)
+                    {
+                        patch.PatchAfterMenus(Harmony!);
+                    }
                 }
             }
             catch (System.Exception e)
@@ -350,6 +365,11 @@ namespace BannerlordPlayerSettlement
             try
             {
                 gameInitializer.AddBehavior(new PlayerSettlementBehaviour());
+
+                foreach (var patch in HarmonyCompatPatches)
+                {
+                    patch.AddBehaviors(gameInitializer);
+                }
             }
             catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
         }
@@ -368,6 +388,35 @@ namespace BannerlordPlayerSettlement
                 }
             }
             catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+        }
+
+        static IEnumerable<ICompatibilityPatch> LoadCompatPatches()
+        {
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblies)
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    if (typeof(ICompatibilityPatch).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
+                    {
+                        object? inst = null;
+                        try
+                        {
+                            inst = type.CreateInstance();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.PrintError(e.ToString(), e.StackTrace, 281474976710656L);
+                        }
+
+                        if (inst is ICompatibilityPatch compatibilityPatch)
+                        {
+                            yield return compatibilityPatch;
+                        }
+
+                    }
+                }
+            }
         }
     }
 }

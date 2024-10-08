@@ -57,6 +57,9 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(204)]
         public int Type = 0;
 
+        [SaveableField(206)]
+        public Mat3Saveable? RotationMat3 = null;
+
         public static string? GetStringIdFor(SettlementType settlementType, int id, PlayerSettlementItem? boundTarget = null)
         {
             switch (settlementType)

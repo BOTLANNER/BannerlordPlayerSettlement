@@ -170,6 +170,32 @@ namespace BannerlordPlayerSettlement.Saves
             }
         }
 
+        public PlayerSettlementItem? FindSettlement(Settlement settlement)
+        {
+            if (settlement == null)
+            {
+                return null;
+            }
+
+            if (settlement.IsTown)
+            {
+                return Towns?.FirstOrDefault(t => t.Settlement == settlement);
+            }
+            
+            if (settlement.IsCastle)
+            {
+                return Castles?.FirstOrDefault(c => c.Settlement == settlement);
+            }
+
+            if (settlement.IsVillage)
+            {
+                return Towns.SelectMany(t => t.Villages)?.FirstOrDefault(v => v.Settlement == settlement) ?? 
+                    Castles.SelectMany(c => c.Villages)?.FirstOrDefault(v => v.Settlement == settlement);
+            }
+
+            return null;
+        }
+
         public int GetVillageNumber(Settlement bound, out PlayerSettlementItem? target)
         {
             if (bound.IsTown)

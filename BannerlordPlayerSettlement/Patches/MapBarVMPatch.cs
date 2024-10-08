@@ -1,10 +1,7 @@
-﻿using BannerlordPlayerSettlement.Extensions;
-using BannerlordPlayerSettlement.UI;
+﻿using BannerlordPlayerSettlement.UI;
 
 using HarmonyLib;
 
-using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.ViewModelCollection.Map.MapBar;
 using TaleWorlds.Library;
 

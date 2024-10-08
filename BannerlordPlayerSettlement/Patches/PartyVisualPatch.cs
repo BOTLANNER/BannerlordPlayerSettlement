@@ -5,6 +5,7 @@ using System.Reflection;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.Saves;
 
 using HarmonyLib;
 
@@ -112,6 +113,17 @@ namespace BannerlordPlayerSettlement.Patches
                     {
                         Campaign.Current.MapSceneWrapper.AddNewEntityToMapScene(__instance.PartyBase.Settlement.StringId, __instance.PartyBase.Settlement.Position2D);
                         SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.PartyBase.Id) });
+                    }
+
+                    if (__instance.StrategicEntity != null)
+                    {
+                        var playerSettlementItem = PlayerSettlementInfo.Instance?.FindSettlement(__instance.PartyBase.Settlement);
+                        if (playerSettlementItem?.RotationMat3 != null)
+                        {
+                            var frame = __instance.StrategicEntity.GetFrame();
+                            frame.rotation = playerSettlementItem.RotationMat3;
+                            __instance.StrategicEntity.SetFrame(ref frame);
+                        }
                     }
                     bool flag1 = false;
                     if (__instance.PartyBase.Settlement.IsFortification)

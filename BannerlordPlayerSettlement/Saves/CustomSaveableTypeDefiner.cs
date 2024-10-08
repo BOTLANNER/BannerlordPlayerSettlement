@@ -19,6 +19,7 @@ namespace BannerlordPlayerSettlement.Saves
         {
             base.DefineClassTypes();
 
+            AddClassDefinition(typeof(Mat3Saveable), 9);
             AddClassDefinition(typeof(PlayerSettlementItem), 3);
             AddClassDefinition(typeof(PlayerSettlementInfo), 2);
 

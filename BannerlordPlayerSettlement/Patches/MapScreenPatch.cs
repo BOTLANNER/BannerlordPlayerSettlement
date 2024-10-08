@@ -1,32 +1,28 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.UI;
 
 using HarmonyLib;
 
-using SandBox.Missions.MissionLogics;
 using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Siege;
 using TaleWorlds.Core;
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
-using TaleWorlds.MountAndBlade;
-using TaleWorlds.MountAndBlade.Objects;
-using TaleWorlds.MountAndBlade.Source.Objects;
-
-using static TaleWorlds.CampaignSystem.Siege.SiegeEvent;
 
 namespace BannerlordPlayerSettlement.Patches
 {
+
     [HarmonyPatch(typeof(MapScreen))]
     public static class MapScreenPatch
     {
@@ -52,6 +48,52 @@ namespace BannerlordPlayerSettlement.Patches
         {
             return (string) GetDesiredMaterialNameMethod.Invoke(mapScreen, new object[] { isRanged, isAttacker, isEmpty, isTower });
         }
+
+        static MethodInfo IsEscapedMethod = AccessTools.Method(typeof(MapView), "IsEscaped") ?? AccessTools.DeclaredMethod(typeof(MapView), "IsEscaped");
+
+        static bool CheckIsEscaped(this MapView mapView)
+        {
+            try
+            {
+                return (bool) IsEscapedMethod.Invoke(mapView, new object[] { });
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+
+        static MapScreenPatch()
+        {
+            Main.Harmony?.Patch(AccessTools.DeclaredMethod(typeof(MapScreen), "TaleWorlds.CampaignSystem.GameState.IMapStateHandler.AfterWaitTick"), prefix: new HarmonyMethod(typeof(MapScreenPatch), nameof(AfterWaitTick)));
+        }
+
+        public static bool AfterWaitTick(ref MapScreen __instance, ref ObservableCollection<MapView> ____mapViews, float dt)
+        {
+            if (__instance.SceneLayer.Input.IsHotKeyReleased("ToggleEscapeMenu") && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement)
+            {
+                if (!____mapViews.Any<MapView>((MapView m) => m.CheckIsEscaped()))
+                {
+                    PlayerSettlementBehaviour.Instance.Reset();
+                    MapBarExtensionVM.Current?.OnRefresh();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(HandleLeftMouseButtonClick))]
+        public static bool HandleLeftMouseButtonClick(ref MapScreen __instance, ref UIntPtr ____preSelectedSiegeEntityID, ref GameEntity[] ____defenderMachinesCircleEntities, ref GameEntity[] ____attackerRangedMachinesCircleEntities, ref GameEntity[] ____attackerRamMachinesCircleEntities, ref GameEntity[] ____attackerTowerMachinesCircleEntities, UIntPtr selectedSiegeEntityID, PartyVisual visualOfSelectedEntity, Vec3 intersectionPoint, PathFaceRecord mouseOverFaceIndex)
+        {
+            if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            {
+                PlayerSettlementBehaviour.Instance.ApplyNow();
+                return false;
+            }
+            return true;
+        }
+
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(TickSiegeMachineCircles))]

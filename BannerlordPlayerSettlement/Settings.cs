@@ -145,6 +145,30 @@ Maximum village count per town or castle has to be reached before next castle or
         [SettingPropertyGroup("Player Settlements")]
         public bool SingleConstruction { get; set; } = false;
 
+        private const string SettlementPlacement_Hint = "Allows choosing the position and rotation to place the settlement. When disabled will use the player party current position.  [ Default: ON ]";
+
+        [SettingPropertyBool("Enable Settlement Placement", HintText = SettlementPlacement_Hint, RequireRestart = false, Order = 19, IsToggle = true)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public bool SettlementPlacement { get; set; } = true;
+
+        private const string MouseRotationModifier_Hint = "Speed at which mouse movement rotates settlement.  [ Default: 50% ]";
+
+        [SettingPropertyFloatingInteger("Mouse Rotation Speed", 0.01f, 10f, "#0%", HintText = MouseRotationModifier_Hint, RequireRestart = false, Order = 20)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public float MouseRotationModifier { get; set; } = 0.5f;
+
+        private const string KeyRotationModifier_Hint = "Speed at which rotation keys affect settlement when rotating. Default game rotation keys are 'Q' and 'E', unless remapped. [ Default: 100% ]";
+
+        [SettingPropertyFloatingInteger("Key Rotation Speed", 0.01f, 10f, "#0%", HintText = KeyRotationModifier_Hint, RequireRestart = false, Order = 21)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public float KeyRotationModifier { get; set; } = 1f;
+
+        private const string RotationAltModifier_Hint = "Will trigger settlement rotation during placement when 'Alt' is held. Otherwise will do the same when 'Shift' is held instead. [ Default: ON ]";
+
+        [SettingPropertyBool("Use 'Alt' for Rotation", HintText = RotationAltModifier_Hint, RequireRestart = false, Order = 22, IsToggle = false)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public bool RotationAltModifier { get; set; } = true;
+
         // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
         public const int HardMaxTowns = 10;
         public const int HardMaxVillagesPerTown = 5;

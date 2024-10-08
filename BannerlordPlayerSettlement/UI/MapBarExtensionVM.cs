@@ -147,7 +147,7 @@ namespace BannerlordPlayerSettlement.UI
             }
 
 
-            if (PlayerSettlementBehaviour.Instance!.ReachedMax || PlayerSettlementBehaviour.Instance!.HasRequest)
+            if (PlayerSettlementBehaviour.Instance!.ReachedMax || PlayerSettlementBehaviour.Instance!.HasRequest || PlayerSettlementBehaviour.Instance!.IsPlacingSettlement)
             {
                 // Either reached max or about to create something
                 disableReason ??= new TextObject("<Already Created or About to Create>");
@@ -255,37 +255,19 @@ namespace BannerlordPlayerSettlement.UI
             }
 
             var bound = BoundTarget?.Settlement;
+            if (PlayerSettlementBehaviour.Instance != null)
+            {
+                PlayerSettlementBehaviour.Instance.SettlementRequest = NextBuildType;
+                PlayerSettlementBehaviour.Instance.RequestBoundSettlement = bound;
 
-            var confirm =
-                NextBuildType == SettlementType.Village ?
-                new TextObject("{=player_settlement_14}Are you sure you want to build your village here?") :
-                    NextBuildType == SettlementType.Castle ?
-                    new TextObject("{=player_settlement_18}Are you sure you want to build your castle here?") :
-                        // buildType == SettlementType.Town
-                        new TextObject("{=player_settlement_05}Are you sure you want to build your town here?");
-
-            InformationManager.ShowInquiry(new InquiryData(CreatePlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
-                () =>
-                {
-                    if (PlayerSettlementBehaviour.Instance != null)
-                    {
-                        PlayerSettlementBehaviour.Instance.SettlementRequest = NextBuildType;
-                        PlayerSettlementBehaviour.Instance.RequestBoundSettlement = bound;
-
-                        IsCreatePlayerSettlementAllowed = false;
-                        IsCreatePlayerSettlementVisible = false;
-                        NextBuildType = SettlementType.None;
-                        OnRefresh();
+                IsCreatePlayerSettlementAllowed = false;
+                IsCreatePlayerSettlementVisible = false;
+                NextBuildType = SettlementType.None;
+                OnRefresh();
 
 
-                        Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
-                    }
-                },
-                () =>
-                {
-                    // Cancelled. Do nothing.
-                    InformationManager.HideInquiry();
-                }), true, false);
+                Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
+            }
         }
 
 

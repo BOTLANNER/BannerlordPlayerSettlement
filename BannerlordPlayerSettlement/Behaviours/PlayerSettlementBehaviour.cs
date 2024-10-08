@@ -14,31 +14,22 @@ using HarmonyLib;
 
 using Helpers;
 
-using SandBox.GauntletUI.Encyclopedia;
-using SandBox.GauntletUI.Map;
+using SandBox;
 using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
-using TaleWorlds.CampaignSystem.BarterSystem;
-using TaleWorlds.CampaignSystem.BarterSystem.Barterables;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
-using TaleWorlds.CampaignSystem.Conversation;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.GameState;
-using TaleWorlds.CampaignSystem.MapEvents;
 using TaleWorlds.CampaignSystem.Overlay;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
 using TaleWorlds.CampaignSystem.ViewModelCollection;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Encyclopedia;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Encyclopedia.Pages;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Map.MapBar;
 using TaleWorlds.Core;
-using TaleWorlds.Engine.GauntletUI;
-using TaleWorlds.GauntletUI.Data;
+using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
 using TaleWorlds.ModuleManager;
@@ -121,6 +112,13 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             Instance = this;
         }
+
+        private GameEntity? settlementVisualEntity = null;
+        private MatrixFrame? settlementPlacementFrame = null;
+        private float settlementRotationBearing = 0f;
+        private float settlementRotationVelocity = 0f;
+        private Action? applyPending = null;
+        public bool IsPlacingSettlement => settlementVisualEntity != null && applyPending != null;
 
         #region Overrides
         public override void RegisterEvents()
@@ -419,14 +417,177 @@ namespace BannerlordPlayerSettlement.Behaviours
             Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
         }
 
+        public void OnBeforeTick(ref MapCameraView.InputInformation inputInformation)
+        {
+            if (Main.Settings != null && Main.Settings.Enabled && PlayerSettlementInfo.Instance != null)
+            {
+                if (settlementVisualEntity != null)
+                {
+                    if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
+                    {
+                        return;
+                    }
+                    if (mapState.Handler is not MapScreen mapScreen)
+                    {
+                        return;
+                    }
+
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+                    Campaign.Current.SetTimeControlModeLock(true);
+
+
+                    Vec3 worldMouseNear = Vec3.Zero;
+                    Vec3 worldMouseFar = Vec3.Zero;
+                    mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
+                    Vec3 clippedMouseNear = worldMouseNear;
+                    Vec3 clippedMouseFar = worldMouseFar;
+                    PathFaceRecord currentFace = PathFaceRecord.NullFaceRecord;
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+                    MatrixFrame identity = MatrixFrame.Identity;
+                    identity.origin = intersectionPoint2;
+
+                    var previous = settlementVisualEntity.GetFrame();
+
+                    var modifierDown = Main.Settings.RotationAltModifier ? mapScreen.SceneLayer.Input.IsAltDown() : mapScreen.SceneLayer.Input.IsShiftDown();
+                    if (inputInformation.RotateLeftKeyDown && modifierDown)
+                    {
+                        this.settlementRotationVelocity = inputInformation.Dt * 2f;
+                    }
+                    else if (inputInformation.RotateRightKeyDown && modifierDown)
+                    {
+                        this.settlementRotationVelocity = inputInformation.Dt * -2f;
+                    }
+                    this.settlementRotationVelocity = this.settlementRotationVelocity + inputInformation.HorizontalCameraInput * 1.75f * inputInformation.Dt;
+                    if (inputInformation.RightMouseButtonDown && modifierDown)
+                    {
+                        this.settlementRotationVelocity += 0.01f * inputInformation.MouseSensitivity * inputInformation.MouseMoveX;
+
+                        // Divide by 5 for actual settings
+                        this.settlementRotationVelocity *= (Main.Settings.MouseRotationModifier / 5);
+                    }
+                    else if (modifierDown && (inputInformation.RotateLeftKeyDown || inputInformation.RotateRightKeyDown))
+                    {
+                        // Divide by 5 for actual settings
+                        this.settlementRotationVelocity *= (Main.Settings.KeyRotationModifier / 5);
+                    }
+
+
+                    var bearing = this.settlementRotationBearing + this.settlementRotationVelocity;
+                    identity.rotation.RotateAboutUp(-bearing);
+                    this.settlementRotationBearing = bearing;
+                    this.settlementRotationVelocity = 0f;
+
+                    settlementPlacementFrame = identity;
+                    this.SetFrame(ref identity);
+
+                    bool flag = Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
+                    mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+
+                }
+            }
+        }
+
+        // // TODO: Might be useful to ensure reachable
+        //public Vec3 GetVisualPosition()
+        //{
+        //    float single = 0f;
+        //    Vec2 zero = Vec2.Zero;
+        //    Vec2 vec2 = new Vec2(this.PartyBase.Position2D.x + zero.x, this.PartyBase.Position2D.y + zero.y);
+
+        //    return new Vec3(vec2, single, -1f);
+        //}
+
+        private void SetFrame(ref MatrixFrame frame)
+        {
+            if (this.settlementVisualEntity != null && !this.settlementVisualEntity.GetFrame().NearlyEquals(frame, 1E-05f))
+            {
+                this.settlementVisualEntity.SetFrame(ref frame);
+            }
+        }
+
+        public void ApplyNow()
+        {
+            if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
+            {
+                return;
+            }
+            if (mapState.Handler is not MapScreen mapScreen)
+            {
+                return;
+            }
+
+            if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && mapScreen.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            {
+                try
+                {
+                    var apply = applyPending;
+                    apply.Invoke();
+                    return;
+                }
+                catch (Exception e)
+                {
+                    Debug.PrintError(e.Message, e.StackTrace);
+                }
+            }
+            //Reset();
+        }
+
+        public void Reset()
+        {
+            Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+            Campaign.Current.SetTimeControlModeLock(false);
+            ClearEntities();
+            settlementRotationBearing = 0f;
+            settlementRotationVelocity = 0f;
+            settlementPlacementFrame = null;
+            applyPending = null;
+            RequestBoundSettlement = null;
+            SettlementRequest = SettlementType.None;
+        }
+
+        private void ClearEntities()
+        {
+            if (settlementVisualEntity != null)
+            {
+                try
+                {
+                    try
+                    {
+                        MapScreen.VisualsOfEntities.Remove(settlementVisualEntity.Pointer);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.PrintError(e.Message, e.StackTrace);
+                    }
+                    foreach (GameEntity child in settlementVisualEntity.GetChildren())
+                    {
+                        try
+                        {
+                            MapScreen.VisualsOfEntities.Remove(child.Pointer);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.PrintError(e.Message, e.StackTrace);
+                        }
+                    }
+                    settlementVisualEntity.Remove(112);
+                }
+                catch (Exception e)
+                {
+                    Debug.PrintError(e.Message, e.StackTrace);
+                }
+            }
+            settlementVisualEntity = null;
+        }
+
         public void Tick(float delta)
         {
             if (Main.Settings != null && Main.Settings.Enabled && PlayerSettlementInfo.Instance != null)
             {
                 if (SettlementRequest == SettlementType.Town)
                 {
-                    RequestBoundSettlement = null;
-                    SettlementRequest = SettlementType.None;
+                    Reset();
 
                     BuildTown();
                     return;
@@ -435,16 +596,14 @@ namespace BannerlordPlayerSettlement.Behaviours
                 {
                     var bound = RequestBoundSettlement;
 
-                    RequestBoundSettlement = null;
-                    SettlementRequest = SettlementType.None;
+                    Reset();
 
                     BuildVillage(bound);
                     return;
                 }
                 else if (SettlementRequest == SettlementType.Castle)
                 {
-                    RequestBoundSettlement = null;
-                    SettlementRequest = SettlementType.None;
+                    Reset();
 
                     BuildCastle();
                     return;
@@ -466,24 +625,26 @@ namespace BannerlordPlayerSettlement.Behaviours
                         settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                     }
 
-                    Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                    Action<string, CultureObject> applyPlaced = (string settlementName, CultureObject culture) =>
                     {
                         if (PlayerSettlementInfo.Instance!.Castles == null)
                         {
                             PlayerSettlementInfo.Instance!.Castles = new();
                         }
 
+                        var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+
                         var castleNumber = PlayerSettlementInfo.Instance!.Castles!.Count + 1;
 
+                        // For now gate position is the same as the main position.
+                        // TODO: Determine if gate position can be calculated with rotation and ensure it is a reachable terrain.
+                        var gPos = atPos;
+
                         var xml = PlayerSettlementCastleTemplate;
-                        xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                        xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
-                        /*                         
-                          gx = -2.4141
-                          gy = -0.9198
-                         */
-                        xml = xml.Replace("{{G_POS_X}}", (MobileParty.MainParty.Position2D.X - 2.4141f).ToString());
-                        xml = xml.Replace("{{G_POS_Y}}", (MobileParty.MainParty.Position2D.Y - 0.9198f).ToString());
+                        xml = xml.Replace("{{POS_X}}", atPos.X.ToString());
+                        xml = xml.Replace("{{POS_Y}}", atPos.Y.ToString());
+                        xml = xml.Replace("{{G_POS_X}}", (gPos.X).ToString());
+                        xml = xml.Replace("{{G_POS_Y}}", (gPos.Y).ToString());
                         xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
                         xml = xml.Replace("{{PLAYER_CLAN}}", Hero.MainHero.Clan.StringId);
                         xml = xml.Replace("{{BASE_IDENTIFIER}}", castleNumber.ToString());
@@ -495,6 +656,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             Identifier = castleNumber,
                             Type = (int) SettlementType.Castle,
                             SettlementName = settlementName,
+                            RotationMat3 = settlementPlacementFrame?.rotation
                         };
                         PlayerSettlementInfo.Instance.Castles.Add(castleItem);
 
@@ -608,6 +770,47 @@ namespace BannerlordPlayerSettlement.Behaviours
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
                     };
 
+                    Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                    {
+                        settlementPlacementFrame = null;
+
+                        Action confirmAndApply = () =>
+                        {
+                            var createPlayerSettlementText = new TextObject("{=player_settlement_19}Build a Castle").ToString();
+                            var confirm = new TextObject("{=player_settlement_18}Are you sure you want to build your castle here?");
+
+                            InformationManager.ShowInquiry(new InquiryData(createPlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                                () =>
+                                {
+                                    InformationManager.HideInquiry();
+                                    applyPlaced(settlementName, culture);
+                                },
+                                () =>
+                                {
+                                    // Cancelled. Do nothing.
+                                    InformationManager.HideInquiry();
+
+                                    // If not in placement, we have to reset completely. Otherwise we can just return to placement
+                                    if (!Main.Settings!.SettlementPlacement)
+                                    {
+                                        Reset();
+                                        MapBarExtensionVM.Current?.OnRefresh();
+                                    }
+                                }), true, false);
+                        };
+
+                        if (!Main.Settings!.SettlementPlacement)
+                        {
+                            confirmAndApply();
+                            return;
+                        }
+
+                        var castleNumber = PlayerSettlementInfo.Instance!.Castles!.Count + 1;
+                        var id = PlayerSettlementItem.GetStringIdFor(SettlementType.Castle, castleNumber);
+                        GenerateSettlementVisualEntity(id);
+
+                        applyPending = () => confirmAndApply();
+                    };
 
                     if (Main.Settings!.ForcePlayerCulture)
                     {
@@ -634,7 +837,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         affirmativeAction: (List<InquiryElement> args) =>
                         {
                             List<InquiryElement> source = args;
-                            InformationManager.HideInquiry();
+                            //InformationManager.HideInquiry();
 
                             CultureObject culture = (args?.FirstOrDefault()?.Identifier as CultureObject) ?? Hero.MainHero.Culture;
 
@@ -649,6 +852,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 () =>
                 {
                     InformationManager.HideInquiry();
+                    Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
                 }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
         }
@@ -680,13 +884,16 @@ namespace BannerlordPlayerSettlement.Behaviours
                         settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                     }
 
-                    Action<string, CultureObject, string> apply = (string settlementName, CultureObject culture, string villageType) =>
+                    Action<string, CultureObject, string> applyPlaced = (string settlementName, CultureObject culture, string villageType) =>
                     {
+
+                        var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+
                         var xml = "" + (bound.IsCastle ?
                                             PlayerSettlementCastleVillageTemplate :
                                             PlayerSettlementTownVillageTemplate);
-                        xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                        xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
+                        xml = xml.Replace("{{POS_X}}", atPos.X.ToString());
+                        xml = xml.Replace("{{POS_Y}}", atPos.Y.ToString());
                         xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
                         xml = xml.Replace("{{BASE_IDENTIFIER}}", boundTarget.Identifier.ToString());
                         xml = xml.Replace("{{SETTLEMENT_NAME}}", settlementName);
@@ -699,7 +906,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             Identifier = villageNumber,
                             Type = (int) SettlementType.Village,
                             SettlementName = settlementName,
-
+                            RotationMat3 = settlementPlacementFrame?.rotation
                         };
                         boundTarget.Villages!.Add(villageItem);
 
@@ -740,6 +947,47 @@ namespace BannerlordPlayerSettlement.Behaviours
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
                     };
 
+                    Action<string, CultureObject, string> apply = (string settlementName, CultureObject culture, string villageType) =>
+                    {
+                        settlementPlacementFrame = null;
+
+                        Action confirmAndApply = () =>
+                        {
+                            var createPlayerSettlementText = new TextObject("{=player_settlement_13}Build a Village").ToString();
+                            var confirm = new TextObject("{=player_settlement_14}Are you sure you want to build your village here?");
+
+                            InformationManager.ShowInquiry(new InquiryData(createPlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                                () =>
+                                {
+                                    InformationManager.HideInquiry();
+                                    applyPlaced(settlementName, culture, villageType);
+                                },
+                                () =>
+                                {
+                                    // Cancelled. Do nothing.
+                                    InformationManager.HideInquiry();
+
+                                    // If not in placement, we have to reset completely. Otherwise we can just return to placement
+                                    if (!Main.Settings!.SettlementPlacement)
+                                    {
+                                        Reset();
+                                        MapBarExtensionVM.Current?.OnRefresh();
+                                    }
+                                }), true, false);
+                        };
+
+                        if (!Main.Settings!.SettlementPlacement)
+                        {
+                            confirmAndApply();
+                            return;
+                        }
+
+                        var id = PlayerSettlementItem.GetStringIdFor(SettlementType.Village, villageNumber, boundTarget);
+                        GenerateSettlementVisualEntity(id);
+
+                        applyPending = () => confirmAndApply();
+                    };
+
                     var determineVillageType = new Action<string, CultureObject>((string settlementName, CultureObject culture) =>
                     {
                         List<InquiryElement> inquiryElements = GetVillageTypeInquiry();
@@ -760,7 +1008,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             affirmativeAction: (List<InquiryElement> args) =>
                             {
                                 List<InquiryElement> source = args;
-                                InformationManager.HideInquiry();
+                                //InformationManager.HideInquiry();
 
                                 string villageType = (args?.FirstOrDefault()?.Identifier as VillageType)?.MeshName ?? AutoCalculateVillageType(villageNumber);
 
@@ -811,7 +1059,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                             if (Main.Settings.AutoAllocateVillageType)
                             {
-                                InformationManager.HideInquiry();
+                                //InformationManager.HideInquiry();
                                 apply(settlementName, culture, AutoCalculateVillageType(villageNumber));
                             }
                             else
@@ -828,6 +1076,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 () =>
                 {
                     InformationManager.HideInquiry();
+                    Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
                 }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
         }
@@ -845,21 +1094,26 @@ namespace BannerlordPlayerSettlement.Behaviours
                     {
                         settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                     }
-
-                    Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                    Action<string, CultureObject> applyPlaced = (string settlementName, CultureObject culture) =>
                     {
                         if (PlayerSettlementInfo.Instance!.Towns == null)
                         {
                             PlayerSettlementInfo.Instance!.Towns = new();
                         }
 
+                        var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+
                         var townNumber = PlayerSettlementInfo.Instance!.Towns!.Count + 1;
 
+                        // For now gate position is the same as the main position.
+                        // TODO: Determine if gate position can be calculated with rotation and ensure it is a reachable terrain.
+                        var gPos = atPos;
+
                         var xml = PlayerSettlementTownTemplate;
-                        xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                        xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
-                        xml = xml.Replace("{{G_POS_X}}", (MobileParty.MainParty.Position2D.X - 0.8578f).ToString());
-                        xml = xml.Replace("{{G_POS_Y}}", (MobileParty.MainParty.Position2D.Y - 4.2689f).ToString());
+                        xml = xml.Replace("{{POS_X}}", atPos.X.ToString());
+                        xml = xml.Replace("{{POS_Y}}", atPos.Y.ToString());
+                        xml = xml.Replace("{{G_POS_X}}", (gPos.X).ToString());
+                        xml = xml.Replace("{{G_POS_Y}}", (gPos.Y).ToString());
                         xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
                         xml = xml.Replace("{{PLAYER_CLAN}}", Hero.MainHero.Clan.StringId);
                         xml = xml.Replace("{{BASE_IDENTIFIER}}", townNumber.ToString());
@@ -871,6 +1125,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             Identifier = townNumber,
                             Type = (int) SettlementType.Town,
                             SettlementName = settlementName,
+                            RotationMat3 = settlementPlacementFrame?.rotation
                         };
                         PlayerSettlementInfo.Instance.Towns.Add(townItem);
 
@@ -968,11 +1223,11 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         if (townSettlement.Town.CurrentDefaultBuilding == null)
                         {
-                            BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault(), townSettlement.Town);
+                            BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
                         }
 
                         var campaignGameStarter = SandBoxManager.Instance.GameStarter;
-                        var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
+                        var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault<CampaignBehaviorBase>(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
                         craftingCampaignBehavior?.AddTown(town, out _);
 
                         townItem.BuiltAt = Campaign.CurrentTime;
@@ -990,9 +1245,53 @@ namespace BannerlordPlayerSettlement.Behaviours
                         //}
 
                         _settlementCreated.Invoke(townItem.Settlement);
+
+                        Reset();
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
                     };
 
+
+                    Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                    {
+                        settlementPlacementFrame = null;
+
+                        Action confirmAndApply = () =>
+                        {
+                            var createPlayerSettlementText = new TextObject("{=player_settlement_04}Build a Town").ToString();
+                            var confirm = new TextObject("{=player_settlement_05}Are you sure you want to build your town here?");
+
+                            InformationManager.ShowInquiry(new InquiryData(createPlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                                () =>
+                                {
+                                    InformationManager.HideInquiry();
+                                    applyPlaced(settlementName, culture);
+                                },
+                                () =>
+                                {
+                                    // Cancelled. Do nothing.
+                                    InformationManager.HideInquiry();
+
+                                    // If not in placement, we have to reset completely. Otherwise we can just return to placement
+                                    if (!Main.Settings!.SettlementPlacement)
+                                    {
+                                        Reset();
+                                        MapBarExtensionVM.Current?.OnRefresh();
+                                    }
+                                }), true, false);
+                        };
+
+                        if (!Main.Settings!.SettlementPlacement)
+                        {
+                            confirmAndApply();
+                            return;
+                        }
+
+                        var townNumber = PlayerSettlementInfo.Instance!.Towns!.Count + 1;
+                        var id = PlayerSettlementItem.GetStringIdFor(SettlementType.Town, townNumber);
+                        GenerateSettlementVisualEntity(id);
+
+                        applyPending = () => confirmAndApply();
+                    };
 
                     if (Main.Settings!.ForcePlayerCulture)
                     {
@@ -1019,7 +1318,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         affirmativeAction: (List<InquiryElement> args) =>
                         {
                             List<InquiryElement> source = args;
-                            InformationManager.HideInquiry();
+                            //InformationManager.HideInquiry();
 
                             CultureObject culture = (args?.FirstOrDefault()?.Identifier as CultureObject) ?? Hero.MainHero.Culture;
 
@@ -1034,8 +1333,17 @@ namespace BannerlordPlayerSettlement.Behaviours
                 () =>
                 {
                     InformationManager.HideInquiry();
+                    Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
                 }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
+        }
+
+        private void GenerateSettlementVisualEntity(string? id)
+        {
+            Campaign.Current.MapSceneWrapper.AddNewEntityToMapScene(id, MobileParty.MainParty.Position2D);
+            var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
+            settlementVisualEntity = mapScene.GetCampaignEntityWithName(id);
+            settlementVisualEntity.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor);
         }
 
         private List<InquiryElement> GetVillageTypeInquiry()
@@ -1234,7 +1542,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             fileSegments.Add(ModuleHelper.GetModuleInfo(moduleName).FolderPath);
             fileSegments.AddRange(filePaths);
 
-            var fullPath = Path.Combine(fileSegments.ToArray());
+            var fullPath = System.IO.Path.Combine(fileSegments.ToArray());
             return fullPath;
         }
     }

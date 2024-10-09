@@ -106,6 +106,8 @@ namespace BannerlordPlayerSettlement.Saves
                     DisplayName = town.SettlementName,
                     Identifier = town.Identifier,
                     settlement = town.Settlement,
+                    StringId = town.StringId,
+                    Version = town.Version,
                     Villages = town.Villages.Select(v => new SettlementMetaV3
                     {
                         XML = v.ItemXML,
@@ -113,6 +115,8 @@ namespace BannerlordPlayerSettlement.Saves
                         DisplayName = v.SettlementName,
                         Identifier = v.Identifier,
                         settlement = v.Settlement,
+                        StringId = v.StringId,
+                        Version = v.Version,
                         Villages = new()
                     }).ToList()
                 });
@@ -126,6 +130,8 @@ namespace BannerlordPlayerSettlement.Saves
                     DisplayName = castle.SettlementName,
                     Identifier = castle.Identifier,
                     settlement = castle.Settlement,
+                    StringId = castle.StringId,
+                    Version = castle.Version,
                     Villages = castle.Villages.Select(v => new SettlementMetaV3
                     {
                         XML = v.ItemXML,
@@ -133,6 +139,8 @@ namespace BannerlordPlayerSettlement.Saves
                         DisplayName = v.SettlementName,
                         Identifier = v.Identifier,
                         settlement = v.Settlement,
+                        StringId = v.StringId,
+                        Version = v.Version,
                         Villages = new()
                     }).ToList()
                 });

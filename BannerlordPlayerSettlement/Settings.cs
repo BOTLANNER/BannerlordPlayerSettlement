@@ -151,23 +151,37 @@ Maximum village count per town or castle has to be reached before next castle or
         [SettingPropertyGroup("Settlement Placement")]
         public bool SettlementPlacement { get; set; } = true;
 
-        private const string MouseRotationModifier_Hint = "Speed at which mouse movement rotates settlement.  [ Default: 50% ]";
+        private const string MouseRotationModifier_Hint = @"Speed at which mouse movement rotates settlement. 
+Settlement rotation applies when 'Alt' is held.  [ Default: 50% ]";
 
         [SettingPropertyFloatingInteger("Mouse Rotation Speed", 0.01f, 10f, "#0%", HintText = MouseRotationModifier_Hint, RequireRestart = false, Order = 20)]
         [SettingPropertyGroup("Settlement Placement")]
         public float MouseRotationModifier { get; set; } = 0.5f;
 
-        private const string KeyRotationModifier_Hint = "Speed at which rotation keys affect settlement when rotating. Default game rotation keys are 'Q' and 'E', unless remapped. [ Default: 100% ]";
+        private const string KeyRotationModifier_Hint = @"Speed at which rotation keys affect settlement when rotating. 
+Default game rotation keys are 'Q' and 'E', unless remapped. 
+Settlement rotation applies when 'Alt' is held. [ Default: 100% ]";
 
         [SettingPropertyFloatingInteger("Key Rotation Speed", 0.01f, 10f, "#0%", HintText = KeyRotationModifier_Hint, RequireRestart = false, Order = 21)]
         [SettingPropertyGroup("Settlement Placement")]
         public float KeyRotationModifier { get; set; } = 1f;
 
-        private const string RotationAltModifier_Hint = "Will trigger settlement rotation during placement when 'Alt' is held. Otherwise will do the same when 'Shift' is held instead. [ Default: ON ]";
+        private const string SelectedCultureOnly_Hint = @"Will limit settlement options to selected culture only. 
+Otherwise will allow settlement options for all cultures. 
+Cycle visually between options by holding 'Shift' and using rotation keys. 
+Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: ON ]";
 
-        [SettingPropertyBool("Use 'Alt' for Rotation", HintText = RotationAltModifier_Hint, RequireRestart = false, Order = 22, IsToggle = false)]
+        [SettingPropertyBool("Selected Culture Only", HintText = SelectedCultureOnly_Hint, RequireRestart = false, Order = 22, IsToggle = false)]
         [SettingPropertyGroup("Settlement Placement")]
-        public bool RotationAltModifier { get; set; } = true;
+        public bool SelectedCultureOnly { get; set; } = true;
+
+        private const string CycleSpeed_Hint = @"Speed at which settlements will visually cycle during placement while holding 'Shift' and a rotation key. 
+Cycle visually between options by holding 'Shift' and using rotation keys. 
+Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
+
+        [SettingPropertyFloatingInteger("Settlement Cycle Speed", 0.01f, 10f, "#0%", HintText = CycleSpeed_Hint, RequireRestart = false, Order = 23)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public float CycleSpeed { get; set; } = 2f;
 
         // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
         public const int HardMaxTowns = 10;

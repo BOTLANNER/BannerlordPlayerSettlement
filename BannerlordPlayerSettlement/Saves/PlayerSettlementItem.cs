@@ -51,6 +51,7 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(201)]
         public List<PlayerSettlementItem> Villages = new List<PlayerSettlementItem>();
 
+        [System.Obsolete("Replaced with `StringId`")]
         [SaveableField(202)]
         public int Identifier = 1;
 
@@ -60,7 +61,14 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(206)]
         public Mat3Saveable? RotationMat3 = null;
 
-        public static string? GetStringIdFor(SettlementType settlementType, int id, PlayerSettlementItem? boundTarget = null)
+        [SaveableField(207)]
+        public string Version = null;
+
+        [SaveableField(208)]
+        public string StringId = null;
+
+        [System.Obsolete("Use PlayerSettlementItem.StringId instead")]
+        private static string? GetStringIdFor(SettlementType settlementType, int id, PlayerSettlementItem? boundTarget = null)
         {
             switch (settlementType)
             {
@@ -84,9 +92,13 @@ namespace BannerlordPlayerSettlement.Saves
             }
         }
 
-        public string? GetStringId(SettlementType settlementType, PlayerSettlementItem? boundTarget = null)
+        public string? GetStringId(PlayerSettlementItem? boundTarget = null)
         {
-            return GetStringIdFor(settlementType, Identifier, boundTarget);
+            if (!string.IsNullOrEmpty(StringId))
+            {
+                return StringId;
+            }
+            return GetStringIdFor((SettlementType) Type, Identifier, boundTarget);
         }
     }
 }

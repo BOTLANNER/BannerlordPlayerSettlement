@@ -28,21 +28,21 @@ namespace BannerlordPlayerSettlement.Patches
 
         public static void FindAndSetChild(this NotableSpawnPointHandler notableSpawnPointHandler, GameEntity childGameEntity)
         {
-            FindAndSetChildInvoker(notableSpawnPointHandler, new object[] { childGameEntity });
+            FindAndSetChildInvoker(notableSpawnPointHandler,childGameEntity );
         }
 
         static readonly FastInvokeHandler ActivateParentSetInsideWorkshopInvoker = MethodInvoker.GetHandler(AccessTools.Method(typeof(NotableSpawnPointHandler), nameof(ActivateParentSetInsideWorkshop)));
 
         public static void ActivateParentSetInsideWorkshop(this NotableSpawnPointHandler notableSpawnPointHandler, WorkshopAreaMarker areaMarker)
         {
-            ActivateParentSetInsideWorkshopInvoker(notableSpawnPointHandler, new object[] { areaMarker });
+            ActivateParentSetInsideWorkshopInvoker(notableSpawnPointHandler, areaMarker);
         }
 
         static readonly FastInvokeHandler ActivateParentSetOutsideWorkshopInvoker = MethodInvoker.GetHandler(AccessTools.Method(typeof(NotableSpawnPointHandler), nameof(ActivateParentSetOutsideWorkshop)));
 
         public static void ActivateParentSetOutsideWorkshop(this NotableSpawnPointHandler notableSpawnPointHandler)
         {
-            ActivateParentSetOutsideWorkshopInvoker(notableSpawnPointHandler, new object[] {});
+            ActivateParentSetOutsideWorkshopInvoker(notableSpawnPointHandler);
         }
 
         [HarmonyPrefix]

@@ -39,7 +39,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         public static void AddNewPartyVisualForParty(this PartyVisualManager partyVisualManager, PartyBase partyBase)
         {
-            AddNewPartyVisualForPartyInvoker(partyVisualManager, new object[] { partyBase });
+            AddNewPartyVisualForPartyInvoker(partyVisualManager, partyBase );
         }
 
         public static Scene MapScene(this PartyVisual __instance)

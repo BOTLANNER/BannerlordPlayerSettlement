@@ -188,6 +188,24 @@ Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
         [SettingPropertyGroup("Player Settlements")]
         public bool SingleConstruction { get; set; } = false;
 
+        private const string AddInitialGarrison_Hint = "Will add an initial garrison for new towns and castles.  [ Default: ON ]";
+
+        [SettingPropertyBool("Add Initial Garrison", HintText = AddInitialGarrison_Hint, RequireRestart = false, Order = 20, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AddInitialGarrison { get; set; } = true;
+
+        private const string AddInitialMilitia_Hint = "Will add initial militia for new settlements.  [ Default: ON ]";
+
+        [SettingPropertyBool("Add Initial Militia", HintText = AddInitialMilitia_Hint, RequireRestart = false, Order = 21, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AddInitialMilitia { get; set; } = true;
+
+        private const string AddInitialNotables_Hint = "Will add initial notables for new towns and villages.  [ Default: ON ]";
+
+        [SettingPropertyBool("Add Initial Notables", HintText = AddInitialNotables_Hint, RequireRestart = false, Order = 22, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AddInitialNotables { get; set; } = true;
+
         // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
         public const int HardMaxTowns = 10;
         public const int HardMaxVillagesPerTown = 5;

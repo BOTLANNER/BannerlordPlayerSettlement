@@ -2,8 +2,38 @@
   "profiles": {
     "Start": {
       "commandName": "Executable",
-      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.exe",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
       "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*Sandbox*CustomBattle*StoryMode*BirthAndDeath*PlayerSettlement*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "EuropeLemmyProjectSupport": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*Sandbox*CustomBattle*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*BirthAndDeath*PlayerSettlement*Europe_LemmyProject*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "EuropeLemmyProjectSupportExtraSettlements": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*Sandbox*CustomBattle*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*BirthAndDeath*PlayerSettlement*Europe_LemmyProject*PlayerSettlement_Europe_LemmyProject*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "Europe1100Support": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*Sandbox*CustomBattle*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*BirthAndDeath*PlayerSettlement*Europe_LemmyProject*Europe1100*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "Europe1100SupportExtraSettlements": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*Sandbox*CustomBattle*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*BirthAndDeath*PlayerSettlement*Europe_LemmyProject*Europe1100*PlayerSettlement_Europe1100*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "Europe1100SupportExtraSettlementsBoth (Broken)": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*Sandbox*CustomBattle*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*BirthAndDeath*PlayerSettlement*Europe_LemmyProject*Europe1100*PlayerSettlement_Europe1100*PlayerSettlement_Europe_LemmyProject*_MODULES_",
       "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
     },
     "MySetup": {
@@ -46,6 +76,12 @@
       "commandName": "Executable",
       "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
       "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*BirthAndDeath*CustomBattle*Sandbox*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*Bannerlord.FamilyTree*CharacterManager*DeathForAll*DismembermentPlus*ExecutionAdjuster*FamilyControl*Nepotism*OpenSourceArmory*OpenSourceSaddlery*OpenSourceWeaponry*ROT-Core*ROT-Content*ROT_Map*ROT-Dragon*RighteousExecutions*SiegeLoadout*TimeLord*WhereTournaments*WhereTournamentsSelectTournamentPrize*WhereTournamentsLockTrackedPrize*PlayerSettlement*RestartPlus*zzCharacterCreation*_MODULES_",
+      "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
+    },
+    "MyROTSetupExtraSettlements": {
+      "commandName": "Executable",
+      "executablePath": "$(GameFolder)\\bin\\Win64_Shipping_Client\\Bannerlord.BLSE.Standalone.exe",
+      "commandLineArgs": "/singleplayer _MODULES_*Bannerlord.Harmony*BetterExceptionWindow*Bannerlord.ButterLib*Bannerlord.UIExtenderEx*Bannerlord.MBOptionScreen*Native*SandBoxCore*BirthAndDeath*CustomBattle*Sandbox*StoryMode*AnotherAchievementModule*AutoTrader*Bannerlord Cheats Reload*Bannerlord.FamilyTree*CharacterManager*DeathForAll*DismembermentPlus*ExecutionAdjuster*FamilyControl*Nepotism*OpenSourceArmory*OpenSourceSaddlery*OpenSourceWeaponry*ROT-Core*ROT-Content*ROT_Map*ROT-Dragon*RighteousExecutions*SiegeLoadout*TimeLord*WhereTournaments*WhereTournamentsSelectTournamentPrize*WhereTournamentsLockTrackedPrize*PlayerSettlement*PlayerSettlement_RoT*RestartPlus*zzCharacterCreation*_MODULES_",
       "workingDirectory": "$(GameFolder)\\bin\\Win64_Shipping_Client"
     }
   }

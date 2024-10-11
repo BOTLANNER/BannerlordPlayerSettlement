@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
@@ -113,6 +111,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
             }
             villages.AddRange(PlayerSettlementInfo.Instance.Towns?.SelectMany(t => t.Villages?.Select(v => v.Settlement!)) ?? new List<Settlement>());
             villages.AddRange(PlayerSettlementInfo.Instance.Castles?.SelectMany(c => c.Villages?.Select(v => v.Settlement!)) ?? new List<Settlement>());
+            villages.AddRange(PlayerSettlementInfo.Instance.PlayerVillages?.Select(v => v.Settlement!) ?? new List<Settlement>());
             return villages;
         }
 

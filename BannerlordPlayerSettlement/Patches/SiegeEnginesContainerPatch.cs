@@ -1,11 +1,8 @@
 ﻿using System;
 
-using BannerlordPlayerSettlement.UI;
-
 using HarmonyLib;
 
 using TaleWorlds.CampaignSystem.Siege;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Map.MapBar;
 using TaleWorlds.Library;
 
 using static TaleWorlds.CampaignSystem.Siege.SiegeEvent;

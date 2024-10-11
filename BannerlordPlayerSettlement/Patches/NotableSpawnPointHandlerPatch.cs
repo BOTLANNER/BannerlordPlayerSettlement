@@ -2,28 +2,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
-using Helpers;
-
 using SandBox.Missions.AgentBehaviors;
 using SandBox.Objects.AreaMarkers;
-using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
-using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Workshops;
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.MountAndBlade.View;
 
 namespace BannerlordPlayerSettlement.Patches
 {
@@ -35,21 +28,21 @@ namespace BannerlordPlayerSettlement.Patches
 
         public static void FindAndSetChild(this NotableSpawnPointHandler notableSpawnPointHandler, GameEntity childGameEntity)
         {
-            FindAndSetChildInvoker(notableSpawnPointHandler, new object[] { childGameEntity });
+            FindAndSetChildInvoker(notableSpawnPointHandler,childGameEntity );
         }
 
         static readonly FastInvokeHandler ActivateParentSetInsideWorkshopInvoker = MethodInvoker.GetHandler(AccessTools.Method(typeof(NotableSpawnPointHandler), nameof(ActivateParentSetInsideWorkshop)));
 
         public static void ActivateParentSetInsideWorkshop(this NotableSpawnPointHandler notableSpawnPointHandler, WorkshopAreaMarker areaMarker)
         {
-            ActivateParentSetInsideWorkshopInvoker(notableSpawnPointHandler, new object[] { areaMarker });
+            ActivateParentSetInsideWorkshopInvoker(notableSpawnPointHandler, areaMarker);
         }
 
         static readonly FastInvokeHandler ActivateParentSetOutsideWorkshopInvoker = MethodInvoker.GetHandler(AccessTools.Method(typeof(NotableSpawnPointHandler), nameof(ActivateParentSetOutsideWorkshop)));
 
         public static void ActivateParentSetOutsideWorkshop(this NotableSpawnPointHandler notableSpawnPointHandler)
         {
-            ActivateParentSetOutsideWorkshopInvoker(notableSpawnPointHandler, new object[] {});
+            ActivateParentSetOutsideWorkshopInvoker(notableSpawnPointHandler);
         }
 
         [HarmonyPrefix]

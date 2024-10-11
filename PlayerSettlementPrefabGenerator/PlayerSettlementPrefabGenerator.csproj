@@ -1,26 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="player_settlements_prefabs.xml" />
-    <None Remove="player_settlements_prefabs_castle_template.xml" />
-    <None Remove="player_settlements_prefabs_town_template.xml" />
-    <None Remove="player_settlements_prefabs_village_template_1.xml" />
-    <None Remove="player_settlements_prefabs_village_template_2.xml" />
-    <None Remove="player_settlements_prefabs_village_template_3.xml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="player_settlements_prefabs_village_template_2.xml" />
-    <EmbeddedResource Include="player_settlements_prefabs_village_template_3.xml" />
-    <EmbeddedResource Include="player_settlements_prefabs_castle_template.xml" />
-    <EmbeddedResource Include="player_settlements_prefabs_village_template_1.xml" />
-    <EmbeddedResource Include="player_settlements_prefabs_town_template.xml" />
-    <EmbeddedResource Include="player_settlements_prefabs.xml" />
-  </ItemGroup>
 
 </Project>

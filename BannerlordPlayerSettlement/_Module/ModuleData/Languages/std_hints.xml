@@ -10,5 +10,11 @@
         <string id="player_settlement_h_04" text="Player Settlement not enabled" />
         <string id="player_settlement_h_05" text="Not enough funds ({CURRENT_FUNDS}/{REQUIRED_FUNDS})" />
         <string id="player_settlement_h_06" text="Construction in progress" />
+        <string id="player_settlement_h_07" text="Cannot build town: {TOWN_REASON}\r\n\r\nCannot build castle: {CASTLE_REASON}\r\n\r\nCannot build village: {VILLAGE_REASON}" />
+        <string id="player_settlement_h_08" text="Maximum number of towns have been built" />
+        <string id="player_settlement_h_09" text="Maximum number of castles have been built" />
+        <string id="player_settlement_h_10" text="Maximum number of villages have been built" />
+        <string id="player_settlement_h_11" text="No candidate for village to be bound to" />
+        <string id="player_settlement_h_12" text="Show/Hide player settlement build options" />
     </strings>
 </base>

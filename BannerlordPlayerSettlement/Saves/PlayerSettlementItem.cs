@@ -1,8 +1,11 @@
 ﻿
+using System;
 using System.Collections.Generic;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Core;
+using TaleWorlds.Localization;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
@@ -51,13 +54,24 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(201)]
         public List<PlayerSettlementItem> Villages = new List<PlayerSettlementItem>();
 
+        [System.Obsolete("Replaced with `StringId`")]
         [SaveableField(202)]
         public int Identifier = 1;
 
         [SaveableField(204)]
         public int Type = 0;
 
-        public static string? GetStringIdFor(SettlementType settlementType, int id, PlayerSettlementItem? boundTarget = null)
+        [SaveableField(206)]
+        public Mat3Saveable? RotationMat3 = null;
+
+        [SaveableField(207)]
+        public string Version = null;
+
+        [SaveableField(208)]
+        public string StringId = null;
+
+        [System.Obsolete("Use PlayerSettlementItem.StringId instead")]
+        private static string? GetStringIdFor(SettlementType settlementType, int id, PlayerSettlementItem? boundTarget = null)
         {
             switch (settlementType)
             {
@@ -81,9 +95,19 @@ namespace BannerlordPlayerSettlement.Saves
             }
         }
 
-        public string? GetStringId(SettlementType settlementType, PlayerSettlementItem? boundTarget = null)
+        public string? GetStringId(PlayerSettlementItem? boundTarget = null)
         {
-            return GetStringIdFor(settlementType, Identifier, boundTarget);
+            if (!string.IsNullOrEmpty(StringId))
+            {
+                return StringId;
+            }
+            return GetStringIdFor((SettlementType) Type, Identifier, boundTarget);
         }
+
+
+
+        public static string EncyclopediaLink(string StringId) => String.Concat(Campaign.Current.EncyclopediaManager.GetIdentifier(typeof(Settlement)), "-", StringId) ?? "";
+
+        public static TextObject EncyclopediaLinkWithName(string StringId, TextObject Name) => HyperlinkTexts.GetSettlementHyperlinkText(EncyclopediaLink(StringId), Name);
     }
 }

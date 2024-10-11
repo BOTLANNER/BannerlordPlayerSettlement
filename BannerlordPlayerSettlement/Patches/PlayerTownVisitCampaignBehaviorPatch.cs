@@ -10,9 +10,7 @@ using HarmonyLib;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.GameMenus;
-using TaleWorlds.CampaignSystem.GameState;
 using TaleWorlds.CampaignSystem.Settlements;
-using TaleWorlds.Core;
 using TaleWorlds.Library;
 
 namespace BannerlordPlayerSettlement.Patches
@@ -59,7 +57,8 @@ namespace BannerlordPlayerSettlement.Patches
                         return true;
                     }
 
-                    var village = PlayerSettlementInfo.Instance?.Towns?.SelectMany(t => t.Villages)?.FirstOrDefault(v => v.Settlement == Settlement.CurrentSettlement) ??
+                    var village = PlayerSettlementInfo.Instance?.PlayerVillages?.FirstOrDefault(v => v.Settlement == Settlement.CurrentSettlement) ??
+                                  PlayerSettlementInfo.Instance?.Towns?.SelectMany(t => t.Villages)?.FirstOrDefault(v => v.Settlement == Settlement.CurrentSettlement) ??
                                   PlayerSettlementInfo.Instance?.Castles?.SelectMany(t => t.Villages)?.FirstOrDefault(v => v.Settlement == Settlement.CurrentSettlement);
 
                     if (village?.BuildEnd.IsFuture ?? true)

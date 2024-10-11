@@ -1,9 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-using TaleWorlds.ObjectSystem;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
@@ -19,6 +15,7 @@ namespace BannerlordPlayerSettlement.Saves
         {
             base.DefineClassTypes();
 
+            AddClassDefinition(typeof(Mat3Saveable), 9);
             AddClassDefinition(typeof(PlayerSettlementItem), 3);
             AddClassDefinition(typeof(PlayerSettlementInfo), 2);
 

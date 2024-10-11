@@ -1,47 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Xml;
 
+using BannerlordPlayerSettlement.Descriptors;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Patches;
 using BannerlordPlayerSettlement.Saves;
-using BannerlordPlayerSettlement.UI;
+using BannerlordPlayerSettlement.UI.Viewmodels;
 using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
 using Helpers;
 
-using SandBox.GauntletUI.Encyclopedia;
-using SandBox.GauntletUI.Map;
+using SandBox;
 using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
-using TaleWorlds.CampaignSystem.BarterSystem;
-using TaleWorlds.CampaignSystem.BarterSystem.Barterables;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.Conversation;
 using TaleWorlds.CampaignSystem.Encounters;
+using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.GameState;
-using TaleWorlds.CampaignSystem.MapEvents;
 using TaleWorlds.CampaignSystem.Overlay;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
-using TaleWorlds.CampaignSystem.ViewModelCollection;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Encyclopedia;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Encyclopedia.Pages;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Map.MapBar;
 using TaleWorlds.Core;
-using TaleWorlds.Engine.GauntletUI;
-using TaleWorlds.GauntletUI.Data;
+using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
-using TaleWorlds.ModuleManager;
+using TaleWorlds.MountAndBlade;
 using TaleWorlds.ObjectSystem;
 using TaleWorlds.ScreenSystem;
 
@@ -57,13 +49,7 @@ namespace BannerlordPlayerSettlement.Behaviours
         public static bool OldSaveLoaded = false;
         public static bool TriggerSaveAfterUpgrade = false;
 
-        public static readonly string PlayerSettlementTownTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_town_template.xml");
-        public static readonly string PlayerSettlementCastleTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_castle_template.xml");
-        public static readonly string PlayerSettlementTownVillageTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_town_village_template.xml");
-        public static readonly string PlayerSettlementCastleVillageTemplate = ModulePrefab.LoadModuleFile(Main.ModuleName, "ModuleData", "Templates", "player_settlement_castle_village_template.xml");
-
         public SettlementType SettlementRequest = SettlementType.None;
-        public Settlement? RequestBoundSettlement = null;
 
 
         private PlayerSettlementInfo _playerSettlementInfo = new();
@@ -103,9 +89,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                     return true;
                 }
                 return PlayerSettlementInfo.Instance.Towns.Count >= Main.Settings.MaxTowns &&
-                    PlayerSettlementInfo.Instance.Towns.All(t => t.Villages.Count >= Main.Settings.MaxVillagesPerTown) &&
-                    PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxCastles &&
-                    PlayerSettlementInfo.Instance.Castles.All(t => t.Villages.Count >= Main.Settings.MaxVillagesPerCastle);
+                       PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxCastles &&
+                       PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages;
             }
         }
 
@@ -122,6 +107,17 @@ namespace BannerlordPlayerSettlement.Behaviours
             Instance = this;
         }
 
+        private List<PlayerSettlementItemTemplate> availableModels = new List<PlayerSettlementItemTemplate>();
+        private int currentModelOptionIdx = -1;
+        private GameEntity? settlementVisualEntity = null;
+        private MatrixFrame? settlementPlacementFrame = null;
+        private float settlementRotationBearing = 0f;
+        private float settlementRotationVelocity = 0f;
+        private Action? applyPending = null;
+        private float holdTime = 0f;
+
+        public bool IsPlacingSettlement => settlementVisualEntity != null && applyPending != null;
+
         #region Overrides
         public override void RegisterEvents()
         {
@@ -132,6 +128,25 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             CampaignEvents.OnNewGameCreatedEvent.AddNonSerializedListener(this, new Action<CampaignGameStarter>(OnNewGameCreated));
             CampaignEvents.OnGameEarlyLoadedEvent.AddNonSerializedListener(this, new Action<CampaignGameStarter>(OnGameEarlyLoaded));
+
+            CampaignEvents.SettlementEntered.AddNonSerializedListener(this, SettlementEntered);
+            CampaignEvents.OnSettlementLeftEvent.AddNonSerializedListener(this, SettlementLeft);
+        }
+
+        private void SettlementLeft(MobileParty arg1, Settlement arg2)
+        {
+            if (arg1 == MobileParty.MainParty)
+            {
+                MapBarExtensionVM.Current?.Tick(0f);
+            }
+        }
+
+        private void SettlementEntered(MobileParty arg1, Settlement arg2, Hero arg3)
+        {
+            if (arg1 == MobileParty.MainParty || arg3 == Hero.MainHero)
+            {
+                MapBarExtensionVM.Current?.Tick(0f);
+            }
         }
 
         public override void SyncData(IDataStore dataStore)
@@ -192,6 +207,98 @@ namespace BannerlordPlayerSettlement.Behaviours
         private void OnSessionLaunched(CampaignGameStarter starter)
         {
             this.SetupGameMenus(starter);
+
+            this.SetupConversationDialogues(starter);
+        }
+
+        private void SetupConversationDialogues(CampaignGameStarter starter)
+        {
+            starter.AddPlayerLine("player_settlement_build_options_intro", "hero_main_options", "player_settlement_build_options_response", "{=player_settlement_25}I would like to review my options for building a settlement.", new ConversationSentence.OnConditionDelegate(this.conv_build_start_condition), null, 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_start_clickable), null);
+            starter.AddDialogLine("player_settlement_build_options_response_dialogue", "player_settlement_build_options_response", "player_settlement_build_options_choices", "{=k7ebznzr}Yes?", null, null, 100, null);
+            starter.AddPlayerLine("player_settlement_build_town", "player_settlement_build_options_choices", "close_window", "{=player_settlement_26}We should build a town.", new ConversationSentence.OnConditionDelegate(this.conv_build_town_condition), new ConversationSentence.OnConsequenceDelegate(() => this.conv_build_consequence(SettlementType.Town)), 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_town_clickable), null);
+            starter.AddPlayerLine("player_settlement_build_village", "player_settlement_build_options_choices", "close_window", "{=player_settlement_27}We should build a village.", new ConversationSentence.OnConditionDelegate(this.conv_build_village_condition), new ConversationSentence.OnConsequenceDelegate(() => this.conv_build_consequence(SettlementType.Village)), 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_village_clickable), null);
+            starter.AddPlayerLine("player_settlement_build_castle", "player_settlement_build_options_choices", "close_window", "{=player_settlement_28}We should build a castle.", new ConversationSentence.OnConditionDelegate(this.conv_build_castle_condition), new ConversationSentence.OnConsequenceDelegate(() => this.conv_build_consequence(SettlementType.Castle)), 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_castle_clickable), null);
+            starter.AddPlayerLine("player_settlement_build_nothing", "player_settlement_build_options_choices", "close_window", "{=player_settlement_29}Nevermind.", null, null, 100, null, null);
+        }
+
+        private bool conv_build_castle_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerCastleBuildInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerCastleBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_castle_condition()
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            return (Main.Settings != null && !Main.Settings.HideButtonUntilReady) || (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerCastleBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_village_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerVillageBuildInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerVillageBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_village_condition()
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            return (Main.Settings != null && !Main.Settings.HideButtonUntilReady) || (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerVillageBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_town_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerTownBuildInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerTownBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_town_condition()
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            return (Main.Settings != null && !Main.Settings.HideButtonUntilReady) || (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerTownBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_start_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.IsOverallAllowed ?? false);
+        }
+
+        private bool conv_build_start_condition()
+        {
+            if (Hero.OneToOneConversationHero == null || Hero.OneToOneConversationHero.Clan != Clan.PlayerClan)
+            {
+                return false;
+            }
+
+            if (Main.Settings == null || Main.Settings.NoDialogue)
+            {
+                return false;
+            }
+
+            MapBarExtensionVM.Current?.OnRefresh();
+            return Main.Settings != null && Main.Settings.Enabled &&
+                 (!Main.Settings.HideButtonUntilReady ||
+                  (MapBarExtensionVM.Current?.PlayerSettlementInfo?.IsOverallAllowed ?? false));
+        }
+
+        private void conv_build_consequence(SettlementType settlementType)
+        {
+            SettlementRequest = settlementType;
+
+            MapBarExtensionVM.Current?.OnRefresh();
+
+            Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
+
+            Mission.Current?.EndMission();
+
+            if (PlayerEncounter.Current != null)
+            {
+                PlayerEncounter.LeaveEncounter = true;
+            }
         }
 
         public void SetupGameMenus(CampaignGameStarter campaignGameSystemStarter)
@@ -347,6 +454,21 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                 if (PlayerSettlementInfo.Instance != null)
                 {
+                    var extraVillages = PlayerSettlementInfo.Instance.PlayerVillages;
+                    if (extraVillages == null)
+                    {
+                        extraVillages = (PlayerSettlementInfo.Instance.PlayerVillages = new List<PlayerSettlementItem>());
+                    }
+
+                    for (int t = 0; t < extraVillages.Count; t++)
+                    {
+                        var village = extraVillages[t];
+                        if (!village.BuildComplete && !village.BuildEnd.IsFuture)
+                        {
+                            NotifyComplete(village);
+                        }
+                    }
+
                     var towns = PlayerSettlementInfo.Instance.Towns;
                     if (towns == null)
                     {
@@ -419,32 +541,265 @@ namespace BannerlordPlayerSettlement.Behaviours
             Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
         }
 
+        public void OnBeforeTick(ref MapCameraView.InputInformation inputInformation)
+        {
+            if (Main.Settings != null && Main.Settings.Enabled && PlayerSettlementInfo.Instance != null)
+            {
+                if (settlementVisualEntity != null)
+                {
+                    if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
+                    {
+                        return;
+                    }
+                    if (mapState.Handler is not MapScreen mapScreen)
+                    {
+                        return;
+                    }
+
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+                    Campaign.Current.SetTimeControlModeLock(true);
+
+                    var cycleModifierDown = mapScreen.SceneLayer.Input.IsShiftDown();
+                    if (cycleModifierDown)
+                    {
+                        var cycleBackRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(57);
+                        var cycleForwardRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(58);
+
+                        var cycleBackHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(57);
+                        var cycleForwardHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(58);
+
+                        var holdWait = 1 / Main.Settings.CycleSpeed;
+
+                        if (cycleForwardHeld)
+                        {
+                            if (holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                holdTime = Time.ApplicationTime;
+                            }
+                            else if ((holdTime + holdWait) < Time.ApplicationTime)
+                            {
+                                UpdateSettlementVisualEntity(true);
+                                holdTime = 0f;
+                            }
+                        }
+                        else if (cycleBackHeld)
+                        {
+                            if (holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                holdTime = Time.ApplicationTime;
+                            }
+                            else if ((holdTime + holdWait) < Time.ApplicationTime)
+                            {
+                                UpdateSettlementVisualEntity(false);
+                                holdTime = 0f;
+                            }
+                        }
+                        else
+                        {
+                            holdTime = 0f;
+                        }
+
+                        if (cycleForwardRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                        {
+                            UpdateSettlementVisualEntity(true);
+                        }
+                        else if (cycleBackRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                        {
+                            UpdateSettlementVisualEntity(false);
+                        }
+                    }
+                    else
+                    {
+                        holdTime = 0f;
+                    }
+
+
+
+                    Vec3 worldMouseNear = Vec3.Zero;
+                    Vec3 worldMouseFar = Vec3.Zero;
+                    mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
+                    Vec3 clippedMouseNear = worldMouseNear;
+                    Vec3 clippedMouseFar = worldMouseFar;
+                    PathFaceRecord currentFace = PathFaceRecord.NullFaceRecord;
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+                    MatrixFrame identity = MatrixFrame.Identity;
+                    identity.origin = intersectionPoint2;
+
+                    var previous = settlementVisualEntity.GetFrame();
+
+                    var rotateModifierDown = mapScreen.SceneLayer.Input.IsAltDown();
+                    if (inputInformation.RotateLeftKeyDown && rotateModifierDown)
+                    {
+                        this.settlementRotationVelocity = inputInformation.Dt * 2f;
+                    }
+                    else if (inputInformation.RotateRightKeyDown && rotateModifierDown)
+                    {
+                        this.settlementRotationVelocity = inputInformation.Dt * -2f;
+                    }
+                    this.settlementRotationVelocity = this.settlementRotationVelocity + inputInformation.HorizontalCameraInput * 1.75f * inputInformation.Dt;
+                    if (inputInformation.RightMouseButtonDown && rotateModifierDown)
+                    {
+                        this.settlementRotationVelocity += 0.01f * inputInformation.MouseSensitivity * inputInformation.MouseMoveX;
+
+                        // Divide by 5 for actual settings
+                        this.settlementRotationVelocity *= (Main.Settings.MouseRotationModifier / 5);
+                    }
+                    else if (rotateModifierDown && (inputInformation.RotateLeftKeyDown || inputInformation.RotateRightKeyDown))
+                    {
+                        // Divide by 5 for actual settings
+                        this.settlementRotationVelocity *= (Main.Settings.KeyRotationModifier / 5);
+                    }
+
+
+                    var bearing = this.settlementRotationBearing + this.settlementRotationVelocity;
+                    identity.rotation.RotateAboutUp(-bearing);
+                    this.settlementRotationBearing = bearing;
+                    this.settlementRotationVelocity = 0f;
+
+                    settlementPlacementFrame = identity;
+                    this.SetFrame(ref identity);
+
+                    bool flag = Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
+                    mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+
+                }
+            }
+        }
+
+        // // TODO: Might be useful to ensure reachable
+        //public Vec3 GetVisualPosition()
+        //{
+        //    float single = 0f;
+        //    Vec2 zero = Vec2.Zero;
+        //    Vec2 vec2 = new Vec2(this.PartyBase.Position2D.x + zero.x, this.PartyBase.Position2D.y + zero.y);
+
+        //    return new Vec3(vec2, single, -1f);
+        //}
+
+        private void SetFrame(ref MatrixFrame frame)
+        {
+            if (this.settlementVisualEntity != null && !this.settlementVisualEntity.GetFrame().NearlyEquals(frame, 1E-05f))
+            {
+                this.settlementVisualEntity.SetFrame(ref frame);
+            }
+        }
+
+        public void ApplyNow()
+        {
+            if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
+            {
+                return;
+            }
+            if (mapState.Handler is not MapScreen mapScreen)
+            {
+                return;
+            }
+
+            if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && mapScreen.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            {
+                try
+                {
+                    var apply = applyPending;
+                    apply.Invoke();
+                    return;
+                }
+                catch (Exception e)
+                {
+                    Debug.PrintError(e.Message, e.StackTrace);
+                }
+            }
+            //Reset();
+        }
+
+        public void Reset()
+        {
+            Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+            Campaign.Current.SetTimeControlModeLock(false);
+            availableModels?.Clear();
+            currentModelOptionIdx = -1;
+            ClearEntities();
+            settlementRotationBearing = 0f;
+            settlementRotationVelocity = 0f;
+            settlementPlacementFrame = null;
+            applyPending = null;
+            SettlementRequest = SettlementType.None;
+        }
+
+        private void ClearEntities()
+        {
+
+            if (settlementVisualEntity != null)
+            {
+                try
+                {
+                    try
+                    {
+                        MapScreen.VisualsOfEntities.Remove(settlementVisualEntity.Pointer);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.PrintError(e.Message, e.StackTrace);
+                    }
+                    foreach (GameEntity child in settlementVisualEntity.GetChildren().ToList())
+                    {
+                        try
+                        {
+                            MapScreen.VisualsOfEntities.Remove(child.Pointer);
+                            child.Remove(112);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.PrintError(e.Message, e.StackTrace);
+                        }
+                    }
+                    try
+                    {
+                        settlementVisualEntity.ClearEntityComponents(true, true, true);
+                        settlementVisualEntity.ClearOnlyOwnComponents();
+                        settlementVisualEntity.ClearComponents();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.PrintError(e.Message, e.StackTrace);
+                    }
+                    settlementVisualEntity.Remove(112);
+                }
+                catch (Exception e)
+                {
+                    Debug.PrintError(e.Message, e.StackTrace);
+                }
+            }
+            settlementVisualEntity = null;
+        }
+
         public void Tick(float delta)
         {
             if (Main.Settings != null && Main.Settings.Enabled && PlayerSettlementInfo.Instance != null)
             {
+                if (Settlement.CurrentSettlement != null || Hero.MainHero.IsPrisoner || PlayerEncounter.Current != null || Mission.Current != null)
+                {
+                    // Build will only occur after leaving settlement, being freed, finishing encounter and not being in a mission
+                    return;
+                }
+
                 if (SettlementRequest == SettlementType.Town)
                 {
-                    RequestBoundSettlement = null;
-                    SettlementRequest = SettlementType.None;
+                    Reset();
 
                     BuildTown();
                     return;
                 }
-                else if (SettlementRequest == SettlementType.Village && RequestBoundSettlement != null)
+                else if (SettlementRequest == SettlementType.Village)
                 {
-                    var bound = RequestBoundSettlement;
+                    Reset();
 
-                    RequestBoundSettlement = null;
-                    SettlementRequest = SettlementType.None;
-
-                    BuildVillage(bound);
+                    BuildVillage();
                     return;
                 }
                 else if (SettlementRequest == SettlementType.Castle)
                 {
-                    RequestBoundSettlement = null;
-                    SettlementRequest = SettlementType.None;
+                    Reset();
 
                     BuildCastle();
                     return;
@@ -466,46 +821,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                         settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                     }
 
-                    Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                    void ApplyPlaced(string settlementName, CultureObject culture)
                     {
-                        if (PlayerSettlementInfo.Instance!.Castles == null)
-                        {
-                            PlayerSettlementInfo.Instance!.Castles = new();
-                        }
-
-                        var castleNumber = PlayerSettlementInfo.Instance!.Castles!.Count + 1;
-
-                        var xml = PlayerSettlementCastleTemplate;
-                        xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                        xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
-                        /*                         
-                          gx = -2.4141
-                          gy = -0.9198
-                         */
-                        xml = xml.Replace("{{G_POS_X}}", (MobileParty.MainParty.Position2D.X - 2.4141f).ToString());
-                        xml = xml.Replace("{{G_POS_Y}}", (MobileParty.MainParty.Position2D.Y - 0.9198f).ToString());
-                        xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
-                        xml = xml.Replace("{{PLAYER_CLAN}}", Hero.MainHero.Clan.StringId);
-                        xml = xml.Replace("{{BASE_IDENTIFIER}}", castleNumber.ToString());
-                        xml = xml.Replace("{{SETTLEMENT_NAME}}", settlementName);
-
-                        var castleItem = new PlayerSettlementItem
-                        {
-                            ItemXML = xml,
-                            Identifier = castleNumber,
-                            Type = (int) SettlementType.Castle,
-                            SettlementName = settlementName,
-                        };
-                        PlayerSettlementInfo.Instance.Castles.Add(castleItem);
-
-                        var doc = new XmlDocument();
-                        doc.LoadXml(xml);
-                        MBObjectManager.Instance.LoadXml(doc);
-
-                        var castleStringId = castleItem.GetStringId(SettlementType.Castle);
-
-                        var castleSettlement = MBObjectManager.Instance.GetObject<Settlement>(castleStringId);
-                        castleItem.Settlement = castleSettlement;
+                        var castleSettlement = CreateCastle(settlementName, culture, out PlayerSettlementItem castleItem);
 
                         castleSettlement.Town.OwnerClan = Hero.MainHero.Clan;
 
@@ -525,73 +843,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         var castle = castleSettlement.Town;
 
-
-                        bool flag = false;
-                        int num = 0;
-                        foreach (BuildingType buildingType1 in BuildingType.All)
-                        {
-                            if (buildingType1.BuildingLocation != BuildingLocation.Castle || buildingType1 == DefaultBuildingTypes.Wall)
-                            {
-                                continue;
-                            }
-                            num = MBRandom.RandomInt(0, 7);
-                            if (num < 4)
-                            {
-                                flag = false;
-                                break;
-                            }
-                            flag = true;
-                            num -= 3;
-                            if (!flag)
-                            {
-                                continue;
-                            }
-                            if (num > 3)
-                            {
-                                num = 3;
-                            }
-                            castle.Buildings.Add(new Building(buildingType1, castle, 0f, num));
-                        }
-                        foreach (BuildingType all2 in BuildingType.All)
-                        {
-                            if (castle.Buildings.Any<Building>((Building k) => k.BuildingType == all2) || all2.BuildingLocation != BuildingLocation.Castle)
-                            {
-                                continue;
-                            }
-                            castle.Buildings.Add(new Building(all2, castle, 0f, 0));
-                        }
-                        int num1 = MBRandom.RandomInt(1, 4);
-                        int num2 = 1;
-                        foreach (BuildingType buildingType2 in BuildingType.All)
-                        {
-                            if (buildingType2.BuildingLocation != BuildingLocation.Daily)
-                            {
-                                continue;
-                            }
-                            Building building = new Building(buildingType2, castle, 0f, 1);
-                            castle.Buildings.Add(building);
-                            if (num2 == num1)
-                            {
-                                building.IsCurrentlyDefault = true;
-                            }
-                            num2++;
-                        }
-                        foreach (Building building1 in
-                            from k in castle.Buildings
-                            orderby k.CurrentLevel descending
-                            select k)
-                        {
-                            if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
-                            {
-                                continue;
-                            }
-                            castle.BuildingsInProgress.Enqueue(building1);
-                        }
-
-                        if (castleSettlement.Town.CurrentDefaultBuilding == null)
-                        {
-                            BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
-                        }
+                        InitCastleBuildings(castleSettlement);
 
                         //var campaignGameStarter = SandBoxManager.Instance.GameStarter;
                         //var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
@@ -603,15 +855,116 @@ namespace BannerlordPlayerSettlement.Behaviours
                         {
                             GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, castleSettlement, Main.Settings.RequiredCastleGold, true);
                         }
+                        else
+                        {
+                            castleSettlement.SettlementComponent.ChangeGold(3_000);
+                        }
 
-                        _settlementCreated.Invoke(castleItem.Settlement);
+                        if (Main.Settings.AddInitialGarrison)
+                        {
+                            castleSettlement.AddGarrisonParty(true);
+                        }
+
+                        if (Main.Settings.AddInitialMilitia)
+                        {
+                            castleSettlement.Militia = castleSettlement.Town.MilitiaChange * 45f;
+                        }
+
+                        var campaignGameStarter = SandBoxManager.Instance.GameStarter;
+                        var rc = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is RecruitmentCampaignBehavior) as RecruitmentCampaignBehavior;
+                        if (rc is RecruitmentCampaignBehavior recruitmentCampaignBehavior)
+                        {
+                            recruitmentCampaignBehavior.NewSettlementBuilt(castleSettlement);
+                        }
+
+                        _settlementCreated.Invoke(castleSettlement);
                         SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
-                    };
+                    }
 
+                    void Apply(string settlementName, CultureObject culture)
+                    {
+                        settlementPlacementFrame = null;
+
+                        Action confirmAndApply = () =>
+                        {
+                            var createPlayerSettlementText = new TextObject("{=player_settlement_19}Build a Castle").ToString();
+                            var confirm = new TextObject("{=player_settlement_18}Are you sure you want to build your castle here?");
+
+                            InformationManager.ShowInquiry(new InquiryData(createPlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                                () =>
+                                {
+                                    InformationManager.HideInquiry();
+                                    ApplyPlaced(settlementName, culture);
+                                },
+                                () =>
+                                {
+                                    // Cancelled. Do nothing.
+                                    InformationManager.HideInquiry();
+
+                                    // If not in placement, we have to reset completely. Otherwise we can just return to placement
+                                    if (!Main.Settings!.SettlementPlacement)
+                                    {
+                                        Reset();
+                                        MapBarExtensionVM.Current?.OnRefresh();
+                                    }
+                                }), true, false);
+                        };
+
+                        Func<CultureSettlementTemplate, List<PlayerSettlementItemTemplate>> select = cst =>
+                        {
+                            var templates = new List<PlayerSettlementItemTemplate>();
+                            try
+                            {
+                                var castles = cst.Castles;
+                                for (int i = 0; i < castles; i++)
+                                {
+                                    var variant = i + 1;
+                                    var nodes = cst.Document.SelectNodes($"descendant::Settlement[@template_type='Castle']");
+                                    // [@template_variant='{variant}']
+                                    var node = nodes.OfType<XmlNode>().FirstOrDefault(n => n.Attributes["template_variant"].Value == $"{variant}");
+                                    var id = node.Attributes["id"].Value;
+                                    templates.Add(new PlayerSettlementItemTemplate
+                                    {
+                                        Id = id,
+                                        ItemXML = node,
+                                        Type = (int) SettlementType.Castle,
+                                        Variant = variant,
+                                        Culture = cst.CultureId
+                                    });
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.PrintError(e.Message, e.StackTrace);
+                            }
+                            return templates;
+                        };
+
+                        if (Main.Settings.SelectedCultureOnly && Main.Submodule!.CultureTemplates.ContainsKey(culture.StringId))
+                        {
+                            availableModels = Main.Submodule.CultureTemplates[culture.StringId].SelectMany(select).Where(this.FilterAvailableModels).ToList();
+                            currentModelOptionIdx = -1;
+                        }
+                        else
+                        {
+                            availableModels = Main.Submodule!.CultureTemplates.Values.SelectMany(c => c.SelectMany(select)).Where(this.FilterAvailableModels).ToList();
+                            currentModelOptionIdx = availableModels.FindIndex(a => a.Culture == culture.StringId) - 1;
+                        }
+
+                        if (!Main.Settings!.SettlementPlacement)
+                        {
+                            confirmAndApply();
+                            return;
+                        }
+
+                        UpdateSettlementVisualEntity(true);
+
+                        applyPending = () => confirmAndApply();
+                    }
 
                     if (Main.Settings!.ForcePlayerCulture)
                     {
-                        apply(settlementName, Hero.MainHero.Culture);
+                        Apply(settlementName, Hero.MainHero.Culture);
                         return;
                     }
 
@@ -628,17 +981,17 @@ namespace BannerlordPlayerSettlement.Behaviours
                         inquiryElements: inquiryElements1,
                         isExitShown: false,
                         maxSelectableOptionCount: 1,
-                        minSelectableOptionCount: 0,
+                        minSelectableOptionCount: 1,
                         affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
                         negativeText: null,
                         affirmativeAction: (List<InquiryElement> args) =>
                         {
                             List<InquiryElement> source = args;
-                            InformationManager.HideInquiry();
+                            //InformationManager.HideInquiry();
 
                             CultureObject culture = (args?.FirstOrDefault()?.Identifier as CultureObject) ?? Hero.MainHero.Culture;
 
-                            apply(settlementName, culture);
+                            Apply(settlementName, culture);
                         },
                         negativeAction: null,
                         soundEventPath: "")
@@ -649,21 +1002,222 @@ namespace BannerlordPlayerSettlement.Behaviours
                 () =>
                 {
                     InformationManager.HideInquiry();
+                    Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
-                }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
+                }, false, new Func<string, Tuple<bool, string>>(FactionHelper.IsKingdomNameApplicable), "", ""), true, false);
         }
 
-        private void BuildVillage(Settlement bound)
+        private static void InitCastleBuildings(Settlement castleSettlement)
         {
-            var villageNumber = PlayerSettlementInfo.Instance!.GetVillageNumber(bound, out PlayerSettlementItem? boundTarget);
-
-            if (villageNumber < 1 || boundTarget == null)
+            Town castle = castleSettlement.Town;
+            bool flag = false;
+            int num = 0;
+            foreach (BuildingType buildingType1 in BuildingType.All)
             {
-                // Not a valid village
+                if (buildingType1.BuildingLocation != BuildingLocation.Castle || buildingType1 == DefaultBuildingTypes.Wall)
+                {
+                    continue;
+                }
+                num = MBRandom.RandomInt(0, 7);
+                if (num < 4)
+                {
+                    flag = false;
+                    break;
+                }
+                flag = true;
+                num -= 3;
+                if (!flag)
+                {
+                    continue;
+                }
+                if (num > 3)
+                {
+                    num = 3;
+                }
+                castle.Buildings.Add(new Building(buildingType1, castle, 0f, num));
+            }
+            foreach (BuildingType all2 in BuildingType.All)
+            {
+                if (castle.Buildings.Any<Building>((Building k) => k.BuildingType == all2) || all2.BuildingLocation != BuildingLocation.Castle)
+                {
+                    continue;
+                }
+                castle.Buildings.Add(new Building(all2, castle, 0f, 0));
+            }
+            int num1 = MBRandom.RandomInt(1, 4);
+            int num2 = 1;
+            foreach (BuildingType buildingType2 in BuildingType.All)
+            {
+                if (buildingType2.BuildingLocation != BuildingLocation.Daily)
+                {
+                    continue;
+                }
+                Building building = new Building(buildingType2, castle, 0f, 1);
+                castle.Buildings.Add(building);
+                if (num2 == num1)
+                {
+                    building.IsCurrentlyDefault = true;
+                }
+                num2++;
+            }
+            foreach (Building building1 in
+                from k in castle.Buildings
+                orderby k.CurrentLevel descending
+                select k)
+            {
+                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
+                {
+                    continue;
+                }
+                castle.BuildingsInProgress.Enqueue(building1);
+            }
+
+            if (castleSettlement.Town.CurrentDefaultBuilding == null)
+            {
+                BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
+            }
+        }
+
+        private Settlement CreateCastle(string settlementName, CultureObject culture, out PlayerSettlementItem castleItem)
+        {
+            if (currentModelOptionIdx < 0)
+            {
+                currentModelOptionIdx = new Random().Next(0, availableModels.Count);
+            }
+
+            if (PlayerSettlementInfo.Instance!.Castles == null)
+            {
+                PlayerSettlementInfo.Instance!.Castles = new();
+            }
+
+            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+
+            var castleNumber = PlayerSettlementInfo.Instance!.Castles!.Count + 1;
+
+            // For now gate position is the same as the main position.
+            // TODO: Determine if gate position can be calculated with rotation and ensure it is a reachable terrain.
+            var gPos = atPos;
+
+            var item = availableModels[currentModelOptionIdx];
+
+            var node = item.ItemXML.CloneNode(true);
+            node.Attributes["posX"].Value = atPos.X.ToString();
+            node.Attributes["posY"].Value = atPos.Y.ToString();
+            node.Attributes["name"].Value = settlementName;
+            node.Attributes["owner"].Value = $"Faction.{Hero.MainHero.Clan.StringId}";
+            node.Attributes["culture"].Value = $"Culture.{culture.StringId}";
+
+            TextObject encyclopediaText = new TextObject("{=player_settlement_24}{SETTLEMENT_NAME} was founded by {HERO_NAME} of the {FACTION_TERM} on {BUILD_TIME}");
+            encyclopediaText.SetTextVariable("SETTLEMENT_NAME", PlayerSettlementItem.EncyclopediaLinkWithName(item.Id, new TextObject(settlementName)));
+            encyclopediaText.SetTextVariable("HERO_NAME", Hero.MainHero.EncyclopediaLinkWithName);
+            encyclopediaText.SetTextVariable("FACTION_TERM", Hero.MainHero.Clan.EncyclopediaLinkWithName);
+            encyclopediaText.SetTextVariable("BUILD_TIME", CampaignTime.Now.ToString());
+
+            if (node.Attributes["text"] == null)
+            {
+                XmlAttribute encyclopediaTextAttribute = node.OwnerDocument.CreateAttribute("text");
+                encyclopediaTextAttribute.Value = encyclopediaText.ToString();
+                node.Attributes.SetNamedItem(encyclopediaTextAttribute);
+            }
+            else
+            {
+                node.Attributes["text"].Value = encyclopediaText.ToString();
+            }
+
+            var xml = $"<Settlements>{node.OuterXml}</Settlements>";
+            xml = xml.Replace("{{G_POS_X}}", (gPos.X).ToString());
+            xml = xml.Replace("{{G_POS_Y}}", (gPos.Y).ToString());
+
+            castleItem = new PlayerSettlementItem
+            {
+                ItemXML = xml,
+                Identifier = castleNumber,
+                Type = (int) SettlementType.Castle,
+                SettlementName = settlementName,
+                RotationMat3 = settlementPlacementFrame?.rotation,
+                Version = Main.Version,
+                StringId = item.Id
+            };
+            PlayerSettlementInfo.Instance.Castles.Add(castleItem);
+
+            var doc = new XmlDocument();
+            doc.LoadXml(xml);
+            MBObjectManager.Instance.LoadXml(doc);
+
+            var castleSettlement = MBObjectManager.Instance.GetObject<Settlement>(castleItem.StringId);
+            castleItem.Settlement = castleSettlement;
+
+            return castleSettlement;
+        }
+
+        private void BuildVillage()
+        {
+            if (Main.Settings!.AutoDetermineVillageOwner)
+            {
+                BuildVillageFor(null);
                 return;
             }
 
-            if (boundTarget.Villages == null)
+            var titleText = new TextObject("{=player_settlement_22}Choose village bound settlement");
+            var descriptionText = new TextObject("{=player_settlement_23}Choose the settlement to which this village is bound");
+
+            List<InquiryElement> inquiryElements1 = GetPotentialVillageBoundOwners().Where(s => s != null).Select(c => new InquiryElement(c, c!.Name.ToString(), new ImageIdentifier(CharacterCode.CreateFrom((c.IsTown || c.IsCastle ? c.Town.Governor ?? Hero.MainHero : Hero.MainHero).CharacterObject)), true, (c.EncyclopediaText ?? c.Name).ToString())).ToList();
+
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                titleText: titleText.ToString(),
+                descriptionText: descriptionText.ToString(),
+                inquiryElements: inquiryElements1,
+                isExitShown: false,
+                maxSelectableOptionCount: 1,
+                minSelectableOptionCount: 1,
+                affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
+                negativeText: null,
+                affirmativeAction: (List<InquiryElement> args) =>
+                {
+                    List<InquiryElement> source = args;
+
+                    Settlement? settlement = (args?.FirstOrDefault()?.Identifier as Settlement);
+
+                    BuildVillageFor(settlement);
+                },
+                negativeAction: (_) =>
+                {
+                    InformationManager.HideInquiry();
+                    Reset();
+                    MapBarExtensionVM.Current?.OnRefresh();
+                },
+                soundEventPath: "")
+                ,
+                false,
+                false);
+        }
+
+
+        private void BuildVillageFor(Settlement? bound)
+        {
+            PlayerSettlementItem? boundTarget;
+            if (bound == null)
+            {
+                bound = CalculateVillageOwner(/*out boundTarget*/);
+            }
+
+            if (bound == null)
+            {
+                InformationManager.HideInquiry();
+                Reset();
+                MapBarExtensionVM.Current?.OnRefresh();
+                return;
+            }
+
+            var villageNumber = PlayerSettlementInfo.Instance!.GetVillageNumber(bound, out boundTarget);
+
+            //if (villageNumber < 1 || boundTarget == null)
+            //{
+            //    // Not a valid village
+            //    return;
+            //}
+
+            if (boundTarget != null && boundTarget.Villages == null)
             {
                 boundTarget.Villages = new();
             }
@@ -680,37 +1234,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                         settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                     }
 
-                    Action<string, CultureObject, string> apply = (string settlementName, CultureObject culture, string villageType) =>
+                    void ApplyPlaced(string settlementName, CultureObject culture, string villageType)
                     {
-                        var xml = "" + (bound.IsCastle ?
-                                            PlayerSettlementCastleVillageTemplate :
-                                            PlayerSettlementTownVillageTemplate);
-                        xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                        xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
-                        xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
-                        xml = xml.Replace("{{BASE_IDENTIFIER}}", boundTarget.Identifier.ToString());
-                        xml = xml.Replace("{{SETTLEMENT_NAME}}", settlementName);
-                        xml = xml.Replace("{{VILLAGE_NUMBER}}", villageNumber.ToString());
-                        xml = xml.Replace("{{VILLAGE_TYPE}}", villageType);
-
-                        var villageItem = new PlayerSettlementItem
-                        {
-                            ItemXML = xml,
-                            Identifier = villageNumber,
-                            Type = (int) SettlementType.Village,
-                            SettlementName = settlementName,
-
-                        };
-                        boundTarget.Villages!.Add(villageItem);
-
-                        var doc = new XmlDocument();
-                        doc.LoadXml(xml);
-                        MBObjectManager.Instance.LoadXml(doc);
-
-                        var villageStringId = villageItem.GetStringId(SettlementType.Village, boundTarget);
-
-                        var villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
-                        villageItem.Settlement = villageSettlement;
+                        Settlement villageSettlement = CreateVillage(settlementName, culture, bound, boundTarget, villageType, villageNumber, out PlayerSettlementItem villageItem);
 
                         villageSettlement.SetBound(bound);
 
@@ -735,54 +1261,149 @@ namespace BannerlordPlayerSettlement.Behaviours
                         {
                             GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, villageSettlement, Main.Settings.RequiredVillageGold, true);
                         }
+                        else
+                        {
+                            village.ChangeGold(3_000);
+                        }
 
-                        _settlementCreated.Invoke(villageItem.Settlement);
-                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
-                    };
+                        if (Main.Settings.AddInitialMilitia)
+                        {
+                            villageSettlement.Militia = villageSettlement.Village.MilitiaChange * 45f;
+                        }
 
-                    var determineVillageType = new Action<string, CultureObject>((string settlementName, CultureObject culture) =>
-                    {
-                        List<InquiryElement> inquiryElements = GetVillageTypeInquiry();
-
-                        var titleText = new TextObject("{=player_settlement_15}Choose village type");
-                        var descriptionText = new TextObject("{=player_settlement_16}Choose the type of primary product for {VILLAGE}");
-                        descriptionText.SetTextVariable("VILLAGE", settlementName);
-
-                        MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
-                            titleText: titleText.ToString(),
-                            descriptionText: descriptionText.ToString(),
-                            inquiryElements: inquiryElements,
-                            isExitShown: false,
-                            maxSelectableOptionCount: 1,
-                            minSelectableOptionCount: 0,
-                            affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
-                            negativeText: null,
-                            affirmativeAction: (List<InquiryElement> args) =>
+                        if (Main.Settings.AddInitialNotables)
+                        {
+                            int targetNotableCountForSettlement = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(villageSettlement, Occupation.RuralNotable);
+                            for (int i = 0; i < targetNotableCountForSettlement; i++)
                             {
-                                List<InquiryElement> source = args;
-                                InformationManager.HideInquiry();
+                                HeroCreator.CreateHeroAtOccupation(Occupation.RuralNotable, villageSettlement);
+                            }
+                            int num = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(villageSettlement, Occupation.Headman);
+                            for (int j = 0; j < num; j++)
+                            {
+                                HeroCreator.CreateHeroAtOccupation(Occupation.Headman, villageSettlement);
+                            }
 
-                                string villageType = (args?.FirstOrDefault()?.Identifier as VillageType)?.MeshName ?? AutoCalculateVillageType(villageNumber);
+                            PostNotablesAdded(villageSettlement);
+                        }
 
-                                apply(settlementName, culture, villageType);
-                            },
-                            negativeAction: null,
-                            soundEventPath: "")
-                        ,
-                        false,
-                        false);
-                    });
+                        float value = 0f;
+                        foreach (ValueTuple<ItemObject, float> production in village.VillageType.Productions)
+                        {
+                            float single = Campaign.Current.Models.VillageProductionCalculatorModel.CalculateDailyProductionAmount(village, production.Item1);
+                            value = value + (float) production.Item1.Value * single;
+                        }
+                        village.TradeTaxAccumulated = (int) (value * (0.6f + 0.3f * MBRandom.RandomFloat) * Campaign.Current.Models.ClanFinanceModel.RevenueSmoothenFraction());
 
+                        var campaignGameStarter = SandBoxManager.Instance.GameStarter;
+                        var b = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is VillageGoodProductionCampaignBehavior) as VillageGoodProductionCampaignBehavior;
+                        if (b is VillageGoodProductionCampaignBehavior villageGoodsProduction)
+                        {
+                            villageGoodsProduction.NewVillageBuilt(village);
+                        }
+
+                        var rc = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is RecruitmentCampaignBehavior) as RecruitmentCampaignBehavior;
+                        if (rc is RecruitmentCampaignBehavior recruitmentCampaignBehavior)
+                        {
+                            recruitmentCampaignBehavior.NewSettlementBuilt(villageSettlement);
+                        }
+
+
+                        _settlementCreated.Invoke(villageItem.Settlement!);
+                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
+                    }
+
+                    void Apply(string settlementName, CultureObject culture, string villageType)
+                    {
+                        settlementPlacementFrame = null;
+
+                        Action confirmAndApply = () =>
+                        {
+                            var createPlayerSettlementText = new TextObject("{=player_settlement_13}Build a Village").ToString();
+                            var confirm = new TextObject("{=player_settlement_14}Are you sure you want to build your village here?");
+
+                            InformationManager.ShowInquiry(new InquiryData(createPlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                                () =>
+                                {
+                                    InformationManager.HideInquiry();
+                                    ApplyPlaced(settlementName, culture, villageType);
+                                },
+                                () =>
+                                {
+                                    // Cancelled. Do nothing.
+                                    InformationManager.HideInquiry();
+
+                                    // If not in placement, we have to reset completely. Otherwise we can just return to placement
+                                    if (!Main.Settings!.SettlementPlacement)
+                                    {
+                                        Reset();
+                                        MapBarExtensionVM.Current?.OnRefresh();
+                                    }
+                                }), true, false);
+                        };
+
+
+                        Func<CultureSettlementTemplate, List<PlayerSettlementItemTemplate>> select = cst =>
+                        {
+                            var templates = new List<PlayerSettlementItemTemplate>();
+                            try
+                            {
+                                var villages = cst.Villages;
+                                for (int i = 0; i < villages; i++)
+                                {
+                                    var variant = i + 1;
+                                    var nodes = cst.Document.SelectNodes($"descendant::Settlement[@template_type='Village']");
+                                    // [@template_variant='{variant}']
+                                    var node = nodes.OfType<XmlNode>().FirstOrDefault(n => n.Attributes["template_variant"].Value == $"{variant}");
+                                    var id = node.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", bound.IsCastle ? "castle" : "town");
+                                    templates.Add(new PlayerSettlementItemTemplate
+                                    {
+                                        Id = id,
+                                        ItemXML = node,
+                                        Type = (int) SettlementType.Village,
+                                        Variant = variant,
+                                        Culture = cst.CultureId
+                                    });
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.PrintError(e.Message, e.StackTrace);
+                            }
+                            return templates;
+                        };
+
+                        if (Main.Settings.SelectedCultureOnly && Main.Submodule!.CultureTemplates.ContainsKey(culture.StringId))
+                        {
+                            availableModels = Main.Submodule.CultureTemplates[culture.StringId].SelectMany(select).Where(FilterAvailableModels).ToList();
+                            currentModelOptionIdx = -1;
+                        }
+                        else
+                        {
+                            availableModels = Main.Submodule!.CultureTemplates.Values.SelectMany(c => c.SelectMany(select)).Where(FilterAvailableModels).ToList();
+                            currentModelOptionIdx = availableModels.FindIndex(a => a.Culture == culture.StringId) - 1;
+                        }
+
+                        if (!Main.Settings!.SettlementPlacement)
+                        {
+                            confirmAndApply();
+                            return;
+                        }
+
+                        UpdateSettlementVisualEntity(true);
+
+                        applyPending = () => confirmAndApply();
+                    }
 
                     if (Main.Settings!.ForcePlayerCulture)
                     {
                         if (Main.Settings.AutoAllocateVillageType)
                         {
-                            apply(settlementName, Hero.MainHero.Culture, AutoCalculateVillageType(villageNumber));
+                            Apply(settlementName, Hero.MainHero.Culture, AutoCalculateVillageType(villageNumber));
                         }
                         else
                         {
-                            determineVillageType(settlementName, Hero.MainHero.Culture);
+                            DetermineVillageType(settlementName, Hero.MainHero.Culture, bound, boundTarget, villageNumber, Apply);
                         }
                         return;
                     }
@@ -800,7 +1421,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         inquiryElements: inquiryElements1,
                         isExitShown: false,
                         maxSelectableOptionCount: 1,
-                        minSelectableOptionCount: 0,
+                        minSelectableOptionCount: 1,
                         affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
                         negativeText: null,
                         affirmativeAction: (List<InquiryElement> args) =>
@@ -811,12 +1432,12 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                             if (Main.Settings.AutoAllocateVillageType)
                             {
-                                InformationManager.HideInquiry();
-                                apply(settlementName, culture, AutoCalculateVillageType(villageNumber));
+                                //InformationManager.HideInquiry();
+                                Apply(settlementName, culture, AutoCalculateVillageType(villageNumber));
                             }
                             else
                             {
-                                determineVillageType(settlementName, culture);
+                                DetermineVillageType(settlementName, culture, bound, boundTarget, villageNumber, Apply);
                             }
                         },
                         negativeAction: null,
@@ -828,8 +1449,268 @@ namespace BannerlordPlayerSettlement.Behaviours
                 () =>
                 {
                     InformationManager.HideInquiry();
+                    Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
-                }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
+                }, false, new Func<string, Tuple<bool, string>>(FactionHelper.IsKingdomNameApplicable), "", ""), true, false);
+        }
+
+        private void DetermineVillageType(string settlementName, CultureObject culture, Settlement? bound, PlayerSettlementItem? boundTarget, int villageNumber, Action<string, CultureObject, string> Apply)
+        {
+            List<InquiryElement> inquiryElements = GetVillageTypeInquiry();
+
+            var titleText = new TextObject("{=player_settlement_15}Choose village type");
+            var descriptionText = new TextObject("{=player_settlement_16}Choose the type of primary product for {VILLAGE}");
+            descriptionText.SetTextVariable("VILLAGE", settlementName);
+
+            MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
+                titleText: titleText.ToString(),
+                descriptionText: descriptionText.ToString(),
+                inquiryElements: inquiryElements,
+                isExitShown: false,
+                maxSelectableOptionCount: 1,
+                minSelectableOptionCount: 1,
+                affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
+                negativeText: null,
+                affirmativeAction: (List<InquiryElement> args) =>
+                {
+                    List<InquiryElement> source = args;
+                    //InformationManager.HideInquiry();
+
+                    string villageType = (args?.FirstOrDefault()?.Identifier as VillageType)?.MeshName ?? AutoCalculateVillageType(villageNumber);
+
+                    Apply(settlementName, culture, villageType);
+                },
+                negativeAction: null,
+                soundEventPath: "")
+            ,
+            false,
+            false);
+        }
+
+        private Settlement CreateVillage(string settlementName, CultureObject culture, Settlement? bound, PlayerSettlementItem? boundTarget, string villageType, int villageNumber, out PlayerSettlementItem villageItem)
+        {
+
+            if (currentModelOptionIdx < 0)
+            {
+                currentModelOptionIdx = new Random().Next(0, availableModels.Count);
+            }
+
+            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+
+            var item = availableModels[currentModelOptionIdx];
+
+            var node = item.ItemXML.CloneNode(true);
+            node.Attributes["id"].Value = item.Id;
+            node.Attributes["posX"].Value = atPos.X.ToString();
+            node.Attributes["posY"].Value = atPos.Y.ToString();
+            node.Attributes["name"].Value = settlementName;
+            node.Attributes["culture"].Value = $"Culture.{culture.StringId}";
+
+            var newNodeComponent = node.SelectSingleNode("descendant::Village");
+            newNodeComponent.Attributes["id"].Value = newNodeComponent.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", bound.IsCastle ? "castle" : "town");
+            newNodeComponent.Attributes["village_type"].Value = $"VillageType.{villageType}";
+            newNodeComponent.Attributes["bound"].Value = $"Settlement.{bound.StringId}";
+
+            TextObject encyclopediaText = new TextObject("{=player_settlement_24}{SETTLEMENT_NAME} was founded by {HERO_NAME} of the {FACTION_TERM} on {BUILD_TIME}");
+            encyclopediaText.SetTextVariable("SETTLEMENT_NAME", PlayerSettlementItem.EncyclopediaLinkWithName(item.Id, new TextObject(settlementName)));
+            encyclopediaText.SetTextVariable("HERO_NAME", Hero.MainHero.EncyclopediaLinkWithName);
+            encyclopediaText.SetTextVariable("FACTION_TERM", Hero.MainHero.Clan.EncyclopediaLinkWithName);
+            encyclopediaText.SetTextVariable("BUILD_TIME", CampaignTime.Now.ToString());
+
+            if (node.Attributes["text"] == null)
+            {
+                XmlAttribute encyclopediaTextAttribute = node.OwnerDocument.CreateAttribute("text");
+                encyclopediaTextAttribute.Value = encyclopediaText.ToString();
+                node.Attributes.SetNamedItem(encyclopediaTextAttribute);
+            }
+            else
+            {
+                node.Attributes["text"].Value = encyclopediaText.ToString();
+            }
+
+            var xml = $"<Settlements>{node.OuterXml}</Settlements>";
+
+            villageItem = new PlayerSettlementItem
+            {
+                ItemXML = xml,
+                Identifier = villageNumber,
+                Type = (int) SettlementType.Village,
+                SettlementName = settlementName,
+                RotationMat3 = settlementPlacementFrame?.rotation,
+                Version = Main.Version,
+                StringId = item.Id
+            };
+
+            if (boundTarget == null)
+            {
+                if (PlayerSettlementInfo.Instance.PlayerVillages == null)
+                {
+                    PlayerSettlementInfo.Instance.PlayerVillages = new();
+                }
+                PlayerSettlementInfo.Instance.PlayerVillages.Add(villageItem);
+            }
+            else
+            {
+                boundTarget.Villages!.Add(villageItem);
+            }
+
+            var doc = new XmlDocument();
+            doc.LoadXml(xml);
+            MBObjectManager.Instance.LoadXml(doc);
+
+            var villageSettlement = MBObjectManager.Instance.GetObject<Settlement>(villageItem.StringId);
+            villageItem.Settlement = villageSettlement;
+
+            return villageSettlement;
+        }
+
+        private void PostNotablesAdded(Settlement settlement)
+        {
+            for (int i = 0; i < settlement.Notables.Count; i++)
+            {
+                Hero item = settlement.Notables[i];
+                foreach (Hero lord in settlement.MapFaction.Lords)
+                {
+                    if (lord != item && lord == lord.Clan.Leader && lord.MapFaction == settlement.MapFaction)
+                    {
+                        float single = (float) HeroHelper.NPCPersonalityClashWithNPC(item, lord) * 0.01f * 2.5f;
+                        float randomFloat = MBRandom.RandomFloat;
+                        float mapDiagonal = Campaign.MapDiagonal;
+                        foreach (Settlement s in lord.Clan.Settlements)
+                        {
+                            float single1 = (settlement == s ? 0f : s.Position2D.Distance(settlement.Position2D));
+                            if (single1 >= mapDiagonal)
+                            {
+                                continue;
+                            }
+                            mapDiagonal = single1;
+                        }
+                        float single2 = (mapDiagonal < 100f ? 1f - mapDiagonal / 100f : 0f);
+                        float randomFloat1 = single2 * MBRandom.RandomFloat + (1f - single2);
+                        if (MBRandom.RandomFloat < 0.2f)
+                        {
+                            randomFloat1 = 1f / (0.5f + 0.5f * randomFloat1);
+                        }
+                        randomFloat *= randomFloat1;
+                        if (randomFloat > 1f)
+                        {
+                            randomFloat = 1f;
+                        }
+                        this.DetermineRelation(item, lord, randomFloat, single);
+                    }
+                    for (int j = i + 1; j < settlement.Notables.Count; j++)
+                    {
+                        Hero hero = settlement.Notables[j];
+                        float single3 = (float) HeroHelper.NPCPersonalityClashWithNPC(item, hero) * 0.01f * 2.5f;
+                        float randomFloat2 = MBRandom.RandomFloat;
+                        if (item.CharacterObject.Occupation == hero.CharacterObject.Occupation)
+                        {
+                            randomFloat2 = 1f - 0.25f * MBRandom.RandomFloat;
+                        }
+                        this.DetermineRelation(item, hero, randomFloat2, single3);
+                    }
+                }
+            }
+            int num = 50;
+            for (int i1 = 0; i1 < num; i1++)
+            {
+                foreach (Hero allAliveHero in Hero.AllAliveHeroes)
+                {
+                    if (!allAliveHero.IsNotable)
+                    {
+                        continue;
+                    }
+                    this.UpdateNotableSupport(allAliveHero);
+                }
+            }
+        }
+
+        private void UpdateNotableSupport(Hero notable)
+        {
+            if (notable.SupporterOf != null)
+            {
+                int relation = notable.GetRelation(notable.SupporterOf.Leader);
+                if (relation < 0)
+                {
+                    notable.SupporterOf = null;
+                    return;
+                }
+                if (relation < 50)
+                {
+                    float single = (float) (50 - relation) / 500f;
+                    if (MBRandom.RandomFloat < single)
+                    {
+                        notable.SupporterOf = null;
+                    }
+                }
+            }
+            else
+            {
+                foreach (Clan nonBanditFaction in Clan.NonBanditFactions)
+                {
+                    if (nonBanditFaction.Leader == null)
+                    {
+                        continue;
+                    }
+                    int num = notable.GetRelation(nonBanditFaction.Leader);
+                    if (num <= 50)
+                    {
+                        continue;
+                    }
+                    float single1 = (float) (num - 50) / 2000f;
+                    if (MBRandom.RandomFloat >= single1)
+                    {
+                        continue;
+                    }
+                    notable.SupporterOf = nonBanditFaction;
+                }
+            }
+        }
+
+
+        private void DetermineRelation(Hero hero1, Hero hero2, float randomValue, float chanceOfConflict)
+        {
+            float single = 0.3f;
+            if (randomValue < single)
+            {
+                int num = (int) ((single - randomValue) * (single - randomValue) / (single * single) * 100f);
+                if (num > 0)
+                {
+                    ChangeRelationAction.ApplyRelationChangeBetweenHeroes(hero1, hero2, num, true);
+                    return;
+                }
+            }
+            else if (randomValue > 1f - chanceOfConflict)
+            {
+                int num1 = -(int) ((randomValue - (1f - chanceOfConflict)) * (randomValue - (1f - chanceOfConflict)) / (chanceOfConflict * chanceOfConflict) * 100f);
+                if (num1 < 0)
+                {
+                    ChangeRelationAction.ApplyRelationChangeBetweenHeroes(hero1, hero2, num1, true);
+                }
+            }
+        }
+
+        private bool FilterAvailableModels(PlayerSettlementItemTemplate potentialSettlement)
+        {
+            if (PlayerSettlementInfo.Instance == null)
+            {
+                return false;
+            }
+
+            switch ((SettlementType) potentialSettlement.Type)
+            {
+                default:
+                case SettlementType.None:
+                    return false;
+                case SettlementType.Town:
+                    return !PlayerSettlementInfo.Instance.Towns.Any(t => t.Settlement?.StringId == potentialSettlement.Id);
+                case SettlementType.Village:
+                    return !((PlayerSettlementInfo.Instance.PlayerVillages?.Any(v => v.Settlement?.StringId == potentialSettlement.Id) ?? false) ||
+                              PlayerSettlementInfo.Instance.Towns.SelectMany(t => t.Villages).Any(v => v.Settlement?.StringId == potentialSettlement.Id) ||
+                              PlayerSettlementInfo.Instance.Castles.SelectMany(c => c.Villages).Any(v => v.Settlement?.StringId == potentialSettlement.Id));
+                case SettlementType.Castle:
+                    return !PlayerSettlementInfo.Instance.Castles.Any(c => c.Settlement?.StringId == potentialSettlement.Id);
+            }
         }
 
         private void BuildTown()
@@ -846,42 +1727,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                         settlementName = new TextObject("{=player_settlement_n_01}Player Settlement").ToString();
                     }
 
-                    Action<string, CultureObject> apply = (string settlementName, CultureObject culture) =>
+                    void ApplyPlaced(string settlementName, CultureObject culture)
                     {
-                        if (PlayerSettlementInfo.Instance!.Towns == null)
-                        {
-                            PlayerSettlementInfo.Instance!.Towns = new();
-                        }
-
-                        var townNumber = PlayerSettlementInfo.Instance!.Towns!.Count + 1;
-
-                        var xml = PlayerSettlementTownTemplate;
-                        xml = xml.Replace("{{POS_X}}", MobileParty.MainParty.Position2D.X.ToString());
-                        xml = xml.Replace("{{POS_Y}}", MobileParty.MainParty.Position2D.Y.ToString());
-                        xml = xml.Replace("{{G_POS_X}}", (MobileParty.MainParty.Position2D.X - 0.8578f).ToString());
-                        xml = xml.Replace("{{G_POS_Y}}", (MobileParty.MainParty.Position2D.Y - 4.2689f).ToString());
-                        xml = xml.Replace("{{PLAYER_CULTURE}}", culture.StringId);
-                        xml = xml.Replace("{{PLAYER_CLAN}}", Hero.MainHero.Clan.StringId);
-                        xml = xml.Replace("{{BASE_IDENTIFIER}}", townNumber.ToString());
-                        xml = xml.Replace("{{SETTLEMENT_NAME}}", settlementName);
-
-                        var townItem = new PlayerSettlementItem
-                        {
-                            ItemXML = xml,
-                            Identifier = townNumber,
-                            Type = (int) SettlementType.Town,
-                            SettlementName = settlementName,
-                        };
-                        PlayerSettlementInfo.Instance.Towns.Add(townItem);
-
-                        var doc = new XmlDocument();
-                        doc.LoadXml(xml);
-                        MBObjectManager.Instance.LoadXml(doc);
-
-                        var townStringId = townItem.GetStringId(SettlementType.Town);
-
-                        var townSettlement = MBObjectManager.Instance.GetObject<Settlement>(townStringId);
-                        townItem.Settlement = townSettlement;
+                        Settlement townSettlement = CreateTown(settlementName, culture, out PlayerSettlementItem townItem);
 
                         townSettlement.Town.OwnerClan = Hero.MainHero.Clan;
 
@@ -901,85 +1749,17 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         var town = townSettlement.Town;
 
-
-                        foreach (BuildingType buildingType in BuildingType.All)
-                        {
-                            if (buildingType.BuildingLocation != BuildingLocation.Settlement || buildingType == DefaultBuildingTypes.Fortifications)
-                            {
-                                continue;
-                            }
-                            var num = MBRandom.RandomInt(0, 7);
-                            bool flag;
-                            if (num < 4)
-                            {
-                                flag = false;
-                            }
-                            else
-                            {
-                                flag = true;
-                                num -= 3;
-
-                            }
-                            if (!flag)
-                            {
-                                continue;
-                            }
-                            if (num > 3)
-                            {
-                                num = 3;
-                            }
-                            town.Buildings.Add(new Building(buildingType, town, 0f, num));
-                        }
-                        foreach (BuildingType all1 in BuildingType.All)
-                        {
-                            if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1) || all1.BuildingLocation != BuildingLocation.Settlement)
-                            {
-                                continue;
-                            }
-                            town.Buildings.Add(new Building(all1, town, 0f, 0));
-                        }
-                        int num1 = MBRandom.RandomInt(1, 4);
-                        int num2 = 1;
-                        foreach (BuildingType buildingType2 in BuildingType.All)
-                        {
-                            if (buildingType2.BuildingLocation != BuildingLocation.Daily)
-                            {
-                                continue;
-                            }
-                            Building building = new Building(buildingType2, town, 0f, 1);
-                            town.Buildings.Add(building);
-                            if (num2 == num1)
-                            {
-                                building.IsCurrentlyDefault = true;
-                            }
-                            num2++;
-                        }
-                        foreach (Building building1 in
-                            from k in town.Buildings
-                            orderby k.CurrentLevel descending
-                            select k)
-                        {
-                            if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
-                            {
-                                continue;
-                            }
-                            town.BuildingsInProgress.Enqueue(building1);
-                        }
-
-                        if (townSettlement.Town.CurrentDefaultBuilding == null)
-                        {
-                            BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault(), townSettlement.Town);
-                        }
-
-                        var campaignGameStarter = SandBoxManager.Instance.GameStarter;
-                        var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
-                        craftingCampaignBehavior?.AddTown(town, out _);
+                        InitiTownBuildings(townSettlement);
 
                         townItem.BuiltAt = Campaign.CurrentTime;
 
                         if (Main.Settings!.RequireGold)
                         {
                             GiveGoldAction.ApplyForCharacterToSettlement(Hero.MainHero, townSettlement, Main.Settings.RequiredGold, true);
+                        }
+                        else
+                        {
+                            townSettlement.SettlementComponent.ChangeGold(3_000);
                         }
 
                         //if (PlayerSettlementInfo.Instance.Towns.Count == 0 || PlayerSettlementInfo.Instance.Towns.Count == 1)
@@ -988,15 +1768,173 @@ namespace BannerlordPlayerSettlement.Behaviours
                         //    // Only for first town!
                         //    UpdateUniqueGameId();
                         //}
+                        var campaignGameStarter = SandBoxManager.Instance.GameStarter;
+
+                        if (Main.Settings.AddInitialGarrison)
+                        {
+                            townSettlement.AddGarrisonParty(true);
+                        }
+
+                        if (Main.Settings.AddInitialMilitia)
+                        {
+                            townSettlement.Militia = townSettlement.Town.MilitiaChange * 45f;
+                        }
+
+                        if (Main.Settings.AddInitialNotables)
+                        {
+                            int targetNotableCountForSettlement1 = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(townSettlement, Occupation.Artisan);
+                            for (int k = 0; k < targetNotableCountForSettlement1; k++)
+                            {
+                                HeroCreator.CreateHeroAtOccupation(Occupation.Artisan, townSettlement);
+                            }
+                            int x = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(townSettlement, Occupation.Merchant);
+                            for (int l = 0; l < x; l++)
+                            {
+                                HeroCreator.CreateHeroAtOccupation(Occupation.Merchant, townSettlement);
+                            }
+                            int targetNotableCountForSettlement2 = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(townSettlement, Occupation.GangLeader);
+                            for (int m = 0; m < targetNotableCountForSettlement2; m++)
+                            {
+                                HeroCreator.CreateHeroAtOccupation(Occupation.GangLeader, townSettlement);
+                            }
+
+                            PostNotablesAdded(townSettlement);
+                        }
+
+                        foreach (ItemCategory all in ItemCategories.All)
+                        {
+                            if (!all.IsValid)
+                            {
+                                continue;
+                            }
+                            town.MarketData.AddDemand(all, 3f);
+                            town.MarketData.AddSupply(all, 2f);
+                        }
+
+                        town.MarketData.UpdateStores();
+
+                        if ((Main.Settings.AddInitialNotables) && townSettlement.Notables.Count > 0)
+                        {
+                            var b = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is WorkshopsCampaignBehavior) as WorkshopsCampaignBehavior;
+                            if (b is WorkshopsCampaignBehavior workshopsCampaignBehavior)
+                            {
+                                workshopsCampaignBehavior.NewTownBuilt(town);
+                            }
+
+                            int num0 = MBRandom.RandomInt(0, townSettlement.Alleys.Count);
+                            IEnumerable<Hero> notables =
+                                from x in townSettlement.Notables
+                                where x.IsGangLeader
+                                select x;
+                            for (int i = num0; i < num0 + 2; i++)
+                            {
+                                townSettlement.Alleys[i % townSettlement.Alleys.Count].SetOwner(notables.ElementAt<Hero>(i % notables.Count<Hero>()));
+                            }
+                        }
+
+
+                        var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault<CampaignBehaviorBase>(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
+                        craftingCampaignBehavior?.AddTown(town, out _);
+
+                        var rc = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is RecruitmentCampaignBehavior) as RecruitmentCampaignBehavior;
+                        if (rc is RecruitmentCampaignBehavior recruitmentCampaignBehavior)
+                        {
+                            recruitmentCampaignBehavior.NewSettlementBuilt(townSettlement);
+                        }
+
 
                         _settlementCreated.Invoke(townItem.Settlement);
-                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
-                    };
 
+                        //Reset();
+                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
+                    }
+
+
+                    void Apply(string settlementName, CultureObject culture)
+                    {
+                        settlementPlacementFrame = null;
+
+                        Action confirmAndApply = () =>
+                        {
+                            var createPlayerSettlementText = new TextObject("{=player_settlement_04}Build a Town").ToString();
+                            var confirm = new TextObject("{=player_settlement_05}Are you sure you want to build your town here?");
+
+                            InformationManager.ShowInquiry(new InquiryData(createPlayerSettlementText, confirm.ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
+                                () =>
+                                {
+                                    InformationManager.HideInquiry();
+                                    ApplyPlaced(settlementName, culture);
+                                },
+                                () =>
+                                {
+                                    // Cancelled. Do nothing.
+                                    InformationManager.HideInquiry();
+
+                                    // If not in placement, we have to reset completely. Otherwise we can just return to placement
+                                    if (!Main.Settings!.SettlementPlacement)
+                                    {
+                                        Reset();
+                                        MapBarExtensionVM.Current?.OnRefresh();
+                                    }
+                                }), true, false);
+                        };
+
+
+                        Func<CultureSettlementTemplate, List<PlayerSettlementItemTemplate>> select = cst =>
+                        {
+                            var templates = new List<PlayerSettlementItemTemplate>();
+                            try
+                            {
+                                var towns = cst.Towns;
+                                for (int i = 0; i < towns; i++)
+                                {
+                                    var variant = i + 1;
+                                    var nodes = cst.Document.SelectNodes($"descendant::Settlement[@template_type='Town']");
+                                    // [@template_variant='{variant}']
+                                    var node = nodes.OfType<XmlNode>().FirstOrDefault(n => n.Attributes["template_variant"].Value == $"{variant}");
+                                    var id = node.Attributes["id"].Value;
+                                    templates.Add(new PlayerSettlementItemTemplate
+                                    {
+                                        Id = id,
+                                        ItemXML = node,
+                                        Type = (int) SettlementType.Town,
+                                        Variant = variant,
+                                        Culture = cst.CultureId
+                                    });
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.PrintError(e.Message, e.StackTrace);
+                            }
+                            return templates;
+                        };
+
+                        if (Main.Settings.SelectedCultureOnly && Main.Submodule!.CultureTemplates.ContainsKey(culture.StringId))
+                        {
+                            availableModels = Main.Submodule.CultureTemplates[culture.StringId].SelectMany(select).Where(this.FilterAvailableModels).ToList();
+                            currentModelOptionIdx = -1;
+                        }
+                        else
+                        {
+                            availableModels = Main.Submodule!.CultureTemplates.Values.SelectMany(c => c.SelectMany(select)).Where(this.FilterAvailableModels).ToList();
+                            currentModelOptionIdx = availableModels.FindIndex(a => a.Culture == culture.StringId) - 1;
+                        }
+
+                        if (!Main.Settings!.SettlementPlacement)
+                        {
+                            confirmAndApply();
+                            return;
+                        }
+
+                        UpdateSettlementVisualEntity(true);
+
+                        applyPending = () => confirmAndApply();
+                    }
 
                     if (Main.Settings!.ForcePlayerCulture)
                     {
-                        apply(settlementName, Hero.MainHero.Culture);
+                        Apply(settlementName, Hero.MainHero.Culture);
                         return;
                     }
 
@@ -1013,17 +1951,17 @@ namespace BannerlordPlayerSettlement.Behaviours
                         inquiryElements: inquiryElements1,
                         isExitShown: false,
                         maxSelectableOptionCount: 1,
-                        minSelectableOptionCount: 0,
+                        minSelectableOptionCount: 1,
                         affirmativeText: GameTexts.FindText("str_ok", null).ToString(),
                         negativeText: null,
                         affirmativeAction: (List<InquiryElement> args) =>
                         {
                             List<InquiryElement> source = args;
-                            InformationManager.HideInquiry();
+                            //InformationManager.HideInquiry();
 
                             CultureObject culture = (args?.FirstOrDefault()?.Identifier as CultureObject) ?? Hero.MainHero.Culture;
 
-                            apply(settlementName, culture);
+                            Apply(settlementName, culture);
                         },
                         negativeAction: null,
                         soundEventPath: "")
@@ -1034,8 +1972,193 @@ namespace BannerlordPlayerSettlement.Behaviours
                 () =>
                 {
                     InformationManager.HideInquiry();
+                    Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
-                }, false, new Func<string, Tuple<bool, string>>(CampaignUIHelper.IsStringApplicableForHeroName), "", ""), true, false);
+                }, false, new Func<string, Tuple<bool, string>>(FactionHelper.IsKingdomNameApplicable), "", ""), true, false);
+        }
+
+        private static void InitiTownBuildings(Settlement townSettlement)
+        {
+            var town = townSettlement.Town;
+            foreach (BuildingType buildingType in BuildingType.All)
+            {
+                if (buildingType.BuildingLocation != BuildingLocation.Settlement || buildingType == DefaultBuildingTypes.Fortifications)
+                {
+                    continue;
+                }
+                var num = MBRandom.RandomInt(0, 7);
+                bool flag;
+                if (num < 4)
+                {
+                    flag = false;
+                }
+                else
+                {
+                    flag = true;
+                    num -= 3;
+
+                }
+                if (!flag)
+                {
+                    continue;
+                }
+                if (num > 3)
+                {
+                    num = 3;
+                }
+                town.Buildings.Add(new Building(buildingType, town, 0f, num));
+            }
+            foreach (BuildingType all1 in BuildingType.All)
+            {
+                if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1) || all1.BuildingLocation != BuildingLocation.Settlement)
+                {
+                    continue;
+                }
+                town.Buildings.Add(new Building(all1, town, 0f, 0));
+            }
+            int num1 = MBRandom.RandomInt(1, 4);
+            int num2 = 1;
+            foreach (BuildingType buildingType2 in BuildingType.All)
+            {
+                if (buildingType2.BuildingLocation != BuildingLocation.Daily)
+                {
+                    continue;
+                }
+                Building building = new Building(buildingType2, town, 0f, 1);
+                town.Buildings.Add(building);
+                if (num2 == num1)
+                {
+                    building.IsCurrentlyDefault = true;
+                }
+                num2++;
+            }
+            foreach (Building building1 in
+                from k in town.Buildings
+                orderby k.CurrentLevel descending
+                select k)
+            {
+                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
+                {
+                    continue;
+                }
+                town.BuildingsInProgress.Enqueue(building1);
+            }
+
+            if (townSettlement.Town.CurrentDefaultBuilding == null)
+            {
+                BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
+            }
+        }
+
+        private Settlement CreateTown(string settlementName, CultureObject culture, out PlayerSettlementItem townItem)
+        {
+            if (currentModelOptionIdx < 0)
+            {
+                currentModelOptionIdx = new Random().Next(0, availableModels.Count);
+            }
+
+            if (PlayerSettlementInfo.Instance!.Towns == null)
+            {
+                PlayerSettlementInfo.Instance!.Towns = new();
+            }
+
+            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+
+            var townNumber = PlayerSettlementInfo.Instance!.Towns!.Count + 1;
+
+            // For now gate position is the same as the main position.
+            // TODO: Determine if gate position can be calculated with rotation and ensure it is a reachable terrain.
+            var gPos = atPos;
+
+            var item = availableModels[currentModelOptionIdx];
+
+            var node = item.ItemXML.CloneNode(true);
+            node.Attributes["posX"].Value = atPos.X.ToString();
+            node.Attributes["posY"].Value = atPos.Y.ToString();
+            node.Attributes["name"].Value = settlementName;
+            node.Attributes["owner"].Value = $"Faction.{Hero.MainHero.Clan.StringId}";
+            node.Attributes["culture"].Value = $"Culture.{culture.StringId}";
+
+            TextObject encyclopediaText = new TextObject("{=player_settlement_24}{SETTLEMENT_NAME} was founded by {HERO_NAME} of the {FACTION_TERM} on {BUILD_TIME}");
+            encyclopediaText.SetTextVariable("SETTLEMENT_NAME", PlayerSettlementItem.EncyclopediaLinkWithName(item.Id, new TextObject(settlementName)));
+            encyclopediaText.SetTextVariable("HERO_NAME", Hero.MainHero.EncyclopediaLinkWithName);
+            encyclopediaText.SetTextVariable("FACTION_TERM", Hero.MainHero.Clan.EncyclopediaLinkWithName);
+            encyclopediaText.SetTextVariable("BUILD_TIME", CampaignTime.Now.ToString());
+
+            if (node.Attributes["text"] == null)
+            {
+                XmlAttribute encyclopediaTextAttribute = node.OwnerDocument.CreateAttribute("text");
+                encyclopediaTextAttribute.Value = encyclopediaText.ToString();
+                node.Attributes.SetNamedItem(encyclopediaTextAttribute);
+            }
+            else
+            {
+                node.Attributes["text"].Value = encyclopediaText.ToString();
+            }
+
+            var xml = $"<Settlements>{node.OuterXml}</Settlements>";
+            xml = xml.Replace("{{G_POS_X}}", (gPos.X).ToString());
+            xml = xml.Replace("{{G_POS_Y}}", (gPos.Y).ToString());
+
+            townItem = new PlayerSettlementItem
+            {
+                ItemXML = xml,
+                Identifier = townNumber,
+                Type = (int) SettlementType.Town,
+                SettlementName = settlementName,
+                RotationMat3 = settlementPlacementFrame?.rotation,
+                Version = Main.Version,
+                StringId = item.Id
+            };
+            PlayerSettlementInfo.Instance.Towns.Add(townItem);
+
+            var doc = new XmlDocument();
+            doc.LoadXml(xml);
+            MBObjectManager.Instance.LoadXml(doc);
+
+            var townSettlement = MBObjectManager.Instance.GetObject<Settlement>(townItem.StringId);
+            townItem.Settlement = townSettlement;
+
+            return townSettlement;
+        }
+
+        private void UpdateSettlementVisualEntity(bool forward)
+        {
+            if (forward)
+            {
+                currentModelOptionIdx += 1;
+                if (currentModelOptionIdx >= availableModels.Count)
+                {
+                    currentModelOptionIdx = 0;
+                }
+            }
+            else
+            {
+                currentModelOptionIdx -= 1;
+                if (currentModelOptionIdx < 0)
+                {
+                    currentModelOptionIdx = availableModels.Count - 1;
+                }
+            }
+
+            if (currentModelOptionIdx < 0)
+            {
+                currentModelOptionIdx = 0;
+            }
+
+            ClearEntities();
+            //settlementRotationBearing = 0f;
+            //settlementRotationVelocity = 0f;
+            settlementPlacementFrame = null;
+
+            var template = availableModels[currentModelOptionIdx];
+
+            Debug.Print($"Requesting swap model for settlement build to: {template.Id}", 2, Debug.DebugColor.Purple);
+
+            Campaign.Current.MapSceneWrapper.AddNewEntityToMapScene(template.Id, MobileParty.MainParty.Position2D);
+            var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
+            settlementVisualEntity = mapScene.GetCampaignEntityWithName(template.Id);
+            settlementVisualEntity.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor);
         }
 
         private List<InquiryElement> GetVillageTypeInquiry()
@@ -1107,22 +2230,67 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
         }
 
+        public IEnumerable<Settlement?> GetPotentialVillageBoundOwners()
+        {
+            if (PlayerSettlementInfo.Instance == null || Main.Settings == null || PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages)
+            {
+                return new List<Settlement>();
+            }
+
+            if ((Hero.MainHero?.Clan?.Settlements) != null && Hero.MainHero.Clan.Settlements.Count != 0)
+            {
+                var incompletePlayerOwnedGameSettlements = Hero.MainHero.Clan.Settlements.Where(s => (s.IsTown && (s.BoundVillages?.Count ?? 0) < Main.Settings.MaxVillagesPerTown) || (s.IsCastle && (s.BoundVillages?.Count ?? 0) < Main.Settings.MaxVillagesPerCastle));
+
+                return incompletePlayerOwnedGameSettlements ?? new List<Settlement>();
+            }
+            return new List<Settlement>();
+
+            // TODO: If player can build for previously owned but lost...
+            //if (PlayerSettlementInfo.Instance.Towns == null)
+            //{
+            //    PlayerSettlementInfo.Instance.Towns = new();
+            //}
+
+            //if (PlayerSettlementInfo.Instance.PlayerVillages == null)
+            //{
+            //    PlayerSettlementInfo.Instance.PlayerVillages = new();
+            //}
+
+            //if (PlayerSettlementInfo.Instance.Castles == null)
+            //{
+            //    PlayerSettlementInfo.Instance.Castles = new();
+            //}
+
+            //var incompleteTowns = PlayerSettlementInfo.Instance.Towns.Where(t => t.Villages.Count < Main.Settings.MaxVillagesPerTown && t.Settlement != null).Select(t => t.Settlement);
+
+            //var incompleteCastles = PlayerSettlementInfo.Instance.Castles.Where(c => c.Villages.Count < Main.Settings.MaxVillagesPerCastle && c.Settlement != null).Select(t => t.Settlement);
+
+
+
+            //return incompleteTowns.Union(incompleteCastles) ?? new List<Settlement>();
+        }
+
         static readonly FastInvokeHandler SetUniqueGameId = MethodInvoker.GetHandler(AccessTools.Property(typeof(Campaign), nameof(Campaign.UniqueGameId)).SetMethod);
         public static (string oldId, string newId) UpdateUniqueGameId()
         {
             var oldId = Campaign.Current.UniqueGameId;
             var newId = MiscHelper.GenerateCampaignId(12);
-            SetUniqueGameId(Campaign.Current, new object[] { newId });
+            SetUniqueGameId(Campaign.Current, newId);
 
             return (oldId, Campaign.Current.UniqueGameId);
         }
 
-        public SettlementType GetNextBuildType(out PlayerSettlementItem? boundTarget)
+        public Settlement? CalculateVillageOwner(/*out PlayerSettlementItem? boundTarget*/)
         {
-            if (PlayerSettlementInfo.Instance == null || Main.Settings == null)
+            if (PlayerSettlementInfo.Instance == null || Main.Settings == null || PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages)
             {
-                boundTarget = null;
-                return SettlementType.None;
+                //boundTarget = null;
+                return null;
+            }
+
+            if (PlayerSettlementInfo.Instance.PlayerVillages == null)
+            {
+                PlayerSettlementInfo.Instance.PlayerVillages = new();
             }
 
             if (PlayerSettlementInfo.Instance.Towns == null)
@@ -1130,112 +2298,35 @@ namespace BannerlordPlayerSettlement.Behaviours
                 PlayerSettlementInfo.Instance.Towns = new();
             }
 
-            if (PlayerSettlementInfo.Instance.Towns.Count == 0)
-            {
-                boundTarget = null;
-                return SettlementType.Town;
-            }
-
-            var incompleteTown = PlayerSettlementInfo.Instance.Towns.FirstOrDefault(t => t.Villages.Count < Main.Settings.MaxVillagesPerTown);
-            if (incompleteTown != null)
-            {
-                boundTarget = incompleteTown;
-                return SettlementType.Village;
-            }
-
             if (PlayerSettlementInfo.Instance.Castles == null)
             {
                 PlayerSettlementInfo.Instance.Castles = new();
             }
 
-            var incompleteCastle = PlayerSettlementInfo.Instance.Castles.FirstOrDefault(t => t.Villages.Count < Main.Settings.MaxVillagesPerCastle);
-            if (incompleteCastle != null)
+            //var incompleteTown = PlayerSettlementInfo.Instance.Towns.FirstOrDefault(t => t.Villages.Count < Main.Settings.MaxVillagesPerTown);
+            //if (incompleteTown != null)
+            //{
+            //    boundTarget = incompleteTown;
+            //    return boundTarget.Settlement;
+            //}
+
+            //var incompleteCastle = PlayerSettlementInfo.Instance.Castles.FirstOrDefault(t => t.Villages.Count < Main.Settings.MaxVillagesPerCastle);
+            //if (incompleteCastle != null)
+            //{
+            //    boundTarget = incompleteCastle;
+            //    return boundTarget.Settlement;
+            //}
+
+            if (Hero.MainHero?.Clan?.Settlements == null || Hero.MainHero.Clan.Settlements.Count == 0)
             {
-                boundTarget = incompleteCastle;
-                return SettlementType.Village;
+                //boundTarget = null;
+                return null;
             }
 
-            if (PlayerSettlementInfo.Instance.Towns.Count >= Main.Settings.MaxTowns)
-            {
-                if (PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxCastles)
-                {
-                    boundTarget = null;
-                    return SettlementType.None;
-                }
-
-                boundTarget = null;
-                return SettlementType.Castle;
-            }
-
-            if (PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxCastles)
-            {
-                boundTarget = null;
-                return SettlementType.Town;
-            }
-
-            var random = MBRandom.RandomInt(0, 100);
-            if (random <= Main.Settings.CastleChance)
-            {
-                boundTarget = null;
-                return SettlementType.Castle;
-            }
-            else
-            {
-                boundTarget = null;
-                return SettlementType.Town;
-            }
-
+            var incompletePlayerOwnedGameSettlement = Hero.MainHero.Clan.Settlements.FirstOrDefault(s => (s.IsTown && (s.BoundVillages?.Count ?? 0) < Main.Settings.MaxVillagesPerTown) || (s.IsCastle && (s.BoundVillages?.Count ?? 0) < Main.Settings.MaxVillagesPerCastle));
+            //boundTarget = null;
+            return incompletePlayerOwnedGameSettlement;
         }
         #endregion
-    }
-
-    public static class ModulePrefab
-    {
-        public static XmlDocument LoadResourceAsXML(string embedPath)
-        {
-            using var stream = typeof(ModulePrefab).Assembly.GetManifestResourceStream(embedPath);
-            if (stream is null)
-                throw new NullReferenceException($"Could not find embed resource '{embedPath}'!");
-            using var xmlReader = XmlReader.Create(stream, new XmlReaderSettings { IgnoreComments = true });
-            var doc = new XmlDocument();
-            doc.Load(xmlReader);
-            return doc;
-        }
-
-        public static string LoadModuleFile(string moduleName, params string[] filePaths)
-        {
-            string fullPath = GetModuleFilePath(moduleName, filePaths);
-
-            if (!File.Exists(fullPath))
-            {
-                throw new FileNotFoundException("Unable to find specified file", fullPath);
-            }
-
-            return File.ReadAllText(fullPath);
-        }
-
-        public static XmlDocument LoadModuleFileAsXML(string moduleName, params string[] filePaths)
-        {
-            string fullPath = GetModuleFilePath(moduleName, filePaths);
-
-            if (!File.Exists(fullPath))
-            {
-                throw new FileNotFoundException("Unable to find specified file", fullPath);
-            }
-
-            var doc = new XmlDocument();
-            doc.LoadXml(File.ReadAllText(fullPath));
-            return doc;
-        }
-
-        private static string GetModuleFilePath(string moduleName, string[] filePaths)
-        {
-            var fileSegments = new List<string>();
-            fileSegments.Add(ModuleHelper.GetModuleInfo(moduleName).FolderPath);
-            fileSegments.AddRange(filePaths);
-
-            var fullPath = Path.Combine(fileSegments.ToArray());
-            return fullPath;
-        }
     }
 }

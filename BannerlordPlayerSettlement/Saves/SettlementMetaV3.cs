@@ -35,6 +35,7 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableProperty(332)]
         public string DisplayName { get; set; }
 
+        [System.Obsolete("Replaced with `StringId`")]
         [JsonProperty]
         [SaveableProperty(333)]
         public int Identifier { get; set; }
@@ -46,6 +47,12 @@ namespace BannerlordPlayerSettlement.Saves
         [JsonProperty]
         [SaveableProperty(335)]
         public List<SettlementMetaV3> Villages { get; set; } = new();
+
+        [SaveableField(336)]
+        public string Version = null;
+
+        [SaveableField(337)]
+        public string StringId = null;
 
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-
+﻿
 using MCM.Abstractions.Attributes;
 using MCM.Abstractions.Attributes.v2;
 #if MCM_v5
@@ -23,16 +22,67 @@ namespace BannerlordPlayerSettlement
         [SettingPropertyGroup("Saves", GroupOrder = 0)]
         public bool CreateNewSave { get; set; } = false;
 
-        private const string HideButtonUntilReady_Hint = "Always hides the build town button until requirements are met.  [ Default: OFF ]";
+        private const string HideButtonUntilReady_Hint = @"Always hides the build panel until requirements are met for at least one build option. 
+When using dialogue options, only available options will show, otherwise the unavailable ones will have hints describing why they are not available.  [ Default: OFF ]";
 
         [SettingPropertyBool("Always Hide Until Ready", HintText = HideButtonUntilReady_Hint, RequireRestart = false, Order = 0, IsToggle = false)]
         [SettingPropertyGroup("User Interface", GroupOrder = 1)]
         public bool HideButtonUntilReady { get; set; } = false;
 
+        private const string ImmersiveMode_Hint = @"Always hides the build panel. Building can only be started by discussing with a companion (if enabled).  [ Default: OFF ]";
+
+        [SettingPropertyBool("Immersive Mode", HintText = ImmersiveMode_Hint, RequireRestart = false, Order = 1, IsToggle = false)]
+        [SettingPropertyGroup("User Interface")]
+        public bool ImmersiveMode { get; set; } = false;
+
+        private const string NoDialogue_Hint = @"Removes the build conversation options. Building can only be started using the build panel (if enabled).  [ Default: OFF ]";
+
+        [SettingPropertyBool("No Conversation Options", HintText = NoDialogue_Hint, RequireRestart = false, Order = 1, IsToggle = false)]
+        [SettingPropertyGroup("User Interface")]
+        public bool NoDialogue { get; set; } = false;
+
+        private const string SettlementPlacement_Hint = "Allows choosing the position and rotation to place the settlement. When disabled will use the player party current position.  [ Default: ON ]";
+
+        [SettingPropertyBool("Enable Settlement Placement", HintText = SettlementPlacement_Hint, RequireRestart = false, Order = 20, IsToggle = true)]
+        [SettingPropertyGroup("Settlement Placement", GroupOrder = 2)]
+        public bool SettlementPlacement { get; set; } = true;
+
+        private const string MouseRotationModifier_Hint = @"Speed at which mouse movement rotates settlement. 
+Settlement rotation applies when 'Alt' is held.  [ Default: 50% ]";
+
+        [SettingPropertyFloatingInteger("Mouse Rotation Speed", 0.01f, 10f, "#0%", HintText = MouseRotationModifier_Hint, RequireRestart = false, Order = 21)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public float MouseRotationModifier { get; set; } = 0.5f;
+
+        private const string KeyRotationModifier_Hint = @"Speed at which rotation keys affect settlement when rotating. 
+Default game rotation keys are 'Q' and 'E', unless remapped. 
+Settlement rotation applies when 'Alt' is held. [ Default: 100% ]";
+
+        [SettingPropertyFloatingInteger("Key Rotation Speed", 0.01f, 10f, "#0%", HintText = KeyRotationModifier_Hint, RequireRestart = false, Order = 22)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public float KeyRotationModifier { get; set; } = 1f;
+
+        private const string SelectedCultureOnly_Hint = @"Will limit settlement options to selected culture only. 
+Otherwise will allow settlement options for all cultures. 
+Cycle visually between options by holding 'Shift' and using rotation keys. 
+Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: ON ]";
+
+        [SettingPropertyBool("Selected Culture Only", HintText = SelectedCultureOnly_Hint, RequireRestart = false, Order = 23, IsToggle = false)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public bool SelectedCultureOnly { get; set; } = true;
+
+        private const string CycleSpeed_Hint = @"Speed at which settlements will visually cycle during placement while holding 'Shift' and a rotation key. 
+Cycle visually between options by holding 'Shift' and using rotation keys. 
+Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
+
+        [SettingPropertyFloatingInteger("Settlement Cycle Speed", 0.01f, 10f, "#0%", HintText = CycleSpeed_Hint, RequireRestart = false, Order = 24)]
+        [SettingPropertyGroup("Settlement Placement")]
+        public float CycleSpeed { get; set; } = 2f;
+
         private const string Enabled_Hint = "Enables Player Settlement mod and adds the option map screen.  [ Default: ON ]";
 
         [SettingPropertyBool("Enabled", HintText = Enabled_Hint, RequireRestart = true, Order = 0, IsToggle = true)]
-        [SettingPropertyGroup("Player Settlements", GroupOrder = 2)]
+        [SettingPropertyGroup("Player Settlements", GroupOrder = 3)]
         public bool Enabled { get; set; } = true;
 
         private const string RequireClanTier_Hint = "Requires clan to be specified tier before being allowed to create a settlement.  [ Default: ON ]";
@@ -95,55 +145,71 @@ namespace BannerlordPlayerSettlement
         [SettingPropertyGroup("Player Settlements")]
         public bool AutoAllocateVillageType { get; set; } = false;
 
+        private const string AutoDetermineVillageOwner_Hint = "Will automatically determine the bound town/castle for the village. By default when this is OFF, the bound settlement can be chosen.  [ Default: OFF ]";
+
+        [SettingPropertyBool("Auto Determine Village Bound Settlement", HintText = AutoDetermineVillageOwner_Hint, RequireRestart = false, Order = 11, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AutoDetermineVillageOwner { get; set; } = false;
+
         private const string RequireCastleGold_Hint = "Requires a specified cost in local currency to build new castle.  [ Default: ON ]";
 
-        [SettingPropertyBool("Require Castle Cost", HintText = RequireCastleGold_Hint, RequireRestart = false, Order = 11, IsToggle = false)]
+        [SettingPropertyBool("Require Castle Cost", HintText = RequireCastleGold_Hint, RequireRestart = false, Order = 12, IsToggle = false)]
         [SettingPropertyGroup("Player Settlements")]
         public bool RequireCastleGold { get; set; } = true;
 
-        private const string RequiredCastleGold_Hint = "Specified cost in local currency to build new castle.  [ Default: 10 000 ]";
+        private const string RequiredCastleGold_Hint = "Specified cost in local currency to build new castle.  [ Default: 7 500 ]";
 
-        [SettingPropertyInteger("Required Castle Cost", 1, 1_000_000, HintText = RequiredCastleGold_Hint, RequireRestart = false, Order = 12)]
+        [SettingPropertyInteger("Required Castle Cost", 1, 1_000_000, HintText = RequiredCastleGold_Hint, RequireRestart = false, Order = 13)]
         [SettingPropertyGroup("Player Settlements")]
-        public int RequiredCastleGold { get; set; } = 10_000;
+        public int RequiredCastleGold { get; set; } = 7_500;
 
         private const string MaxTowns_Hint = "Maximum number of player built towns allowed. At least one town is required.  [ Default: 10 ]";
 
-        [SettingPropertyInteger("Maximum Allowed Towns", 1, HardMaxTowns, HintText = MaxTowns_Hint, RequireRestart = false, Order = 13)]
+        [SettingPropertyInteger("Maximum Allowed Towns", 1, HardMaxTowns, HintText = MaxTowns_Hint, RequireRestart = false, Order = 14)]
         [SettingPropertyGroup("Player Settlements")]
         public int MaxTowns { get; set; } = HardMaxTowns;
 
         private const string MaxVillagesPerTown_Hint = "Maximum number of player built villages per town allowed.  [ Default: 5 ]";
 
-        [SettingPropertyInteger("Maximum Allowed Villages Per Town", 0, HardMaxVillagesPerTown, HintText = MaxVillagesPerTown_Hint, RequireRestart = false, Order = 14)]
+        [SettingPropertyInteger("Maximum Allowed Villages Per Town", 0, HardMaxVillagesPerTown, HintText = MaxVillagesPerTown_Hint, RequireRestart = false, Order = 15)]
         [SettingPropertyGroup("Player Settlements")]
         public int MaxVillagesPerTown { get; set; } = HardMaxVillagesPerTown;
 
         private const string MaxCastles_Hint = "Maximum number of player built castles allowed. At least one town is required first.  [ Default: 15 ]";
 
-        [SettingPropertyInteger("Maximum Allowed Castles", 0, HardMaxCastles, HintText = MaxCastles_Hint, RequireRestart = false, Order = 15)]
+        [SettingPropertyInteger("Maximum Allowed Castles", 0, HardMaxCastles, HintText = MaxCastles_Hint, RequireRestart = false, Order = 16)]
         [SettingPropertyGroup("Player Settlements")]
         public int MaxCastles { get; set; } = HardMaxCastles;
 
-        private const string HardMaxVillagesPerCastle_Hint = "Maximum number of player built villages per castle allowed.  [ Default: 4 ]";
+        private const string MaxVillagesPerCastle_Hint = "Maximum number of player built villages per castle allowed.  [ Default: 4 ]";
 
-        [SettingPropertyInteger("Maximum Allowed Villages Per Castle", 0, HardMaxVillagesPerCastle, HintText = HardMaxVillagesPerCastle_Hint, RequireRestart = false, Order = 16)]
+        [SettingPropertyInteger("Maximum Allowed Villages Per Castle", 0, HardMaxVillagesPerCastle, HintText = MaxVillagesPerCastle_Hint, RequireRestart = false, Order = 17)]
         [SettingPropertyGroup("Player Settlements")]
         public int MaxVillagesPerCastle { get; set; } = HardMaxVillagesPerCastle;
 
-        private const string CastleChance_Hint = @"Percentage used to determine chance of next build being either a town or castle. 
-Higher percentage means castle is more likely until maximum runs out. 
-Maximum village count per town or castle has to be reached before next castle or town can be built.  [ Default: 50% ]";
-
-        [SettingPropertyInteger("Castle Chance", 0, 100, HintText = CastleChance_Hint, RequireRestart = false, Order = 17)]
-        [SettingPropertyGroup("Player Settlements")]
-        public int CastleChance { get; set; } = 50;
-
         private const string SingleConstruction_Hint = "Will require in progress construction to finish before being allowed to build next settlement. By default when this is OFF, multiple settlement construction can be done at once.  [ Default: OFF ]";
 
-        [SettingPropertyBool("Single Construction At a Time", HintText = SingleConstruction_Hint, RequireRestart = false, Order = 18, IsToggle = false)]
+        [SettingPropertyBool("Single Construction At a Time", HintText = SingleConstruction_Hint, RequireRestart = false, Order = 19, IsToggle = false)]
         [SettingPropertyGroup("Player Settlements")]
         public bool SingleConstruction { get; set; } = false;
+
+        private const string AddInitialGarrison_Hint = "Will add an initial garrison for new towns and castles.  [ Default: ON ]";
+
+        [SettingPropertyBool("Add Initial Garrison", HintText = AddInitialGarrison_Hint, RequireRestart = false, Order = 20, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AddInitialGarrison { get; set; } = true;
+
+        private const string AddInitialMilitia_Hint = "Will add initial militia for new settlements.  [ Default: ON ]";
+
+        [SettingPropertyBool("Add Initial Militia", HintText = AddInitialMilitia_Hint, RequireRestart = false, Order = 21, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AddInitialMilitia { get; set; } = true;
+
+        private const string AddInitialNotables_Hint = "Will add initial notables for new towns and villages.  [ Default: ON ]";
+
+        [SettingPropertyBool("Add Initial Notables", HintText = AddInitialNotables_Hint, RequireRestart = false, Order = 22, IsToggle = false)]
+        [SettingPropertyGroup("Player Settlements")]
+        public bool AddInitialNotables { get; set; } = true;
 
         // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
         public const int HardMaxTowns = 10;
@@ -151,6 +217,8 @@ Maximum village count per town or castle has to be reached before next castle or
                
         public const int HardMaxCastles = 15;
         public const int HardMaxVillagesPerCastle = 4;
+
+        public const int HardMaxVillages = (HardMaxTowns * HardMaxVillagesPerTown) + (HardMaxCastles * HardMaxVillagesPerCastle);
 
     }
 }

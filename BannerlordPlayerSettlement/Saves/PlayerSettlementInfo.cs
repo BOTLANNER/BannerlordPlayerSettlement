@@ -5,8 +5,6 @@ using System.Linq;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Utils;
 
-using HarmonyLib;
-
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.Settlements;
@@ -75,7 +73,8 @@ namespace BannerlordPlayerSettlement.Saves
         //    }
         //}
 
-        [System.Obsolete("Replaced with `Towns[0].Villages`")]
+        // Reintroduced for additional villages added to base game towns
+        //[System.Obsolete("Replaced with `Towns[0].Villages`")]
         [SaveableField(111)]
         public List<PlayerSettlementItem>? PlayerVillages = new List<PlayerSettlementItem>();
 
@@ -86,6 +85,11 @@ namespace BannerlordPlayerSettlement.Saves
 
         [SaveableField(212)]
         public List<PlayerSettlementItem> Castles = new List<PlayerSettlementItem>();
+
+        public int TotalVillages => (Towns?.SelectMany(t => t.Villages ?? new()) ?? new List<PlayerSettlementItem>()).Concat(
+                                     Castles?.SelectMany(c => c.Villages ?? new()) ?? new List<PlayerSettlementItem>()).Concat(
+                                     PlayerVillages ?? new List<PlayerSettlementItem>())
+                                    .Count();
 
         public PlayerSettlementInfo()
         {
@@ -121,6 +125,7 @@ namespace BannerlordPlayerSettlement.Saves
                         Villages = new()
                     };
 
+                    // Old v2 version of player villages
                     if (PlayerVillages != null)
                     {
                         for (int i = 0; i < PlayerVillages.Count; i++)
@@ -135,7 +140,7 @@ namespace BannerlordPlayerSettlement.Saves
                                 Type = (int) SettlementType.Village,
                                 ItemIdentifier = $"{PlayerSettlementIdentifier}_village_{villageNumber}",
                                 ItemXML = v.ItemXML, //?.Replace(PlayerSettlementIdentifier, "player_settlement_town_1"),
-                                Settlement = PlayerSettlement,
+                                Settlement = v.Settlement,
                                 SettlementName = v.SettlementName,
                                 // N/A
                                 Villages = new()
@@ -147,7 +152,7 @@ namespace BannerlordPlayerSettlement.Saves
                     Towns.Add(town);
 
                     PlayerSettlement = null;
-                    PlayerVillages = null;
+                    PlayerVillages = new();
                 }
 
                 var campaignGameStarter = SandBoxManager.Instance.GameStarter;
@@ -168,6 +173,33 @@ namespace BannerlordPlayerSettlement.Saves
                 Debug.SetCrashReportCustomStack(e.StackTrace);
                 InformationManager.DisplayMessage(new InformationMessage(e.ToString(), Colours.Error));
             }
+        }
+
+        public PlayerSettlementItem? FindSettlement(Settlement settlement)
+        {
+            if (settlement == null)
+            {
+                return null;
+            }
+
+            if (settlement.IsTown)
+            {
+                return Towns?.FirstOrDefault(t => t.Settlement == settlement);
+            }
+
+            if (settlement.IsCastle)
+            {
+                return Castles?.FirstOrDefault(c => c.Settlement == settlement);
+            }
+
+            if (settlement.IsVillage)
+            {
+                return PlayerVillages?.FirstOrDefault(v => v.Settlement == settlement) ??
+                       Towns.SelectMany(t => t.Villages)?.FirstOrDefault(v => v.Settlement == settlement) ??
+                       Castles.SelectMany(c => c.Villages)?.FirstOrDefault(v => v.Settlement == settlement);
+            }
+
+            return null;
         }
 
         public int GetVillageNumber(Settlement bound, out PlayerSettlementItem? target)

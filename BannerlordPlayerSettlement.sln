@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.32929.386
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BannerlordPlayerSettlement", "BannerlordPlayerSettlement\BannerlordPlayerSettlement.csproj", "{D5764738-FF99-4F5B-9FA3-C9338D6C0F3D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlayerSettlementPrefabGenerator", "PlayerSettlementPrefabGenerator\PlayerSettlementPrefabGenerator.csproj", "{62A95412-3AD9-47B2-85E2-7D17B12E4CE2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlayerSettlementPrefabGenerator", "PlayerSettlementPrefabGenerator\PlayerSettlementPrefabGenerator.csproj", "{62A95412-3AD9-47B2-85E2-7D17B12E4CE2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

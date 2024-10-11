@@ -1,8 +1,20 @@
 {
   "profiles": {
-    "PlayerSettlementPrefabGenerator": {
+    "Vanilla": {
       "commandName": "Project",
-      "commandLineArgs": "10 5 15 4"
+      "commandLineArgs": "\"Modules/SandBox/ModuleData/settlements.xml\" \"Modules/SandBox/SceneObj/Main_map/scene.xscene\" 10 5 15 4 \"_default\""
+    },
+    "RoT": {
+      "commandName": "Project",
+      "commandLineArgs": "\"Modules/ROT-Map/ModuleData/settlements.xml\" \"Modules/ROT-Map/SceneObj/modded_main_map/scene.xscene\" 10 5 15 4 \"_RoT\""
+    },
+    "Lemmy": {
+      "commandName": "Project",
+      "commandLineArgs": "\"Modules/Europe_LemmyProject/ModuleData/settlements.xml\" \"Modules/Europe_LemmyProject/SceneObj/ECM_129C/scene.xscene\" 10 5 15 4 \"_Lemmy\""
+    },
+    "Europe1100": {
+      "commandName": "Project",
+      "commandLineArgs": "\"Modules/Europe1100/ModuleData/settlements/settlements.xml|Modules/Europe1100/ModuleData/settlements/settlements_new.xml\" \"Modules/Europe1100/SceneObj/ECM_129C/scene.xscene\" 10 5 15 4 \"_Europe1100\""
     }
   }
 }

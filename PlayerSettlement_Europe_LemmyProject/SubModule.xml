@@ -1,0 +1,43 @@
+﻿<Module>
+  <Name value="Player Settlement: Europe Lemmy Project"/>
+  <Id value="PlayerSettlement_Europe_LemmyProject"/>
+  <Version value="v1.0.0"/>
+  <Url value="https://www.nexusmods.com/mountandblade2bannerlord/mods/7298" />
+  <SingleplayerModule value="true"/>
+  <MultiplayerModule value="false"/>
+  <Official value="false"/>
+  <DefaultModule value="false" />
+  <ModuleCategory value="Singleplayer" />
+  <ModuleType value="Community" />
+  <UpdateInfo value="NexusMods:7298" />
+  <!-- Used by PlayerSettlement to dynamically add more settlement variants -->
+  <PlayerSettlementsTemplates path="ModuleData/Player_Settlement_Templates" />
+  <DependedModules>
+    <DependedModule Id="Bannerlord.Harmony" />
+    <DependedModule Id="Bannerlord.ButterLib" />
+    <DependedModule Id="Bannerlord.UIExtenderEx" />
+    <DependedModule Id="Bannerlord.MBOptionScreen" />
+    <DependedModule Id="Native"/>
+    <DependedModule Id="SandBoxCore"/>
+    <DependedModule Id="Sandbox"/>
+    <DependedModule Id="StoryMode" />
+    <DependedModule Id="Europe_LemmyProject" />
+    <DependedModule Id="PlayerSettlement" />
+  </DependedModules>
+  <!-- Community Metadata -->
+  <DependedModuleMetadatas>
+    <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" version="v2.2.2" />
+    <DependedModuleMetadata id="Bannerlord.ButterLib" order="LoadBeforeThis" version="v2.8.15" />
+    <DependedModuleMetadata id="Bannerlord.UIExtenderEx" order="LoadBeforeThis" version="v2.12.0" />
+    <DependedModuleMetadata id="Bannerlord.MBOptionScreen" order="LoadBeforeThis" version="v5.10.1" />
+    <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="1.0.0.*" />
+    <DependedModuleMetadata id="SandBoxCore" order="LoadBeforeThis" version="1.0.0.*" />
+    <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="1.0.0.*" />
+    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="1.0.0.*" />
+    <DependedModuleMetadata id="CustomBattle" order="LoadBeforeThis" version="1.0.0.*" optional="true" />
+    <DependedModuleMetadata id="Europe_LemmyProject" order="LoadBeforeThis" version="v1.2.10" />
+    <DependedModuleMetadata id="PlayerSettlement" order="LoadBeforeThis" version="v4.0.0" />
+  </DependedModuleMetadatas>
+  <SubModules />
+  <Xmls />
+</Module>

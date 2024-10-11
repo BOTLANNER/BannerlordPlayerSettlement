@@ -3,12 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
-using SandBox.Missions.MissionLogics;
 using SandBox.Missions.MissionLogics.Towns;
 using SandBox.Objects.AreaMarkers;
 
@@ -19,8 +17,6 @@ using TaleWorlds.CampaignSystem.Settlements.Workshops;
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.MountAndBlade.Objects;
-using TaleWorlds.MountAndBlade.Source.Objects;
 
 namespace BannerlordPlayerSettlement.Patches
 {

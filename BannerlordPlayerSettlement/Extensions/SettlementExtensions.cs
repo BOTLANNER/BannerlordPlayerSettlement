@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Saves;
 
 using HarmonyLib;
 
@@ -49,6 +45,27 @@ namespace BannerlordPlayerSettlement.Extensions
             if (string.IsNullOrEmpty(stringId))
             {
                 return false;
+            }
+
+            if (PlayerSettlementInfo.Instance != null)
+            {
+                var isPlayerTown = PlayerSettlementInfo.Instance.Towns.Any(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
+                if (isPlayerTown)
+                {
+                    return true;
+                }
+                var isPlayerCastle = PlayerSettlementInfo.Instance.Towns.Any(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
+                if (isPlayerCastle)
+                {
+                    return true;
+                }
+                var isPlayerVillage = (PlayerSettlementInfo.Instance.PlayerVillages?.Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ?? false) ||
+                                       PlayerSettlementInfo.Instance.Towns.SelectMany(t => t.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ||
+                                       PlayerSettlementInfo.Instance.Castles.SelectMany(c => c.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId);
+                if (isPlayerVillage)
+                {
+                    return true;
+                }
             }
 
             return stringId!.StartsWith("player_settlement_town_") || stringId!.StartsWith("player_settlement_castle_");

@@ -1,0 +1,4 @@
+﻿<VisualDefinition Name="PlayerSettlementInfoBar" TransitionDuration="0.45" EaseIn="true">
+  <VisualState PositionYOffset="-31" PositionXOffset="-458" State="Default" />
+  <VisualState PositionYOffset="0" PositionXOffset="-100" State="Extended" />
+</VisualDefinition>

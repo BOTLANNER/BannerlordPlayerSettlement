@@ -7,8 +7,6 @@ using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Utils;
 
-using Newtonsoft.Json;
-
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Library;
@@ -150,6 +148,7 @@ namespace BannerlordPlayerSettlement.Saves
                 SavedModuleVersion = Main.Version,
                 Towns = new(),
                 Castles = new(),
+                ExtraVillages = new()
             };
 
             //if (playerSettlement != null)

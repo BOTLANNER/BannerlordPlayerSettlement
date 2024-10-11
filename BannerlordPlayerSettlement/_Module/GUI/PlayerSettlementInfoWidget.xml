@@ -1,0 +1,90 @@
+﻿<PlayerSettlementInfoWidget VisualDefinition="PlayerSettlementInfoBar" DataSource="{PlayerSettlementInfo}" Id="PlayerSettlementOptions" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="541" SuggestedHeight="99" HorizontalAlignment="Left" VerticalAlignment="Top" PositionYOffset="-31" Sprite="MapBar\mapbar_right_frame" ExtendButtonWidget="ExtendPlayerSettlementsButtonWidget" IsInfoBarExtended="@IsInfoBarExtended" IsVisible="@IsOverallVisible" VerticalFlip="true" HorizontalFlip="true" >
+  <Children>
+
+    <NavigationScopeTargeter ScopeID="MapBarPlayerSettlementTopInfoBarScope" ScopeParent="..\PlayerSettlementTopInfoBar" ScopeMovements="Horizontal" ExtendDiscoveryAreaLeft="-60" RightNavigationScope="MapBarCenterPanelScope" NavigateFromScopeEdges="true" UseDiscoveryAreaAsScopeEdges="true" />
+    <ListPanel Id="PlayerSettlementTopInfoBar" DoNotAcceptEvents="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="381" SuggestedHeight="40" HorizontalAlignment="Center" VerticalAlignment="Top" MarginLeft="100" MarginTop="20" >
+      <Children>
+
+        <Widget DataSource="{PlayerTownBuildInfo}"  Id="CreatePlayerTown" HeightSizePolicy ="CoverChildren" WidthSizePolicy="CoverChildren" MarginRight="35" DoNotAcceptEvents="true" >
+          <Children>
+
+            <HintWidget DataSource="{\DisableHint}" DoNotAcceptEvents="false" WidthSizePolicy="Fixed" SuggestedWidth="80" SuggestedHeight="40" HorizontalAlignment="Right" VerticalAlignment="Center" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" />
+
+            <ListPanel DoNotAcceptEvents="true" WidthSizePolicy="CoverChildren" HeightSizePolicy="Fixed" SuggestedHeight="40" HorizontalAlignment="Right" VerticalAlignment="Center">
+              <Children>
+
+                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="80" SuggestedHeight="40" DoNotPassEventsToChildren="true" VerticalAlignment="Center" HorizontalAlignment="Right" Command.Click="ExecuteCreatePlayerSettlement" Brush="ButtonBrush1" UpdateChildrenStates="true" IsEnabled="@IsCreatePlayerSettlementAllowed">
+                  <Children>
+
+                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Popup.Button.Text" Text="@CreatePlayerSettlementText" Brush.FontSize="12" />
+
+                  </Children>
+                </ButtonWidget>
+
+              </Children>
+            </ListPanel>
+
+          </Children>
+        </Widget>
+
+        <Widget DataSource="{PlayerVillageBuildInfo}"  Id="CreatePlayerVillage" HeightSizePolicy ="CoverChildren" WidthSizePolicy="CoverChildren" MarginRight="35" DoNotAcceptEvents="true" >
+          <Children>
+
+            <HintWidget DataSource="{\DisableHint}" DoNotAcceptEvents="false" WidthSizePolicy="Fixed" SuggestedWidth="80" SuggestedHeight="40" HorizontalAlignment="Right" VerticalAlignment="Center" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" />
+
+            <ListPanel DoNotAcceptEvents="true" WidthSizePolicy="CoverChildren" HeightSizePolicy="Fixed" SuggestedHeight="40" HorizontalAlignment="Right" VerticalAlignment="Center">
+              <Children>
+
+                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="80" SuggestedHeight="40" DoNotPassEventsToChildren="true" VerticalAlignment="Center" HorizontalAlignment="Right" Command.Click="ExecuteCreatePlayerSettlement" Brush="ButtonBrush1" UpdateChildrenStates="true" IsEnabled="@IsCreatePlayerSettlementAllowed">
+                  <Children>
+
+                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Popup.Button.Text" Text="@CreatePlayerSettlementText" Brush.FontSize="12" />
+
+                  </Children>
+                </ButtonWidget>
+
+              </Children>
+            </ListPanel>
+
+          </Children>
+        </Widget>
+
+        <Widget DataSource="{PlayerCastleBuildInfo}"  Id="CreatePlayerCastle" HeightSizePolicy ="CoverChildren" WidthSizePolicy="CoverChildren" DoNotAcceptEvents="true" >
+          <Children>
+
+            <HintWidget DataSource="{\DisableHint}" DoNotAcceptEvents="false" WidthSizePolicy="Fixed" SuggestedWidth="80" SuggestedHeight="40" HorizontalAlignment="Right" VerticalAlignment="Center" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" />
+
+            <ListPanel DoNotAcceptEvents="true" WidthSizePolicy="CoverChildren" HeightSizePolicy="Fixed" SuggestedHeight="40" HorizontalAlignment="Right" VerticalAlignment="Center">
+              <Children>
+
+                <ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="80" SuggestedHeight="40" DoNotPassEventsToChildren="true" HorizontalAlignment="Right" VerticalAlignment="Center" Command.Click="ExecuteCreatePlayerSettlement" Brush="ButtonBrush1" UpdateChildrenStates="true" IsEnabled="@IsCreatePlayerSettlementAllowed">
+                  <Children>
+
+                    <TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="Popup.Button.Text" Text="@CreatePlayerSettlementText"  Brush.FontSize="12" />
+
+                  </Children>
+                </ButtonWidget>
+
+              </Children>
+            </ListPanel>
+
+          </Children>
+        </Widget>
+
+      </Children>
+    </ListPanel>
+
+    <NavigationScopeTargeter ScopeID="MapBarExtendPlayerSettlementsButtonScope" ScopeParent="..\ExtendPlayerSettlementsButtonWidget" ScopeMovements="Horizontal" FollowMobileTargets="true" LeftNavigationScope="MapBarRightPanelTopInfoBarScope" />
+
+    <HintWidget DataSource="{\DisableHint}" DoNotAcceptEvents="false" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="41" SuggestedHeight="34" HorizontalAlignment="Right" VerticalAlignment="Bottom" MarginBottom="30" MarginRight="41" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" />
+
+    <ButtonWidget IsEnabled="@IsOverallAllowed" Id="ExtendPlayerSettlementsButtonWidget" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="41" SuggestedHeight="34" HorizontalAlignment="Right" VerticalAlignment="Bottom" MarginBottom="30" MarginRight="41" Brush="PlayerSettlementInfoExtendButtonBrush" GamepadNavigationIndex="0">
+      <Children>
+        <HintWidget DataSource="{ExtendHint}" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Command.HoverBegin="ExecuteBeginHint" Command.HoverEnd="ExecuteEndHint" IsDisabled="true" />
+      </Children>
+    </ButtonWidget>
+
+    <MapInfoSilhouetteWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="MapBar.Silhouette.Right" CurrentScreen="@CurrentScreen" IsEnabled="false" />
+
+  </Children>
+</PlayerSettlementInfoWidget>

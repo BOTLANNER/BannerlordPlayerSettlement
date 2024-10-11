@@ -28,5 +28,10 @@
         <string id="player_settlement_22" text="Choose village bound settlement" />
         <string id="player_settlement_23" text="Choose the settlement to which this village is bound" />
         <string id="player_settlement_24" text="{SETTLEMENT_NAME} was founded by {HERO_NAME} of the {FACTION_TERM} on {BUILD_TIME}" />
+        <string id="player_settlement_25" text="I would like to review my options for building a settlement." />
+        <string id="player_settlement_26" text="We should build a town." />
+        <string id="player_settlement_27" text="We should build a village." />
+        <string id="player_settlement_28" text="We should build a castle." />
+        <string id="player_settlement_29" text="Nevermind." />
     </strings>
 </base>

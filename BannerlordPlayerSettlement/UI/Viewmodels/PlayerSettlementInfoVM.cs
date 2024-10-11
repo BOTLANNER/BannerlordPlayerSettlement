@@ -103,10 +103,12 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
         {
             get
             {
-                return !forceHide &&
-                    ((this.PlayerCastleBuildInfo?.IsCreatePlayerSettlementVisible ?? false) ||
-                    (this.PlayerTownBuildInfo?.IsCreatePlayerSettlementVisible ?? false) ||
-                    (this.PlayerVillageBuildInfo?.IsCreatePlayerSettlementVisible ?? false));
+                return Main.Settings != null &&
+                      !Main.Settings.ImmersiveMode && 
+                      !forceHide &&
+                     ((this.PlayerCastleBuildInfo?.IsCreatePlayerSettlementVisible ?? false) ||
+                     (this.PlayerTownBuildInfo?.IsCreatePlayerSettlementVisible ?? false) ||
+                     (this.PlayerVillageBuildInfo?.IsCreatePlayerSettlementVisible ?? false));
             }
         }
 
@@ -123,7 +125,7 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
                         textObject.SetTextVariable("CASTLE_REASON", _playerCastleBuildInfo?.DisableHint?.HintText?.ToString() ?? " - ");
                         textObject.SetTextVariable("TOWN_REASON", _playerTownBuildInfo?.DisableHint?.HintText?.ToString() ?? " - ");
                         textObject.SetTextVariable("VILLAGE_REASON", _playerVillageBuildInfo?.DisableHint?.HintText?.ToString() ?? " - ");
-                        _disableReasonHint = new HintViewModel(textObject);                        
+                        _disableReasonHint = new HintViewModel(textObject);
                     }
                     return _disableReasonHint;
                 }

@@ -122,7 +122,7 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
         {
             TextObject? disableReason = null;
 
-            if (Main.Settings == null || PlayerSettlementInfo.Instance == null || PlayerSettlementBehaviour.Instance == null || Settlement.CurrentSettlement != null)
+            if (Main.Settings == null || PlayerSettlementInfo.Instance == null || PlayerSettlementBehaviour.Instance == null /*|| Settlement.CurrentSettlement != null*/)
             {
                 disableReason = new TextObject();
                 IsCreatePlayerSettlementAllowed = false;
@@ -150,13 +150,13 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
                 IsCreatePlayerSettlementAllowed = false;
                 IsCreatePlayerSettlementVisible = false;
             }
-            else if (settlementType == SettlementType.Castle && PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxTowns)
+            else if (settlementType == SettlementType.Castle && PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxCastles)
             {
                 disableReason ??= new TextObject("{=player_settlement_h_09}Maximum number of castles have been built");
                 IsCreatePlayerSettlementAllowed = false;
                 IsCreatePlayerSettlementVisible = false;
             }
-            else if (settlementType == SettlementType.Village && PlayerSettlementInfo.Instance.TotalVillages >= Main.Settings.HardMaxVillages)
+            else if (settlementType == SettlementType.Village && PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages)
             {
                 disableReason ??= new TextObject("{=player_settlement_h_10}Maximum number of villages have been built");
                 IsCreatePlayerSettlementAllowed = false;

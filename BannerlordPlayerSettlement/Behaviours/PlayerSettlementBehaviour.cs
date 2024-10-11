@@ -20,6 +20,7 @@ using SandBox.View.Map;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
+using TaleWorlds.CampaignSystem.Conversation;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.GameMenus;
@@ -32,6 +33,7 @@ using TaleWorlds.Core;
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
+using TaleWorlds.MountAndBlade;
 using TaleWorlds.ObjectSystem;
 using TaleWorlds.ScreenSystem;
 
@@ -88,7 +90,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 }
                 return PlayerSettlementInfo.Instance.Towns.Count >= Main.Settings.MaxTowns &&
                        PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxCastles &&
-                       PlayerSettlementInfo.Instance.TotalVillages >= Main.Settings.HardMaxVillages;
+                       PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages;
             }
         }
 
@@ -205,6 +207,98 @@ namespace BannerlordPlayerSettlement.Behaviours
         private void OnSessionLaunched(CampaignGameStarter starter)
         {
             this.SetupGameMenus(starter);
+
+            this.SetupConversationDialogues(starter);
+        }
+
+        private void SetupConversationDialogues(CampaignGameStarter starter)
+        {
+            starter.AddPlayerLine("player_settlement_build_options_intro", "hero_main_options", "player_settlement_build_options_response", "{=player_settlement_25}I would like to review my options for building a settlement.", new ConversationSentence.OnConditionDelegate(this.conv_build_start_condition), null, 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_start_clickable), null);
+            starter.AddDialogLine("player_settlement_build_options_response_dialogue", "player_settlement_build_options_response", "player_settlement_build_options_choices", "{=k7ebznzr}Yes?", null, null, 100, null);
+            starter.AddPlayerLine("player_settlement_build_town", "player_settlement_build_options_choices", "close_window", "{=player_settlement_26}We should build a town.", new ConversationSentence.OnConditionDelegate(this.conv_build_town_condition), new ConversationSentence.OnConsequenceDelegate(() => this.conv_build_consequence(SettlementType.Town)), 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_town_clickable), null);
+            starter.AddPlayerLine("player_settlement_build_village", "player_settlement_build_options_choices", "close_window", "{=player_settlement_27}We should build a village.", new ConversationSentence.OnConditionDelegate(this.conv_build_village_condition), new ConversationSentence.OnConsequenceDelegate(() => this.conv_build_consequence(SettlementType.Village)), 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_village_clickable), null);
+            starter.AddPlayerLine("player_settlement_build_castle", "player_settlement_build_options_choices", "close_window", "{=player_settlement_28}We should build a castle.", new ConversationSentence.OnConditionDelegate(this.conv_build_castle_condition), new ConversationSentence.OnConsequenceDelegate(() => this.conv_build_consequence(SettlementType.Castle)), 100, new ConversationSentence.OnClickableConditionDelegate(this.conv_build_castle_clickable), null);
+            starter.AddPlayerLine("player_settlement_build_nothing", "player_settlement_build_options_choices", "close_window", "{=player_settlement_29}Nevermind.", null, null, 100, null, null);
+        }
+
+        private bool conv_build_castle_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerCastleBuildInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerCastleBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_castle_condition()
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            return (Main.Settings != null && !Main.Settings.HideButtonUntilReady) || (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerCastleBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_village_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerVillageBuildInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerVillageBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_village_condition()
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            return (Main.Settings != null && !Main.Settings.HideButtonUntilReady) || (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerVillageBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_town_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerTownBuildInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerTownBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_town_condition()
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            return (Main.Settings != null && !Main.Settings.HideButtonUntilReady) || (MapBarExtensionVM.Current?.PlayerSettlementInfo?.PlayerTownBuildInfo?.IsCreatePlayerSettlementAllowed ?? false);
+        }
+
+        private bool conv_build_start_clickable(out TextObject? explanation)
+        {
+            MapBarExtensionVM.Current?.OnRefresh();
+            explanation = MapBarExtensionVM.Current?.PlayerSettlementInfo?.DisableHint?.HintText ?? null;
+            return (MapBarExtensionVM.Current?.PlayerSettlementInfo?.IsOverallAllowed ?? false);
+        }
+
+        private bool conv_build_start_condition()
+        {
+            if (Hero.OneToOneConversationHero == null || Hero.OneToOneConversationHero.Clan != Clan.PlayerClan)
+            {
+                return false;
+            }
+
+            if (Main.Settings == null || Main.Settings.NoDialogue)
+            {
+                return false;
+            }
+
+            MapBarExtensionVM.Current?.OnRefresh();
+            return Main.Settings != null && Main.Settings.Enabled &&
+                 (!Main.Settings.HideButtonUntilReady ||
+                  (MapBarExtensionVM.Current?.PlayerSettlementInfo?.IsOverallAllowed ?? false));
+        }
+
+        private void conv_build_consequence(SettlementType settlementType)
+        {
+            SettlementRequest = settlementType;
+
+            MapBarExtensionVM.Current?.OnRefresh();
+
+            Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
+
+            Mission.Current?.EndMission();
+
+            if (PlayerEncounter.Current != null)
+            {
+                PlayerEncounter.LeaveEncounter = true;
+            }
         }
 
         public void SetupGameMenus(CampaignGameStarter campaignGameSystemStarter)
@@ -683,6 +777,12 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             if (Main.Settings != null && Main.Settings.Enabled && PlayerSettlementInfo.Instance != null)
             {
+                if (Settlement.CurrentSettlement != null || Hero.MainHero.IsPrisoner || PlayerEncounter.Current != null || Mission.Current != null)
+                {
+                    // Build will only occur after leaving settlement, being freed, finishing encounter and not being in a mission
+                    return;
+                }
+
                 if (SettlementRequest == SettlementType.Town)
                 {
                     Reset();
@@ -1729,7 +1829,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             for (int i = num0; i < num0 + 2; i++)
                             {
                                 townSettlement.Alleys[i % townSettlement.Alleys.Count].SetOwner(notables.ElementAt<Hero>(i % notables.Count<Hero>()));
-                            } 
+                            }
                         }
 
 
@@ -2132,7 +2232,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         public IEnumerable<Settlement?> GetPotentialVillageBoundOwners()
         {
-            if (PlayerSettlementInfo.Instance == null || Main.Settings == null || PlayerSettlementInfo.Instance.TotalVillages >= Main.Settings.HardMaxVillages)
+            if (PlayerSettlementInfo.Instance == null || Main.Settings == null || PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages)
             {
                 return new List<Settlement>();
             }
@@ -2182,7 +2282,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         public Settlement? CalculateVillageOwner(/*out PlayerSettlementItem? boundTarget*/)
         {
-            if (PlayerSettlementInfo.Instance == null || Main.Settings == null || PlayerSettlementInfo.Instance.TotalVillages >= Main.Settings.HardMaxVillages)
+            if (PlayerSettlementInfo.Instance == null || Main.Settings == null || PlayerSettlementInfo.Instance.TotalVillages >= Settings.HardMaxVillages)
             {
                 //boundTarget = null;
                 return null;

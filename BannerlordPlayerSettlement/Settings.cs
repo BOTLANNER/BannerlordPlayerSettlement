@@ -22,11 +22,24 @@ namespace BannerlordPlayerSettlement
         [SettingPropertyGroup("Saves", GroupOrder = 0)]
         public bool CreateNewSave { get; set; } = false;
 
-        private const string HideButtonUntilReady_Hint = "Always hides the build town button until requirements are met.  [ Default: OFF ]";
+        private const string HideButtonUntilReady_Hint = @"Always hides the build panel until requirements are met for at least one build option. 
+When using dialogue options, only available options will show, otherwise the unavailable ones will have hints describing why they are not available.  [ Default: OFF ]";
 
         [SettingPropertyBool("Always Hide Until Ready", HintText = HideButtonUntilReady_Hint, RequireRestart = false, Order = 0, IsToggle = false)]
         [SettingPropertyGroup("User Interface", GroupOrder = 1)]
         public bool HideButtonUntilReady { get; set; } = false;
+
+        private const string ImmersiveMode_Hint = @"Always hides the build panel. Building can only be started by discussing with a companion (if enabled).  [ Default: OFF ]";
+
+        [SettingPropertyBool("Immersive Mode", HintText = ImmersiveMode_Hint, RequireRestart = false, Order = 1, IsToggle = false)]
+        [SettingPropertyGroup("User Interface")]
+        public bool ImmersiveMode { get; set; } = false;
+
+        private const string NoDialogue_Hint = @"Removes the build conversation options. Building can only be started using the build panel (if enabled).  [ Default: OFF ]";
+
+        [SettingPropertyBool("No Conversation Options", HintText = NoDialogue_Hint, RequireRestart = false, Order = 1, IsToggle = false)]
+        [SettingPropertyGroup("User Interface")]
+        public bool NoDialogue { get; set; } = false;
 
         private const string SettlementPlacement_Hint = "Allows choosing the position and rotation to place the settlement. When disabled will use the player party current position.  [ Default: ON ]";
 
@@ -144,11 +157,11 @@ Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
         [SettingPropertyGroup("Player Settlements")]
         public bool RequireCastleGold { get; set; } = true;
 
-        private const string RequiredCastleGold_Hint = "Specified cost in local currency to build new castle.  [ Default: 10 000 ]";
+        private const string RequiredCastleGold_Hint = "Specified cost in local currency to build new castle.  [ Default: 7 500 ]";
 
         [SettingPropertyInteger("Required Castle Cost", 1, 1_000_000, HintText = RequiredCastleGold_Hint, RequireRestart = false, Order = 13)]
         [SettingPropertyGroup("Player Settlements")]
-        public int RequiredCastleGold { get; set; } = 10_000;
+        public int RequiredCastleGold { get; set; } = 7_500;
 
         private const string MaxTowns_Hint = "Maximum number of player built towns allowed. At least one town is required.  [ Default: 10 ]";
 
@@ -173,14 +186,6 @@ Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
         [SettingPropertyInteger("Maximum Allowed Villages Per Castle", 0, HardMaxVillagesPerCastle, HintText = MaxVillagesPerCastle_Hint, RequireRestart = false, Order = 17)]
         [SettingPropertyGroup("Player Settlements")]
         public int MaxVillagesPerCastle { get; set; } = HardMaxVillagesPerCastle;
-
-//        private const string CastleChance_Hint = @"Percentage used to determine chance of next build being either a town or castle. 
-//Higher percentage means castle is more likely until maximum runs out. 
-//Maximum village count per town or castle has to be reached before next castle or town can be built.  [ Default: 50% ]";
-
-//        [SettingPropertyInteger("Castle Chance", 0, 100, HintText = CastleChance_Hint, RequireRestart = false, Order = 18)]
-//        [SettingPropertyGroup("Player Settlements")]
-//        public int CastleChance { get; set; } = 50;
 
         private const string SingleConstruction_Hint = "Will require in progress construction to finish before being allowed to build next settlement. By default when this is OFF, multiple settlement construction can be done at once.  [ Default: OFF ]";
 
@@ -213,7 +218,7 @@ Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
         public const int HardMaxCastles = 15;
         public const int HardMaxVillagesPerCastle = 4;
 
-        public readonly int HardMaxVillages = (HardMaxTowns * HardMaxVillagesPerTown) + (HardMaxCastles * HardMaxVillagesPerCastle);
+        public const int HardMaxVillages = (HardMaxTowns * HardMaxVillagesPerTown) + (HardMaxCastles * HardMaxVillagesPerCastle);
 
     }
 }

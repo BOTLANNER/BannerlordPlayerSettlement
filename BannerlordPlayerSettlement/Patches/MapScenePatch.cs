@@ -2,7 +2,6 @@
 using System;
 using System.Linq;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
@@ -11,7 +10,6 @@ using SandBox;
 
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
-using TaleWorlds.ObjectSystem;
 
 namespace BannerlordPlayerSettlement.Patches
 {

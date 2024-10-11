@@ -1,0 +1,18 @@
+﻿<Brushes>
+  <Brush Name="PlayerSettlementInfoExtendButtonBrush">
+    <Layers>
+      <BrushLayer VerticalFlip="true" Name="Default" Sprite="MapBar\arrow_looking_up"/>
+    </Layers>
+    <Styles>
+      <Style Name="Default">
+        <BrushLayer VerticalFlip="true" Name="Default" ColorFactor="1.0"/>
+      </Style>
+      <Style Name="Hovered">
+        <BrushLayer VerticalFlip="true" Name="Default" ColorFactor="1.5"/>
+      </Style>
+      <Style Name="Pressed">
+        <BrushLayer VerticalFlip="true" Name="Default" ColorFactor="0.85"/>
+      </Style>
+    </Styles>
+  </Brush>
+</Brushes>

@@ -10,16 +10,16 @@ using System.Xml;
 using Bannerlord.UIExtenderEx;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Descriptors;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Patches.Compatibility.Interfaces;
 using BannerlordPlayerSettlement.Saves;
-using BannerlordPlayerSettlement.UI;
+using BannerlordPlayerSettlement.UI.Viewmodels;
 using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
@@ -134,7 +134,7 @@ namespace BannerlordPlayerSettlement
                 {
                     try
                     {
-                        if (!loadedModules.Contains(addOnModule.Id))
+                        if (addOnModule == null || !loadedModules.Contains(addOnModule.Id))
                         {
                             // Templates available but not active for this game.
                             continue;
@@ -170,7 +170,7 @@ namespace BannerlordPlayerSettlement
                                                     Castles = int.Parse(templateDoc.ChildNodes?[0]?.Attributes?["castles"]?.Value),
                                                     Towns = int.Parse(templateDoc.ChildNodes?[0]?.Attributes?["towns"]?.Value),
                                                     Villages = int.Parse(templateDoc.ChildNodes?[0]?.Attributes?["villages"]?.Value),
-                                                    
+
                                                 };
 
                                                 if (!templates.ContainsKey(cultureSettlementInfo.CultureId))
@@ -183,6 +183,7 @@ namespace BannerlordPlayerSettlement
                                         catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
 
                                     }
+                                    InformationManager.DisplayMessage(new InformationMessage($"Loaded '{addOnModule!.Name}' Settlement Templates", Colours.Green));
                                 }
                             }
                         }
@@ -199,7 +200,7 @@ namespace BannerlordPlayerSettlement
         {
             var thisModule = ModuleHelper.GetModuleInfo(ModuleName);
 
-            return (new List<ModuleInfo>() { thisModule }).Concat(ModuleHelper.GetModules().Where(mi => mi != thisModule && mi.Id != thisModule.Id && mi.DependedModules.FindIndex(dp => dp.ModuleId == thisModule.Id) != -1));
+            return (new List<ModuleInfo>() { thisModule }).Union(ModuleHelper.GetModules().Where(mi => mi != thisModule && mi.Id != thisModule.Id && mi.DependedModules.FindIndex(dp => dp.ModuleId == thisModule.Id) != -1));
         }
 
         protected override void OnGameStart(Game game, IGameStarter starterObject)
@@ -286,7 +287,7 @@ namespace BannerlordPlayerSettlement
                         }
                         else
                         {
-                           townStringId = $"player_settlement_town_{townMeta.Identifier}";
+                            townStringId = $"player_settlement_town_{townMeta.Identifier}";
                         }
 
                         townMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(townStringId);
@@ -456,6 +457,44 @@ namespace BannerlordPlayerSettlement
                         }
                     }
                 }
+
+                if (metaV3.ExtraVillages != null)
+                {
+                    for (int ev = 0; ev < metaV3.ExtraVillages.Count; ev++)
+                    {
+                        var villageMeta = metaV3.ExtraVillages[ev];
+
+                        if (villageMeta.BuildTime - 5 > Campaign.CurrentTime)
+                        {
+                            // A player settlement has been made in a different save.
+                            // This is an older save than the config is for.
+                            PlayerSettlementBehaviour.OldSaveLoaded = true;
+                            continue;
+                        }
+
+                        string villageStringId = villageMeta.StringId;
+
+                        MBObjectManager.Instance.LoadXml(villageMeta.Document);
+
+                        villageMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+
+                        if (villageMeta.settlement != null && !villageMeta.settlement.IsReady)
+                        {
+                            MBObjectManager.Instance.LoadXml(villageMeta.Document);
+
+                            villageMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
+                        }
+
+
+                        if (villageMeta.settlement != null)
+                        {
+                            if (!string.IsNullOrEmpty(villageMeta.DisplayName))
+                            {
+                                villageMeta.settlement.Name = new TextObject(villageMeta.DisplayName);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -517,31 +556,5 @@ namespace BannerlordPlayerSettlement
                 }
             }
         }
-    }
-
-    public class CultureSettlementTemplate
-    {
-        public string FromModule;
-        public string TemplateModifier;
-
-        public XmlDocument Document;
-        public string CultureId;
-
-        public int Castles;
-        public int Towns;
-        public int Villages;
-    }
-
-    public class PlayerSettlementItemTemplate
-    {
-        public XmlNode ItemXML;
-
-        public string Id;
-
-        public string Culture;
-
-        public int Variant;
-
-        public int Type = 0;
     }
 }

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Saves;
 
 using HarmonyLib;
@@ -64,8 +59,9 @@ namespace BannerlordPlayerSettlement.Extensions
                 {
                     return true;
                 }
-                var isPlayerVillage = PlayerSettlementInfo.Instance.Towns.SelectMany(t => t.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ||
-                                      PlayerSettlementInfo.Instance.Castles.SelectMany(c => c.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId);
+                var isPlayerVillage = (PlayerSettlementInfo.Instance.PlayerVillages?.Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ?? false) ||
+                                       PlayerSettlementInfo.Instance.Towns.SelectMany(t => t.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ||
+                                       PlayerSettlementInfo.Instance.Castles.SelectMany(c => c.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId);
                 if (isPlayerVillage)
                 {
                     return true;

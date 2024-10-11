@@ -2,28 +2,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
-using Helpers;
-
 using SandBox.Missions.AgentBehaviors;
 using SandBox.Objects.AreaMarkers;
-using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
-using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Workshops;
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.MountAndBlade.View;
 
 namespace BannerlordPlayerSettlement.Patches
 {

@@ -11,7 +11,6 @@ using BannerlordPlayerSettlement.Saves;
 using HarmonyLib;
 
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.MapEvents;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Library;

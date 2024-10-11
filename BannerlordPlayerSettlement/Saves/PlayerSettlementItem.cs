@@ -1,8 +1,11 @@
 ﻿
+using System;
 using System.Collections.Generic;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Core;
+using TaleWorlds.Localization;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
@@ -100,5 +103,11 @@ namespace BannerlordPlayerSettlement.Saves
             }
             return GetStringIdFor((SettlementType) Type, Identifier, boundTarget);
         }
+
+
+
+        public static string EncyclopediaLink(string StringId) => String.Concat(Campaign.Current.EncyclopediaManager.GetIdentifier(typeof(Settlement)), "-", StringId) ?? "";
+
+        public static TextObject EncyclopediaLinkWithName(string StringId, TextObject Name) => HyperlinkTexts.GetSettlementHyperlinkText(EncyclopediaLink(StringId), Name);
     }
 }

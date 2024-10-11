@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 using Newtonsoft.Json;
 
-using TaleWorlds.CampaignSystem;
-using TaleWorlds.Library;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
@@ -26,62 +22,9 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableProperty(303)]
         public List<SettlementMetaV3> Castles { get; set; } = new();
 
-        //internal bool Save()
-        //{
-        //    try
-        //    {
-        //        var metaText = JsonConvert.SerializeObject(this);
-
-        //        var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
-        //        var moduleName = Main.Name;
-
-        //        var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
-
-        //        if (!Directory.Exists(ConfigDir))
-        //        {
-        //            Directory.CreateDirectory(ConfigDir);
-        //        }
-
-        //        var metaFile = Path.Combine(ConfigDir, $"metaV3.json");
-        //        File.WriteAllText(metaFile, metaText);
-
-        //        return true;
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Debug.PrintError(e.Message, e.StackTrace);
-        //        Debug.WriteDebugLineOnScreen(e.ToString());
-        //        Debug.SetCrashReportCustomString(e.Message);
-        //        Debug.SetCrashReportCustomStack(e.StackTrace);
-        //        return false;
-        //    }
-        //}
-
-        //internal static MetaV3? Load()
-        //{
-
-        //    var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Mount and Blade II Bannerlord");
-        //    var moduleName = Main.Name;
-
-        //    var ConfigDir = Path.Combine(userDir, "Configs", moduleName, Campaign.Current.UniqueGameId);
-
-        //    if (!Directory.Exists(ConfigDir))
-        //    {
-        //        Directory.CreateDirectory(ConfigDir);
-        //    }
-        //    var metaFile = Path.Combine(ConfigDir, $"metaV3.json");
-
-        //    if (!File.Exists(metaFile))
-        //    {
-        //        return null;
-        //    }
-
-        //    var metaText = File.ReadAllText(metaFile);
-
-        //    var metaObj = JsonConvert.DeserializeObject<MetaV3>(metaText);
-
-        //    return metaObj;
-        //}
+        [JsonProperty]
+        [SaveableProperty(304)]
+        public List<SettlementMetaV3> ExtraVillages { get; set; } = new();
 
         public static MetaV3? Create(PlayerSettlementInfo playerSettlementInfo)
         {
@@ -94,7 +37,8 @@ namespace BannerlordPlayerSettlement.Saves
             {
                 SavedModuleVersion = Main.Version,
                 Castles = new(),
-                Towns = new()
+                Towns = new(),
+                ExtraVillages = new()
             };
 
             foreach (var town in playerSettlementInfo.Towns)
@@ -144,6 +88,24 @@ namespace BannerlordPlayerSettlement.Saves
                         Villages = new()
                     }).ToList()
                 });
+            }
+
+            if (playerSettlementInfo.PlayerVillages != null)
+            {
+                foreach (var v in playerSettlementInfo.PlayerVillages)
+                {
+                    metaV3.ExtraVillages.Add(new SettlementMetaV3
+                    {
+                        XML = v.ItemXML,
+                        BuildTime = v.BuiltAt,
+                        DisplayName = v.SettlementName,
+                        Identifier = v.Identifier,
+                        settlement = v.Settlement,
+                        StringId = v.StringId,
+                        Version = v.Version,
+                        Villages = new(),
+                    });
+                }
             }
 
             return metaV3;

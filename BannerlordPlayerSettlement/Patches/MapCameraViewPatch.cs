@@ -1,24 +1,12 @@
 ﻿
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Reflection;
-
 using BannerlordPlayerSettlement.Behaviours;
-using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
 using SandBox.View.Map;
 
-using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.GameState;
-using TaleWorlds.CampaignSystem.Settlements;
-using TaleWorlds.CampaignSystem.Siege;
 using TaleWorlds.Core;
-using TaleWorlds.Engine;
-using TaleWorlds.Library;
 
 namespace BannerlordPlayerSettlement.Patches
 {

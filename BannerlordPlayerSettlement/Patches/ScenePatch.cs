@@ -2,7 +2,6 @@
 using System;
 using System.Linq;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;

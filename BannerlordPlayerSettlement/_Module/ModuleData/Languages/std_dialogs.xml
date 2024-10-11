@@ -25,5 +25,8 @@
         <string id="player_settlement_19" text="Build a Castle" />
         <string id="player_settlement_20" text="Choose castle culture" />
         <string id="player_settlement_21" text="Choose the culture for {CASTLE}" />
+        <string id="player_settlement_22" text="Choose village bound settlement" />
+        <string id="player_settlement_23" text="Choose the settlement to which this village is bound" />
+        <string id="player_settlement_24" text="{SETTLEMENT_NAME} was founded by {HERO_NAME} of the {FACTION_TERM} on {BUILD_TIME}" />
     </strings>
 </base>

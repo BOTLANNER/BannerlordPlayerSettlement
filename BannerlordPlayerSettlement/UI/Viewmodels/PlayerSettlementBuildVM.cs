@@ -1,46 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 using Bannerlord.UIExtenderEx.Attributes;
-using Bannerlord.UIExtenderEx.ViewModels;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Saves;
 
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.CampaignSystem.Party;
-using TaleWorlds.CampaignSystem.ViewModelCollection.Map.MapBar;
+using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Core;
 using TaleWorlds.Core.ViewModelCollection.Information;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
 
-namespace BannerlordPlayerSettlement.UI
+namespace BannerlordPlayerSettlement.UI.Viewmodels
 {
-    [ViewModelMixin(refreshMethodName: "RefreshValues")]
-
-    public class MapBarExtensionVM : BaseViewModelMixin<MapBarVM>
+    public class PlayerSettlementBuildVM : ViewModel
     {
-        public static MapBarExtensionVM? Current = null;
-
-        //[DataSourceProperty]
-        //public WeakReference<MapBarExtensionVM> Mixin => new(this);
+        private readonly PlayerSettlementInfoVM? owner;
+        private readonly SettlementType settlementType = SettlementType.None;
 
         private bool _isCreatePlayerSettlementEnabled = true;
         private bool _isCreatePlayerSettlementVisible = true;
 
-        private bool forceHide = false;
-
         private HintViewModel? _disableReasonHint;
 
-        public MapBarExtensionVM(MapBarVM vm) : base(vm)
+        public PlayerSettlementBuildVM() { }
+        public PlayerSettlementBuildVM(PlayerSettlementInfoVM owner, SettlementType settlementType)
         {
-            Current = this;
-            CalculateEnabled();
+            this.owner = owner;
+            this.settlementType = settlementType;
         }
+
 
         [DataSourceProperty]
         public bool IsCreatePlayerSettlementAllowed
@@ -54,7 +44,7 @@ namespace BannerlordPlayerSettlement.UI
                 if (value != this._isCreatePlayerSettlementEnabled)
                 {
                     this._isCreatePlayerSettlementEnabled = value;
-                    ViewModel?.OnPropertyChangedWithValue(value, "IsCreatePlayerSettlementAllowed");
+                    base.OnPropertyChangedWithValue(value, nameof(IsCreatePlayerSettlementAllowed));
                 }
             }
         }
@@ -63,14 +53,14 @@ namespace BannerlordPlayerSettlement.UI
         {
             get
             {
-                return this._isCreatePlayerSettlementVisible && !forceHide;
+                return this._isCreatePlayerSettlementVisible;
             }
             set
             {
                 if (value != this._isCreatePlayerSettlementVisible)
                 {
                     this._isCreatePlayerSettlementVisible = value;
-                    ViewModel?.OnPropertyChangedWithValue(value, "IsCreatePlayerSettlementVisible");
+                    base.OnPropertyChangedWithValue(value, nameof(IsCreatePlayerSettlementVisible));
                 }
             }
         }
@@ -80,9 +70,9 @@ namespace BannerlordPlayerSettlement.UI
         {
             get
             {
-                return NextBuildType == SettlementType.Village ?
+                return settlementType == SettlementType.Village ?
                     new TextObject("{=player_settlement_13}Build a Village").ToString() :
-                        NextBuildType == SettlementType.Castle ?
+                        settlementType == SettlementType.Castle ?
                         new TextObject("{=player_settlement_19}Build a Castle").ToString() :
                             //NextBuildType == SettlementType.Town ?
                             new TextObject("{=player_settlement_04}Build a Town").ToString();
@@ -101,34 +91,38 @@ namespace BannerlordPlayerSettlement.UI
                 if (value != this._disableReasonHint)
                 {
                     this._disableReasonHint = value;
-                    ViewModel?.OnPropertyChangedWithValue(value, "DisableHint");
+                    base.OnPropertyChangedWithValue(value, nameof(DisableHint));
                 }
             }
         }
 
-        private SettlementType NextBuildType = SettlementType.None;
-        private PlayerSettlementItem? BoundTarget = null;
-
-        public void Tick(float dt)
+        [DataSourceMethod]
+        public void ExecuteCreatePlayerSettlement()
         {
-            if (ViewModel?.MapTimeControl != null)
+            if (settlementType == SettlementType.None)
             {
-                if (forceHide == ViewModel.MapTimeControl.IsCenterPanelEnabled)
-                {
-                    OnRefresh();
+                return;
+            }
 
-                    forceHide = !ViewModel.MapTimeControl.IsCenterPanelEnabled;
-                    ViewModel.OnPropertyChangedWithValue(IsCreatePlayerSettlementVisible, "IsCreatePlayerSettlementVisible");
-                }
+            if (PlayerSettlementBehaviour.Instance != null)
+            {
+                PlayerSettlementBehaviour.Instance.SettlementRequest = settlementType;
+
+                IsCreatePlayerSettlementAllowed = false;
+                IsCreatePlayerSettlementVisible = false;
+
+                owner?.RefreshValues();
+
+                Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
             }
         }
 
-        private void CalculateEnabled()
+
+        internal void CalculateEnabled()
         {
             TextObject? disableReason = null;
-            NextBuildType = SettlementType.None;
 
-            if (Main.Settings == null || PlayerSettlementInfo.Instance == null || PlayerSettlementBehaviour.Instance == null)
+            if (Main.Settings == null || PlayerSettlementInfo.Instance == null || PlayerSettlementBehaviour.Instance == null || Settlement.CurrentSettlement != null)
             {
                 disableReason = new TextObject();
                 IsCreatePlayerSettlementAllowed = false;
@@ -145,12 +139,33 @@ namespace BannerlordPlayerSettlement.UI
             {
                 PlayerSettlementInfo.Instance.Castles = new();
             }
+            if (PlayerSettlementInfo.Instance.PlayerVillages == null)
+            {
+                PlayerSettlementInfo.Instance.PlayerVillages = new();
+            }
 
-
-            if (PlayerSettlementBehaviour.Instance!.ReachedMax || PlayerSettlementBehaviour.Instance!.HasRequest || PlayerSettlementBehaviour.Instance!.IsPlacingSettlement)
+            if (settlementType == SettlementType.Town && PlayerSettlementInfo.Instance.Towns.Count >= Main.Settings.MaxTowns)
+            {
+                disableReason ??= new TextObject("{=player_settlement_h_08}Maximum number of towns have been built");
+                IsCreatePlayerSettlementAllowed = false;
+                IsCreatePlayerSettlementVisible = false;
+            }
+            else if (settlementType == SettlementType.Castle && PlayerSettlementInfo.Instance.Castles.Count >= Main.Settings.MaxTowns)
+            {
+                disableReason ??= new TextObject("{=player_settlement_h_09}Maximum number of castles have been built");
+                IsCreatePlayerSettlementAllowed = false;
+                IsCreatePlayerSettlementVisible = false;
+            }
+            else if (settlementType == SettlementType.Village && PlayerSettlementInfo.Instance.TotalVillages >= Main.Settings.HardMaxVillages)
+            {
+                disableReason ??= new TextObject("{=player_settlement_h_10}Maximum number of villages have been built");
+                IsCreatePlayerSettlementAllowed = false;
+                IsCreatePlayerSettlementVisible = false;
+            }
+            else if (PlayerSettlementBehaviour.Instance!.ReachedMax || PlayerSettlementBehaviour.Instance!.HasRequest || PlayerSettlementBehaviour.Instance!.IsPlacingSettlement)
             {
                 // Either reached max or about to create something
-                disableReason ??= new TextObject("<Already Created or About to Create>");
+                disableReason ??= new TextObject(" - ");
                 IsCreatePlayerSettlementAllowed = false;
                 IsCreatePlayerSettlementVisible = false;
             }
@@ -176,16 +191,15 @@ namespace BannerlordPlayerSettlement.UI
                 }
 
                 if (Main.Settings.SingleConstruction &&
-                    (PlayerSettlementInfo.Instance.Towns.Any(t => t.BuildEnd.IsFuture || t.Villages.Any(v => v.BuildEnd.IsFuture)) ||
+                    (PlayerSettlementInfo.Instance.PlayerVillages.Any(t => t.BuildEnd.IsFuture) ||
+                     PlayerSettlementInfo.Instance.Towns.Any(t => t.BuildEnd.IsFuture || t.Villages.Any(v => v.BuildEnd.IsFuture)) ||
                      PlayerSettlementInfo.Instance.Castles.Any(c => c.BuildEnd.IsFuture || c.Villages.Any(v => v.BuildEnd.IsFuture))))
                 {
                     disableReason ??= new TextObject("{=player_settlement_h_06}Construction in progress");
                 }
 
-                NextBuildType = PlayerSettlementBehaviour.Instance.GetNextBuildType(out BoundTarget);
-                ViewModel?.OnPropertyChangedWithValue(CreatePlayerSettlementText, "CreatePlayerSettlementText");
 
-                if (NextBuildType == SettlementType.Village && Main.Settings.RequireVillageGold)
+                if (settlementType == SettlementType.Village && Main.Settings.RequireVillageGold)
                 {
                     if ((Hero.MainHero?.Gold ?? 0) < Main.Settings.RequiredVillageGold)
                     {
@@ -194,7 +208,7 @@ namespace BannerlordPlayerSettlement.UI
                         disableReason.SetTextVariable("REQUIRED_FUNDS", Main.Settings.RequiredVillageGold);
                     }
                 }
-                else if (NextBuildType == SettlementType.Town && Main.Settings.RequireGold)
+                else if (settlementType == SettlementType.Town && Main.Settings.RequireGold)
                 {
                     if ((Hero.MainHero?.Gold ?? 0) < Main.Settings.RequiredGold)
                     {
@@ -203,7 +217,7 @@ namespace BannerlordPlayerSettlement.UI
                         disableReason.SetTextVariable("REQUIRED_FUNDS", Main.Settings.RequiredGold);
                     }
                 }
-                else if (NextBuildType == SettlementType.Castle && Main.Settings.RequireCastleGold)
+                else if (settlementType == SettlementType.Castle && Main.Settings.RequireCastleGold)
                 {
                     if ((Hero.MainHero?.Gold ?? 0) < Main.Settings.RequiredCastleGold)
                     {
@@ -211,6 +225,11 @@ namespace BannerlordPlayerSettlement.UI
                         disableReason.SetTextVariable("CURRENT_FUNDS", Hero.MainHero?.Gold ?? 0);
                         disableReason.SetTextVariable("REQUIRED_FUNDS", Main.Settings.RequiredCastleGold);
                     }
+                }
+
+                if (settlementType == SettlementType.Village && PlayerSettlementBehaviour.Instance.GetPotentialVillageBoundOwners().Count() == 0)
+                {
+                    disableReason ??= new TextObject("{=player_settlement_h_11}No candidate for village to be bound to");
                 }
             }
             else
@@ -244,45 +263,5 @@ namespace BannerlordPlayerSettlement.UI
             }
         }
 
-        [DataSourceMethod]
-        public void ExecuteCreatePlayerSettlement()
-        {
-            //PlayerSettlementItem? boundTarget = null;
-            //NextBuildType = PlayerSettlementBehaviour.Instance?.GetNextBuildType(out boundTarget) ?? SettlementType.None;
-            if (NextBuildType == SettlementType.None)
-            {
-                return;
-            }
-
-            var bound = BoundTarget?.Settlement;
-            if (PlayerSettlementBehaviour.Instance != null)
-            {
-                PlayerSettlementBehaviour.Instance.SettlementRequest = NextBuildType;
-                PlayerSettlementBehaviour.Instance.RequestBoundSettlement = bound;
-
-                IsCreatePlayerSettlementAllowed = false;
-                IsCreatePlayerSettlementVisible = false;
-                NextBuildType = SettlementType.None;
-                OnRefresh();
-
-
-                Campaign.Current.TimeControlMode = CampaignTimeControlMode.UnstoppablePlay;
-            }
-        }
-
-
-        public override void OnRefresh()
-        {
-            base.OnRefresh();
-
-            CalculateEnabled();
-        }
-
-        public override void OnFinalize()
-        {
-            base.OnFinalize();
-
-            Current = null;
-        }
     }
 }

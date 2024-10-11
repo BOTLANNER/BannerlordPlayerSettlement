@@ -7,7 +7,7 @@ using System.Reflection;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
-using BannerlordPlayerSettlement.UI;
+using BannerlordPlayerSettlement.UI.Viewmodels;
 
 using HarmonyLib;
 

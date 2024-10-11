@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Saves;
 
@@ -11,17 +10,14 @@ using HarmonyLib;
 
 using Helpers;
 
-using SandBox;
 using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Siege;
-using TaleWorlds.Core;
 using TaleWorlds.Engine;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade.View;
-using TaleWorlds.MountAndBlade.View.Screens;
 
 namespace BannerlordPlayerSettlement.Patches
 {

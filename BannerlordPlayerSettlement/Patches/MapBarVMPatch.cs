@@ -1,4 +1,4 @@
-﻿using BannerlordPlayerSettlement.UI;
+﻿using BannerlordPlayerSettlement.UI.Viewmodels;
 
 using HarmonyLib;
 

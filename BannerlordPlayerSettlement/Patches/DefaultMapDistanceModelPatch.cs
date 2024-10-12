@@ -35,7 +35,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 
@@ -56,7 +56,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 
@@ -77,7 +77,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 
@@ -102,7 +102,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 
@@ -126,7 +126,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 
@@ -144,7 +144,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 
@@ -162,7 +162,7 @@
 //                    return false;
 //                }
 //            }
-//            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+//            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 //            return true;
 //        }
 //    }

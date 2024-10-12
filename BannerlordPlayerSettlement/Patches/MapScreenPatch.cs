@@ -8,6 +8,7 @@ using System.Reflection;
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.UI.Viewmodels;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -59,6 +60,7 @@ namespace BannerlordPlayerSettlement.Patches
             }
             catch (Exception e)
             {
+                // No logging, this is default behaviour
                 return false;
             }
         }
@@ -153,6 +155,7 @@ namespace BannerlordPlayerSettlement.Patches
                 }
                 catch (Exception e)
                 {
+                    LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
                 }
 
                 PartyVisual visualOfParty = PartyVisualManager.Current.GetVisualOfParty(besiegedSettlement.Party);
@@ -319,7 +322,7 @@ namespace BannerlordPlayerSettlement.Patches
 
                 return false;
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 
             return true;
         }
@@ -331,10 +334,7 @@ namespace BannerlordPlayerSettlement.Patches
             if (__exception != null)
             {
                 var e = __exception;
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
             return null;
         }

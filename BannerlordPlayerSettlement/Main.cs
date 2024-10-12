@@ -53,6 +53,12 @@ namespace BannerlordPlayerSettlement
 
         public Dictionary<string, List<CultureSettlementTemplate>> CultureTemplates;
 
+        private string? _blacklistFile;
+        public string? BlacklistFile => _blacklistFile;
+        public static MBReadOnlyList<string?> BlacklistedTemplates => _blacklistedTemplates;
+
+        private static readonly MBList<string?> _blacklistedTemplates = new();
+
         public Main()
         {
             //Ctor
@@ -64,6 +70,8 @@ namespace BannerlordPlayerSettlement
             try
             {
                 base.OnSubModuleLoad();
+                LogManager.EnableTracer = true; // enable code event tracing
+
                 Harmony = new Harmony(HarmonyDomain);
                 Harmony.PatchAll();
 
@@ -75,6 +83,8 @@ namespace BannerlordPlayerSettlement
                 _extender = UIExtender.Create(ModuleName); //HarmonyDomain);
                 _extender.Register(typeof(Main).Assembly);
                 _extender.Enable();
+
+                LogManager.EventTracer.Trace();
             }
             catch (System.Exception e)
             {
@@ -82,10 +92,7 @@ namespace BannerlordPlayerSettlement
                 {
                     Debugger.Break();
                 }
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
         }
 
@@ -100,11 +107,12 @@ namespace BannerlordPlayerSettlement
 
                     // register for settings property-changed events
                     Settings.PropertyChanged += Settings_OnPropertyChanged;
+                    LogManager.EventTracer.Trace();
                 }
 
                 if (!_loaded)
                 {
-                    InformationManager.DisplayMessage(new InformationMessage($"Loaded {DisplayName}", Colours.ImportantTextColor));
+                    LogManager.Log.Print($"Loaded {DisplayName}", Colours.ImportantTextColor);
                     _loaded = true;
 
                     foreach (var patch in HarmonyCompatPatches)
@@ -114,13 +122,12 @@ namespace BannerlordPlayerSettlement
 
                     CultureTemplates = GatherTemplates();
                 }
+
+                LogManager.EventTracer.Trace();
             }
             catch (System.Exception e)
             {
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
         }
 
@@ -150,6 +157,16 @@ namespace BannerlordPlayerSettlement
                                 doc.Load(subModuleFile);
 
                                 var templatesDir = doc.SelectSingleNode("descendant::PlayerSettlementsTemplates")?.Attributes?["path"]?.Value;
+                                var blacklistFile = doc.SelectSingleNode("descendant::PlayerSettlementsTemplatesBlacklist")?.Attributes?["path"]?.Value;
+                                if (!string.IsNullOrEmpty(blacklistFile) && File.Exists(Path.Combine(modulePath, blacklistFile)))
+                                {
+                                    var blacklisted = File.ReadAllLines(Path.Combine(modulePath, blacklistFile)).Select(line => line?.Trim()).Where(line => !string.IsNullOrEmpty(line));
+                                    _blacklistedTemplates.AddRange(blacklisted ?? new List<string>());
+                                    if (addOnModule!.Id == ModuleName)
+                                    {
+                                        _blacklistFile = Path.Combine(modulePath, blacklistFile);
+                                    }
+                                }
                                 if (!string.IsNullOrEmpty(templatesDir) && Directory.Exists(Path.Combine(modulePath, templatesDir)))
                                 {
                                     templatesDir = Path.Combine(modulePath, templatesDir);
@@ -180,20 +197,33 @@ namespace BannerlordPlayerSettlement
                                                 templates[cultureSettlementInfo.CultureId].Add(cultureSettlementInfo);
                                             }
                                         }
-                                        catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+                                        catch (System.Exception e)
+                                        {
+                                            LogManager.Log.NotifyBad(e);
+                                        }
 
                                     }
-                                    InformationManager.DisplayMessage(new InformationMessage($"Loaded '{addOnModule!.Name}' Settlement Templates", Colours.Green));
+                                    LogManager.Log.NotifyGood($"Loaded '{addOnModule!.Name}' Templates");
                                 }
                             }
                         }
                     }
-                    catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+                    catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return templates;
+        }
+        public void UpdateBlacklist(params string[] newBlacklistItems)
+        {
+            _blacklistedTemplates.AddRange(newBlacklistItems);
+            if (!string.IsNullOrEmpty(BlacklistFile))
+            {
+                File.AppendAllText(BlacklistFile, "\r\n");
+                File.AppendAllLines(BlacklistFile, newBlacklistItems);
+            }
+
         }
 
         private IEnumerable<ModuleInfo> GetTemplateModules()
@@ -215,7 +245,7 @@ namespace BannerlordPlayerSettlement
                     AddBehaviors(initializer);
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
         }
 
         public override void RegisterSubModuleObjects(bool isSavedCampaign)
@@ -509,7 +539,7 @@ namespace BannerlordPlayerSettlement
                     patch.AddBehaviors(gameInitializer);
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
         }
 
         protected static void Settings_OnPropertyChanged(object sender, PropertyChangedEventArgs args)
@@ -523,9 +553,10 @@ namespace BannerlordPlayerSettlement
                         MapBarExtensionVM.Current?.OnRefresh();
                     }
                     catch (Exception) { }
+                    LogManager.EventTracer.Trace();
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
         }
 
         static IEnumerable<ICompatibilityPatch> LoadCompatPatches()
@@ -544,7 +575,7 @@ namespace BannerlordPlayerSettlement
                         }
                         catch (Exception e)
                         {
-                            Debug.PrintError(e.ToString(), e.StackTrace, 281474976710656L);
+                            LogManager.Log.NotifyBad(e);
                         }
 
                         if (inst is ICompatibilityPatch compatibilityPatch)

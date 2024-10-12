@@ -42,7 +42,10 @@ namespace BannerlordPlayerSettlement.Saves
                 metaObj.displayName = parts[1].Base64Decode();
                 if (!float.TryParse(parts[2].Base64Decode(), out metaObj.buildTime) && !float.TryParse(parts[2], out metaObj.buildTime))
                 {
-                    InformationManager.DisplayMessage(new InformationMessage($"Unable to read save data!", Colours.Error));
+                    LogManager.Log.NotifyBad("Unable to read save data!");
+                    LogManager.EventTracer.Trace(@$"Unable to read save data!
+    {metaText}
+");
                     PlayerSettlementBehaviour.OldSaveLoaded = true;
                     return null;
                 }
@@ -111,7 +114,7 @@ namespace BannerlordPlayerSettlement.Saves
 
                     File.WriteAllText(metaFile, metaText);
 
-                    InformationManager.DisplayMessage(new InformationMessage($"Updated {Main.DisplayName} to {Main.Version}", Colours.Error));
+                    LogManager.Log.Print($"Updated {Main.DisplayName} to {Main.Version}", Colours.Purple);
                 }
 
 

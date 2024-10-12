@@ -23,10 +23,7 @@
 //                __result = MapWeatherModel.WeatherEvent.Clear;
 
 //                var e = __exception;
-//                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-//                Debug.WriteDebugLineOnScreen(e.ToString());
-//                Debug.SetCrashReportCustomString(e.Message);
-//                Debug.SetCrashReportCustomStack(e.StackTrace);
+//                LogManager.Log.NotifyBad(e);
 //            }
 //            return null;
 //        }

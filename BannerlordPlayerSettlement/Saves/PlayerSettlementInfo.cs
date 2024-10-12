@@ -167,11 +167,7 @@ namespace BannerlordPlayerSettlement.Saves
             }
             catch (Exception e)
             {
-                Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
-                InformationManager.DisplayMessage(new InformationMessage(e.ToString(), Colours.Error));
+                LogManager.Log.NotifyBad(e);
             }
         }
 

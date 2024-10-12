@@ -7,6 +7,7 @@ using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Patches.Compatibility.Interfaces;
 using BannerlordPlayerSettlement.Saves;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -145,7 +146,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                     }
                     catch (Exception e)
                     {
-                        Debug.PrintError(e.ToString(), e.StackTrace, 281474976710656L);
+                        LogManager.Log.NotifyBad(e);
                     }
 
                 });

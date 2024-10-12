@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
+using BannerlordPlayerSettlement.Utils;
+
 using HarmonyLib;
 
 using TaleWorlds.CampaignSystem;
@@ -93,10 +95,7 @@ namespace BannerlordPlayerSettlement.Extensions
             }
             catch (Exception e)
             {
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
 
             return null;

@@ -4,6 +4,7 @@ using System.Linq;
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Saves;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -40,7 +41,7 @@ namespace BannerlordPlayerSettlement.Patches
                     }
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return true;
         }
 
@@ -68,7 +69,7 @@ namespace BannerlordPlayerSettlement.Patches
                     }
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return true;
         }
 
@@ -94,7 +95,7 @@ namespace BannerlordPlayerSettlement.Patches
                     }
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return true;
         }
     }

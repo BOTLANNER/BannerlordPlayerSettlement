@@ -1,7 +1,7 @@
 ﻿<Module>
   <Name value="Player Settlement"/>
   <Id value="PlayerSettlement"/>
-  <Version value="v4.0.0"/>
+  <Version value="v4.1.0"/>
   <Url value="https://www.nexusmods.com/mountandblade2bannerlord/mods/7298" />
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
@@ -12,6 +12,8 @@
   <UpdateInfo value="NexusMods:7298" />
   <!-- Used by PlayerSettlement to dynamically add more settlement variants -->
   <PlayerSettlementsTemplates path="ModuleData/Player_Settlement_Templates" />
+  <!-- Used by PlayerSettlement to dynamically blacklist settlement variants -->
+  <PlayerSettlementsTemplatesBlacklist path="ModuleData/template_blacklist.txt" />
   <DependedModules>
     <DependedModule Id="Bannerlord.Harmony" />
     <DependedModule Id="Bannerlord.ButterLib" />

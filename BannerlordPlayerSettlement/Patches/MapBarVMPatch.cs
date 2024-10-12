@@ -1,4 +1,5 @@
 ﻿using BannerlordPlayerSettlement.UI.Viewmodels;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -18,7 +19,7 @@ namespace BannerlordPlayerSettlement.Patches
             {
                 MapBarExtensionVM.Current?.Tick(dt);
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
         }
     }
 }

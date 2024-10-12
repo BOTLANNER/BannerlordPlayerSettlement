@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -32,12 +33,12 @@ namespace BannerlordPlayerSettlement.Patches
                             {
                                 name = name.Contains("village") ? $"player_settlement_town_1_village_{int.Parse(name.Split('_').Last())}" : "player_settlement_town_1";
                             }
-                        } catch(Exception) { }
+                        } catch(Exception) { /* Backward compat. This WILL get hit */ }
                         
                     }
                 }
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return true;
         }
     }

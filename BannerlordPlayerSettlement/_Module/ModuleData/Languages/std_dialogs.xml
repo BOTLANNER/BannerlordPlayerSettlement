@@ -33,5 +33,9 @@
         <string id="player_settlement_27" text="We should build a village." />
         <string id="player_settlement_28" text="We should build a castle." />
         <string id="player_settlement_29" text="Nevermind." />
+        <string id="player_settlement_30" text="Corrupt Template" />
+        <string id="player_settlement_31" text="Player Settlements has encountered a corrupt template. \nPlease screenshot and report this along with the log file at '{LOG_PATH}'. \n{ERROR_DETAIL}\n\nYour game will now have a new emergency save created to avoid crashing. It is highly recommended to close the application before loading." />
+        <string id="player_settlement_32" text="Close Game" />
+        <string id="player_settlement_33" text="Attempt Recovery" />
     </strings>
 </base>

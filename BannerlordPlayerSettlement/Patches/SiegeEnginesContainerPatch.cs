@@ -1,5 +1,7 @@
 ﻿using System;
 
+using BannerlordPlayerSettlement.Utils;
+
 using HarmonyLib;
 
 using TaleWorlds.CampaignSystem.Siege;
@@ -27,7 +29,7 @@ namespace BannerlordPlayerSettlement.Patches
                 }
 
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
         }
         [HarmonyPrefix]
         [HarmonyPatch(nameof(SiegeEnginesContainer.RemoveDeployedSiegeEngine))]
@@ -43,7 +45,7 @@ namespace BannerlordPlayerSettlement.Patches
                 }
 
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
         }
 
         [HarmonyFinalizer]
@@ -53,10 +55,7 @@ namespace BannerlordPlayerSettlement.Patches
             if (__exception != null)
             {
                 var e = __exception;
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
             return null;
         }
@@ -68,10 +67,7 @@ namespace BannerlordPlayerSettlement.Patches
             if (__exception != null)
             {
                 var e = __exception;
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
             return null;
         }

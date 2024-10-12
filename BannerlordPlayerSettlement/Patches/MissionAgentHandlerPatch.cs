@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
 
@@ -154,7 +155,7 @@ namespace BannerlordPlayerSettlement.Patches
 
                 return false;
             }
-            catch (System.Exception e) { TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace); Debug.WriteDebugLineOnScreen(e.ToString()); Debug.SetCrashReportCustomString(e.Message); Debug.SetCrashReportCustomStack(e.StackTrace); }
+            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
 
             return true;
         }
@@ -172,10 +173,7 @@ namespace BannerlordPlayerSettlement.Patches
                     return __exception;
                 }
                 var e = __exception;
-                TaleWorlds.Library.Debug.PrintError(e.Message, e.StackTrace);
-                Debug.WriteDebugLineOnScreen(e.ToString());
-                Debug.SetCrashReportCustomString(e.Message);
-                Debug.SetCrashReportCustomStack(e.StackTrace);
+                LogManager.Log.NotifyBad(e);
             }
             return null;
         }

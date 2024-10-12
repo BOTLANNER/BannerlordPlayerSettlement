@@ -33,5 +33,7 @@ namespace BannerlordPlayerSettlement.Utils
         public static Color White => new(1f, 1f, 1f, 1f);
 
         public static Color Yellow => new(1f, 1f, 0f, 1f);
+        public static Color Magenta => Color.FromUint(0x00FF007F);
+        public static Color ForestGreen => Color.FromUint(0x00FF007F);
     }
 }

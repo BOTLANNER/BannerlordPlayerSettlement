@@ -6,5 +6,71 @@
     <strings>
         <string id="player_settlement_n_01" text="Player Settlement" />
         <string id="player_settlement_n_02" text=" (auto)" />
+        <string id="player_settlement_n_03" text="Create a new save when building. By default, the current active save will be overwritten instead.  [ Default: OFF ]" />
+        <string id="player_settlement_n_04" text="Create new save on build" />
+        <string id="player_settlement_n_05" text="Always hides the build panel until requirements are met for at least one build option. \nWhen using dialogue options, only available options will show, otherwise the unavailable ones will have hints describing why they are not available.  [ Default: OFF ]" />
+        <string id="player_settlement_n_06" text="Always Hide Until Ready" />
+        <string id="player_settlement_n_07" text="Always hides the build panel. Building can only be started by discussing with a companion (if enabled).  [ Default: OFF ]" />
+        <string id="player_settlement_n_08" text="Immersive Mode" />
+        <string id="player_settlement_n_09" text="Removes the build conversation options. Building can only be started using the build panel (if enabled).  [ Default: OFF ]" />
+        <string id="player_settlement_n_10" text="No Conversation Options" />
+        <string id="player_settlement_n_11" text="Allows choosing the position and rotation to place the settlement. When disabled will use the player party current position.  [ Default: ON ]" />
+        <string id="player_settlement_n_12" text="Enable Settlement Placement" />
+        <string id="player_settlement_n_13" text="Speed at which mouse movement rotates settlement. \nSettlement rotation applies when 'Alt' is held.  [ Default: 50% ]" />
+        <string id="player_settlement_n_14" text="Mouse Rotation Speed" />
+        <string id="player_settlement_n_15" text="Speed at which rotation keys affect settlement when rotating. \nDefault game rotation keys are 'Q' and 'E', unless remapped. \nSettlement rotation applies when 'Alt' is held. [ Default: 100% ]" />
+        <string id="player_settlement_n_16" text="Key Rotation Speed" />
+        <string id="player_settlement_n_17" text="Will limit settlement options to selected culture only. \nOtherwise will allow settlement options for all cultures. \nCycle visually between options by holding 'Shift' and using rotation keys. \nDefault game rotation keys are 'Q' and 'E', unless remapped.  [ Default: ON ]" />
+        <string id="player_settlement_n_18" text="Selected Culture Only" />
+        <string id="player_settlement_n_19" text="Speed at which settlements will visually cycle during placement while holding 'Shift' and a rotation key, or speed at which settlements will scale while holding 'Ctrl' and a rotation key. \nCycle visually between options by holding 'Shift' and using rotation keys. \nDefault game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]" />
+        <string id="player_settlement_n_20" text="Settlement Cycle Speed" />
+        <string id="player_settlement_n_21" text="Enables Player Settlement mod and adds the option map screen.  [ Default: ON ]" />
+        <string id="player_settlement_n_22" text="Requires clan to be specified tier before being allowed to create a settlement.  [ Default: ON ]" />
+        <string id="player_settlement_n_23" text="Require Clan Tier" />
+        <string id="player_settlement_n_24" text="Specified tier required before being allowed to create a settlement.  [ Default: 4 ]" />
+        <string id="player_settlement_n_25" text="Required Clan Tier" />
+        <string id="player_settlement_n_26" text="Requires a specified cost in local currency to build new town.  [ Default: ON ]" />
+        <string id="player_settlement_n_27" text="Require Town Cost" />
+        <string id="player_settlement_n_28" text="Specified cost in local currency to build new town.  [ Default: 10 000 ]" />
+        <string id="player_settlement_n_29" text="Required Town Cost" />
+        <string id="player_settlement_n_30" text="Skip required build duration and instantly completes town construction.  [ Default: OFF ]" />
+        <string id="player_settlement_n_31" text="Instant Build" />
+        <string id="player_settlement_n_32" text="Specified days before town is done being built.  [ Default: 7 ]" />
+        <string id="player_settlement_n_33" text="Build Duration Days" />
+        <string id="player_settlement_n_34" text="Will use the player culture for the town. By default when this is OFF, the town culture can be chosen.  [ Default: OFF ]" />
+        <string id="player_settlement_n_35" text="Use Player Culture" />
+        <string id="player_settlement_n_36" text="Requires a specified cost in local currency to build new village.  [ Default: ON ]" />
+        <string id="player_settlement_n_37" text="Require Village Cost" />
+        <string id="player_settlement_n_38" text="Specified cost in local currency to build new village.  [ Default: 3 000 ]" />
+        <string id="player_settlement_n_39" text="Required Village Cost" />
+        <string id="player_settlement_n_40" text="Will automatically determine the type of village, which determines its primary product. By default when this is OFF, the type can be chosen.  [ Default: OFF ]" />
+        <string id="player_settlement_n_41" text="Auto Allocate Village Type" />
+        <string id="player_settlement_n_42" text="Will automatically determine the bound town/castle for the village. By default when this is OFF, the bound settlement can be chosen.  [ Default: OFF ]" />
+        <string id="player_settlement_n_43" text="Auto Determine Village Bound Settlement" />
+        <string id="player_settlement_n_44" text="Requires a specified cost in local currency to build new castle.  [ Default: ON ]" />
+        <string id="player_settlement_n_45" text="Require Castle Cost" />
+        <string id="player_settlement_n_46" text="Specified cost in local currency to build new castle.  [ Default: 7 500 ]" />
+        <string id="player_settlement_n_47" text="Required Castle Cost" />
+        <string id="player_settlement_n_48" text="Maximum number of player built towns allowed. At least one town is required.  [ Default: 10 ]" />
+        <string id="player_settlement_n_49" text="Maximum Allowed Towns" />
+        <string id="player_settlement_n_50" text="Maximum number of player built villages per town allowed.  [ Default: 5 ]" />
+        <string id="player_settlement_n_51" text="Maximum Allowed Villages Per Town" />
+        <string id="player_settlement_n_52" text="Maximum number of player built castles allowed. At least one town is required first.  [ Default: 15 ]" />
+        <string id="player_settlement_n_53" text="Maximum Allowed Castles" />
+        <string id="player_settlement_n_54" text="Maximum number of player built villages per castle allowed.  [ Default: 4 ]" />
+        <string id="player_settlement_n_55" text="Maximum Allowed Villages Per Castle" />
+        <string id="player_settlement_n_56" text="Will require in progress construction to finish before being allowed to build next settlement. By default when this is OFF, multiple settlement construction can be done at once.  [ Default: OFF ]" />
+        <string id="player_settlement_n_57" text="Single Construction At a Time" />
+        <string id="player_settlement_n_58" text="Will add an initial garrison for new towns and castles.  [ Default: ON ]" />
+        <string id="player_settlement_n_59" text="Add Initial Garrison" />
+        <string id="player_settlement_n_60" text="Will add initial militia for new settlements.  [ Default: ON ]" />
+        <string id="player_settlement_n_61" text="Add Initial Militia" />
+        <string id="player_settlement_n_62" text="Will add initial notables for new towns and villages.  [ Default: ON ]" />
+        <string id="player_settlement_n_63" text="Add Initial Notables" />
+        <string id="player_settlement_n_64" text="Enabled" />
+        <string id="player_settlement_n_65" text="Player Settlements" />
+        <string id="player_settlement_n_66" text="Saves" />
+        <string id="player_settlement_n_67" text="User Interface" />
+        
     </strings>
 </base>

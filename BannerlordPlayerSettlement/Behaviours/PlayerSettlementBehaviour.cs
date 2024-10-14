@@ -114,6 +114,7 @@ namespace BannerlordPlayerSettlement.Behaviours
         private float settlementRotationBearing = 0f;
         private float settlementRotationVelocity = 0f;
         private Action? applyPending = null;
+        private float settlementScale = 1f;
         private float holdTime = 0f;
 
         public bool IsPlacingSettlement => settlementVisualEntity != null && applyPending != null;
@@ -562,8 +563,70 @@ namespace BannerlordPlayerSettlement.Behaviours
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
                     Campaign.Current.SetTimeControlModeLock(true);
 
+                    var scaleModifierDown = mapScreen.SceneLayer.Input.IsControlDown();
                     var cycleModifierDown = mapScreen.SceneLayer.Input.IsShiftDown();
-                    if (cycleModifierDown)
+
+                    if (scaleModifierDown)
+                    {
+                        var scaleBackRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(57);
+                        var scaleForwardRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(58);
+
+                        var scaleBackHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(57);
+                        var scaleForwardHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(58);
+
+                        var holdWait = 1 / Main.Settings.CycleSpeed;
+
+                        if (scaleForwardHeld)
+                        {
+                            if (holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                holdTime = Time.ApplicationTime;
+                            }
+                            else if ((holdTime + holdWait) < Time.ApplicationTime)
+                            {
+                                settlementScale += 0.02f;
+                                holdTime = 0f;
+                                return;
+                            }
+                        }
+                        else if (scaleBackHeld)
+                        {
+                            if (holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                holdTime = Time.ApplicationTime;
+                            }
+                            else if ((holdTime + holdWait) < Time.ApplicationTime)
+                            {
+                                settlementScale -= 0.02f;
+                                if (settlementScale <= 0.15f)
+                                {
+                                    settlementScale = 0.1f;
+                                }
+                                holdTime = 0f;
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            holdTime = 0f;
+                        }
+
+                        if (scaleForwardRelease && holdTime.ApproximatelyEqualsTo(0f))
+                        {
+                            settlementScale += 0.02f;
+                            return;
+                        }
+                        else if (scaleBackRelease && holdTime.ApproximatelyEqualsTo(0f))
+                        {
+                            settlementScale -= 0.02f;
+                            if (settlementScale <= 0.15f)
+                            {
+                                settlementScale = 0.1f;
+                            }
+                            return;
+                        }
+                    }
+                    else if (cycleModifierDown)
                     {
                         var cycleBackRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(57);
                         var cycleForwardRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(58);
@@ -661,6 +724,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                     var bearing = this.settlementRotationBearing + this.settlementRotationVelocity;
                     identity.rotation.RotateAboutUp(-bearing);
+                    identity.Scale(new Vec3(settlementScale,settlementScale,settlementScale));
                     this.settlementRotationBearing = bearing;
                     this.settlementRotationVelocity = 0f;
 
@@ -735,6 +799,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             currentModelOptionIdx = -1;
             ClearEntities();
             settlementRotationBearing = 0f;
+            settlementScale = 1f;
             settlementRotationVelocity = 0f;
             settlementPlacementFrame = null;
             applyPending = null;

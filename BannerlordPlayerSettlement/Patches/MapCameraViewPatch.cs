@@ -31,6 +31,7 @@ namespace BannerlordPlayerSettlement.Patches
                 Game.Current.GameStateManager.ActiveState is MapState mapState && 
                 mapState.Handler is MapScreen mapScreen &&
                 (mapScreen.SceneLayer.Input.IsAltDown() ||
+                        mapScreen.SceneLayer.Input.IsControlDown() ||
                         mapScreen.SceneLayer.Input.IsShiftDown())
                     //(inputInformation.RightMouseButtonDown ||
                     //    inputInformation.RotateLeftKeyDown ||

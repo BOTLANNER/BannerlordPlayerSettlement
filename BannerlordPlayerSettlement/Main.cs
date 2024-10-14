@@ -177,7 +177,15 @@ namespace BannerlordPlayerSettlement
                                             if (!string.IsNullOrEmpty(templateFile) && File.Exists(templateFile))
                                             {
                                                 var templateDoc = new XmlDocument();
-                                                templateDoc.Load(templateFile);
+                                                try
+                                                {
+                                                    templateDoc.Load(templateFile);
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
+                                                    continue;
+                                                }
                                                 var cultureSettlementInfo = new CultureSettlementTemplate
                                                 {
                                                     FromModule = addOnModule!.Id,

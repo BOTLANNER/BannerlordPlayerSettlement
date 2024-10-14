@@ -42,32 +42,42 @@ namespace BannerlordPlayerSettlement.Extensions
 
         public static bool IsPlayerBuiltStringId(this string? stringId)
         {
+            return stringId.IsPlayerBuiltStringId(out _);
+        }
+
+        public static bool IsPlayerBuiltStringId(this string? stringId, out PlayerSettlementItem? playerSettlementItem)
+        {
             if (string.IsNullOrEmpty(stringId))
             {
+                playerSettlementItem = null;
                 return false;
             }
 
             if (PlayerSettlementInfo.Instance != null)
             {
-                var isPlayerTown = PlayerSettlementInfo.Instance.Towns.Any(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
-                if (isPlayerTown)
+                var isPlayerTown = PlayerSettlementInfo.Instance.Towns.FirstOrDefault(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
+                if (isPlayerTown != null)
                 {
+                    playerSettlementItem = isPlayerTown;
                     return true;
                 }
-                var isPlayerCastle = PlayerSettlementInfo.Instance.Towns.Any(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
-                if (isPlayerCastle)
+                var isPlayerCastle = PlayerSettlementInfo.Instance.Castles.FirstOrDefault(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
+                if (isPlayerCastle != null)
                 {
+                    playerSettlementItem = isPlayerCastle;
                     return true;
                 }
-                var isPlayerVillage = (PlayerSettlementInfo.Instance.PlayerVillages?.Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ?? false) ||
-                                       PlayerSettlementInfo.Instance.Towns.SelectMany(t => t.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ||
-                                       PlayerSettlementInfo.Instance.Castles.SelectMany(c => c.Villages).Any(v => v.Settlement?.StringId == stringId || v.StringId == stringId);
-                if (isPlayerVillage)
+                var isPlayerVillage = (PlayerSettlementInfo.Instance.PlayerVillages?.FirstOrDefault(v => v.Settlement?.StringId == stringId || v.StringId == stringId)) ??
+                                       PlayerSettlementInfo.Instance.Towns.SelectMany(t => t.Villages).FirstOrDefault(v => v.Settlement?.StringId == stringId || v.StringId == stringId) ??
+                                       PlayerSettlementInfo.Instance.Castles.SelectMany(c => c.Villages).FirstOrDefault(v => v.Settlement?.StringId == stringId || v.StringId == stringId);
+                if (isPlayerVillage != null)
                 {
+                    playerSettlementItem = isPlayerVillage;
                     return true;
                 }
             }
 
+            playerSettlementItem = null;
             return stringId!.StartsWith("player_settlement_town_") || stringId!.StartsWith("player_settlement_castle_");
         }
     }

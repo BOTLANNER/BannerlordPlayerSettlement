@@ -51,6 +51,7 @@ namespace BannerlordPlayerSettlement.Saves
                     Identifier = town.Identifier,
                     settlement = town.Settlement,
                     StringId = town.StringId,
+                    PrefabId = town.PrefabId,
                     Version = town.Version,
                     Villages = town.Villages.Select(v => new SettlementMetaV3
                     {
@@ -60,6 +61,7 @@ namespace BannerlordPlayerSettlement.Saves
                         Identifier = v.Identifier,
                         settlement = v.Settlement,
                         StringId = v.StringId,
+                        PrefabId = v.PrefabId,
                         Version = v.Version,
                         Villages = new()
                     }).ToList()
@@ -75,6 +77,7 @@ namespace BannerlordPlayerSettlement.Saves
                     Identifier = castle.Identifier,
                     settlement = castle.Settlement,
                     StringId = castle.StringId,
+                    PrefabId = castle.PrefabId,
                     Version = castle.Version,
                     Villages = castle.Villages.Select(v => new SettlementMetaV3
                     {
@@ -84,6 +87,7 @@ namespace BannerlordPlayerSettlement.Saves
                         Identifier = v.Identifier,
                         settlement = v.Settlement,
                         StringId = v.StringId,
+                        PrefabId = v.PrefabId,
                         Version = v.Version,
                         Villages = new()
                     }).ToList()
@@ -102,6 +106,7 @@ namespace BannerlordPlayerSettlement.Saves
                         Identifier = v.Identifier,
                         settlement = v.Settlement,
                         StringId = v.StringId,
+                        PrefabId = v.PrefabId,
                         Version = v.Version,
                         Villages = new(),
                     });

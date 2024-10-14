@@ -191,10 +191,7 @@ namespace BannerlordPlayerSettlement
                                                     FromModule = addOnModule!.Id,
                                                     Document = templateDoc,
                                                     TemplateModifier = templateDoc.ChildNodes?[0]?.Attributes?["template_modifier"]?.Value ?? "",
-                                                    CultureId = templateDoc.ChildNodes?[0]?.Attributes?["culture_template"]?.Value ?? "",
-                                                    Castles = int.Parse(templateDoc.ChildNodes?[0]?.Attributes?["castles"]?.Value),
-                                                    Towns = int.Parse(templateDoc.ChildNodes?[0]?.Attributes?["towns"]?.Value),
-                                                    Villages = int.Parse(templateDoc.ChildNodes?[0]?.Attributes?["villages"]?.Value),
+                                                    CultureId = templateDoc.ChildNodes?[0]?.Attributes?["culture_template"]?.Value ?? ""
 
                                                 };
 

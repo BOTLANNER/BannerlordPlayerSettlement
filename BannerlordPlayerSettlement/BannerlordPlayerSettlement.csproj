@@ -126,10 +126,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="PlayerSettlementBehaviour.cs~RF3fe6d45.TMP" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Update="$(GameFolder)\bin\Win64_Shipping_Client\Newtonsoft.Json.dll">
       <Private>true</Private>
       <SpecificVersion>false</SpecificVersion>

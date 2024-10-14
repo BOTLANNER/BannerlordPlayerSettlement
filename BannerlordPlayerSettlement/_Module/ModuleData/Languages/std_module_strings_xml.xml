@@ -71,6 +71,9 @@
         <string id="player_settlement_n_65" text="Player Settlements" />
         <string id="player_settlement_n_66" text="Saves" />
         <string id="player_settlement_n_67" text="User Interface" />
+        <string id="player_settlement_n_68" text="Allow choosing settlement gate position when applicable.  [ Default: ON ]" />
+        <string id="player_settlement_n_69" text="Allow Setting Gate Position" />
+        <string id="player_settlement_n_70" text="Settlement Placement" />
         
     </strings>
 </base>

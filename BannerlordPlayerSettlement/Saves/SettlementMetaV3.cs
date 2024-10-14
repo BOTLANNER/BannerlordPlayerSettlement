@@ -54,5 +54,8 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(337)]
         public string StringId = null;
 
+        [SaveableField(338)]
+        public string PrefabId = null;
+
     }
 }

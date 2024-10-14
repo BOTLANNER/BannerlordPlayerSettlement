@@ -37,5 +37,7 @@
         <string id="player_settlement_31" text="Player Settlements has encountered a corrupt template. \nPlease screenshot and report this along with the log file at '{LOG_PATH}'. \n{ERROR_DETAIL}\n\nYour game will now have a new emergency save created to avoid crashing. It is highly recommended to close the application before loading." />
         <string id="player_settlement_32" text="Close Game" />
         <string id="player_settlement_33" text="Attempt Recovery" />
+        <string id="player_settlement_34" text="Choose your gate position. Click anywhere to apply or press 'ESC' to go back to settlement placement." />
+        <string id="player_settlement_35" text="Choose your settlement. \r\nClick anywhere to apply or press 'ESC' to cancel. \r\nUse 'Shift' and rotation keys ('Q' and 'E' by default) to change visual options.\r\nUse 'Alt' and rotation keys ('Q' and 'E' by default) to change rotation. \r\nUse 'Ctrl' and rotation keys ('Q' and 'E' by default) to change scale." />
     </strings>
 </base>

@@ -10,8 +10,6 @@ namespace BannerlordPlayerSettlement.Descriptors
 
         public string Culture;
 
-        public int Variant;
-
         public int Type = 0;
     }
 }

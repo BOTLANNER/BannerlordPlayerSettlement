@@ -162,7 +162,7 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
                 IsCreatePlayerSettlementAllowed = false;
                 IsCreatePlayerSettlementVisible = false;
             }
-            else if (PlayerSettlementBehaviour.Instance!.ReachedMax || PlayerSettlementBehaviour.Instance!.HasRequest || PlayerSettlementBehaviour.Instance!.IsPlacingSettlement)
+            else if (PlayerSettlementBehaviour.Instance!.ReachedMax || PlayerSettlementBehaviour.Instance!.HasRequest || PlayerSettlementBehaviour.Instance!.IsPlacingSettlement || PlayerSettlementBehaviour.Instance!.IsPlacingGate)
             {
                 // Either reached max or about to create something
                 disableReason ??= new TextObject(" - ");

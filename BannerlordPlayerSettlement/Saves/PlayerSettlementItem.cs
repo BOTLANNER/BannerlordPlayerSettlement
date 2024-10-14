@@ -70,38 +70,12 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(208)]
         public string StringId = null;
 
-        [System.Obsolete("Use PlayerSettlementItem.StringId instead")]
-        private static string? GetStringIdFor(SettlementType settlementType, int id, PlayerSettlementItem? boundTarget = null)
-        {
-            switch (settlementType)
-            {
-                default:
-                case SettlementType.None:
-                    return null;
-                case SettlementType.Town:
-                    return $"player_settlement_town_{id}";
-                case SettlementType.Village:
-                    if (boundTarget == null)
-                    {
-                        return null;
-                    }
-                    if (boundTarget.Type == (int) SettlementType.Castle)
-                    {
-                        return $"player_settlement_castle_{boundTarget.Identifier}_village_{id}";
-                    }
-                    return $"player_settlement_town_{boundTarget.Identifier}_village_{id}";
-                case SettlementType.Castle:
-                    return $"player_settlement_castle_{id}";
-            }
-        }
+        [SaveableField(209)]
+        public string PrefabId = null;
 
-        public string? GetStringId(PlayerSettlementItem? boundTarget = null)
+        public SettlementType GetSettlementType()
         {
-            if (!string.IsNullOrEmpty(StringId))
-            {
-                return StringId;
-            }
-            return GetStringIdFor((SettlementType) Type, Identifier, boundTarget);
+            return (SettlementType) Type;
         }
 
 

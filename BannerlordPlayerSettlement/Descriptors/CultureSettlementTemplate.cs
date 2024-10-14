@@ -9,9 +9,5 @@ namespace BannerlordPlayerSettlement.Descriptors
 
         public XmlDocument Document;
         public string CultureId;
-
-        public int Castles;
-        public int Towns;
-        public int Villages;
     }
 }

@@ -72,10 +72,18 @@ namespace BannerlordPlayerSettlement.Patches
 
         public static bool AfterWaitTick(ref MapScreen __instance, ref ObservableCollection<MapView> ____mapViews, float dt)
         {
-            if (__instance.SceneLayer.Input.IsHotKeyReleased("ToggleEscapeMenu") && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement)
+            if (__instance.SceneLayer.Input.IsHotKeyReleased("ToggleEscapeMenu") && 
+                    PlayerSettlementBehaviour.Instance != null && 
+                    (PlayerSettlementBehaviour.Instance.IsPlacingSettlement || 
+                        PlayerSettlementBehaviour.Instance.IsPlacingGate))
             {
                 if (!____mapViews.Any<MapView>((MapView m) => m.CheckIsEscaped()))
                 {
+                    if (PlayerSettlementBehaviour.Instance.IsPlacingGate)
+                    {
+                        PlayerSettlementBehaviour.Instance.RefreshVisualSelection();
+                        return false;
+                    }
                     PlayerSettlementBehaviour.Instance.Reset();
                     MapBarExtensionVM.Current?.OnRefresh();
                     return false;
@@ -88,9 +96,15 @@ namespace BannerlordPlayerSettlement.Patches
         [HarmonyPatch(nameof(HandleLeftMouseButtonClick))]
         public static bool HandleLeftMouseButtonClick(ref MapScreen __instance, ref UIntPtr ____preSelectedSiegeEntityID, ref GameEntity[] ____defenderMachinesCircleEntities, ref GameEntity[] ____attackerRangedMachinesCircleEntities, ref GameEntity[] ____attackerRamMachinesCircleEntities, ref GameEntity[] ____attackerTowerMachinesCircleEntities, UIntPtr selectedSiegeEntityID, PartyVisual visualOfSelectedEntity, Vec3 intersectionPoint, PathFaceRecord mouseOverFaceIndex)
         {
-            if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+
+            if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingGate && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
             {
                 PlayerSettlementBehaviour.Instance.ApplyNow();
+                return false;
+            }
+            else if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            {
+                PlayerSettlementBehaviour.Instance.StartGatePlacement();
                 return false;
             }
             return true;

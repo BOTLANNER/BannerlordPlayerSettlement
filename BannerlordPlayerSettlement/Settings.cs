@@ -44,14 +44,14 @@ When using dialogue options, only available options will show, otherwise the una
         private const string SettlementPlacement_Hint = "{=player_settlement_n_11}Allows choosing the position and rotation to place the settlement. When disabled will use the player party current position.  [ Default: ON ]";
 
         [SettingPropertyBool("{=player_settlement_n_12}Enable Settlement Placement", HintText = SettlementPlacement_Hint, RequireRestart = false, Order = 20, IsToggle = true)]
-        [SettingPropertyGroup("Settlement Placement", GroupOrder = 2)]
+        [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement", GroupOrder = 2)]
         public bool SettlementPlacement { get; set; } = true;
 
         private const string MouseRotationModifier_Hint = @"{=player_settlement_n_13}Speed at which mouse movement rotates settlement. 
 Settlement rotation applies when 'Alt' is held.  [ Default: 50% ]";
 
         [SettingPropertyFloatingInteger("{=player_settlement_n_14}Mouse Rotation Speed", 0.01f, 10f, "#0%", HintText = MouseRotationModifier_Hint, RequireRestart = false, Order = 21)]
-        [SettingPropertyGroup("Settlement Placement")]
+        [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
         public float MouseRotationModifier { get; set; } = 0.5f;
 
         private const string KeyRotationModifier_Hint = @"{=player_settlement_n_15}Speed at which rotation keys affect settlement when rotating. 
@@ -59,7 +59,7 @@ Default game rotation keys are 'Q' and 'E', unless remapped.
 Settlement rotation applies when 'Alt' is held. [ Default: 100% ]";
 
         [SettingPropertyFloatingInteger("{=player_settlement_n_16}Key Rotation Speed", 0.01f, 10f, "#0%", HintText = KeyRotationModifier_Hint, RequireRestart = false, Order = 22)]
-        [SettingPropertyGroup("Settlement Placement")]
+        [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
         public float KeyRotationModifier { get; set; } = 1f;
 
         private const string SelectedCultureOnly_Hint = @"{=player_settlement_n_17}Will limit settlement options to selected culture only. 
@@ -68,7 +68,7 @@ Cycle visually between options by holding 'Shift' and using rotation keys.
 Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: ON ]";
 
         [SettingPropertyBool("{=player_settlement_n_18}Selected Culture Only", HintText = SelectedCultureOnly_Hint, RequireRestart = false, Order = 23, IsToggle = false)]
-        [SettingPropertyGroup("Settlement Placement")]
+        [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
         public bool SelectedCultureOnly { get; set; } = true;
 
         private const string CycleSpeed_Hint = @"{=player_settlement_n_19}Speed at which settlements will visually cycle during placement while holding 'Shift' and a rotation key, or speed at which settlements will scale while holding 'Ctrl' and a rotation key.
@@ -76,8 +76,14 @@ Cycle visually between options by holding 'Shift' and using rotation keys.
 Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
 
         [SettingPropertyFloatingInteger("{=player_settlement_n_20}Settlement Cycle Speed", 0.01f, 10f, "#0%", HintText = CycleSpeed_Hint, RequireRestart = false, Order = 24)]
-        [SettingPropertyGroup("Settlement Placement")]
+        [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
         public float CycleSpeed { get; set; } = 2f;
+
+        private const string AllowGatePosition_Hint = @"{=player_settlement_n_68}Allow choosing settlement gate position when applicable. When not enabled, all settlement entry is at the center.  [ Default: ON ]";
+
+        [SettingPropertyBool("{=player_settlement_n_69}Allow Setting Gate Position", HintText = AllowGatePosition_Hint, RequireRestart = false, Order = 25, IsToggle = false)]
+        [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
+        public bool AllowGatePosition { get; set; } = true;
 
         private const string Enabled_Hint = "{=player_settlement_n_21}Enables Player Settlement mod and adds the option map screen.  [ Default: ON ]";
 
@@ -212,13 +218,13 @@ Default game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]";
         public bool AddInitialNotables { get; set; } = true;
 
         // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
-        public const int HardMaxTowns = 10;
-        public const int HardMaxVillagesPerTown = 5;
+        public const int HardMaxTowns = 150;
+        public const int HardMaxVillagesPerTown = 50;
                
-        public const int HardMaxCastles = 15;
-        public const int HardMaxVillagesPerCastle = 4;
+        public const int HardMaxCastles = 150;
+        public const int HardMaxVillagesPerCastle = 50;
 
-        public const int HardMaxVillages = (HardMaxTowns * HardMaxVillagesPerTown) + (HardMaxCastles * HardMaxVillagesPerCastle);
+        public const int HardMaxVillages = int.MaxValue; //(HardMaxTowns * HardMaxVillagesPerTown) + (HardMaxCastles * HardMaxVillagesPerCastle);
 
     }
 }

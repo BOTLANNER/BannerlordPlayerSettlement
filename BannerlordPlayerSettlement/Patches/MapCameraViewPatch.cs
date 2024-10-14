@@ -27,6 +27,7 @@ namespace BannerlordPlayerSettlement.Patches
         public static bool GetMapCameraInput(ref bool __result, ref MapCameraView __instance, MapCameraView.InputInformation inputInformation)
         {
             if (PlayerSettlementBehaviour.Instance != null && 
+                !PlayerSettlementBehaviour.Instance.IsPlacingGate && 
                 PlayerSettlementBehaviour.Instance.IsPlacingSettlement && 
                 Game.Current.GameStateManager.ActiveState is MapState mapState && 
                 mapState.Handler is MapScreen mapScreen &&

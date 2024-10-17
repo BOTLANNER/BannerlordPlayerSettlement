@@ -594,6 +594,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
                     MatrixFrame identity = MatrixFrame.Identity;
                     identity.origin = intersectionPoint2;
+                    identity.Scale(new Vec3(0.25f, 0.25f, 0.25f));
 
                     var previous = ghostGateVisualEntity.GetFrame();
 

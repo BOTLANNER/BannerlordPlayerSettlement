@@ -8,7 +8,6 @@ using BannerlordPlayerSettlement.Utils;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.Settlements;
-using TaleWorlds.Library;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
@@ -108,8 +107,14 @@ namespace BannerlordPlayerSettlement.Saves
                 if (Castles == null)
                 {
                     Castles = new();
+                }                
+
+                if (PlayerVillages == null)
+                {
+                    PlayerVillages = new();
                 }
 
+                // Convert to metav3 format
                 if (PlayerSettlement != null && PlayerSettlement.Town != null)
                 {
                     var town = new PlayerSettlementItem

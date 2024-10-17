@@ -36,6 +36,21 @@ namespace BannerlordPlayerSettlement
     {
         public static readonly string Version = $"{typeof(Main).Assembly.GetName().Version}";
 
+        /**
+         * Version with which StringId was introduced as opposed to a built up Identifier based on count
+         */
+        public static readonly Version Feature_StringId_Version = new("4.0.0.0");
+
+        /**
+         * Version with which PrefabId was introduced for prefabs instead of tied to StringId
+         */
+        public static readonly Version Feature_PrefabId_Version = new("5.0.0.0");
+
+        /**
+         * Version with which component was fixed to be unique identifier to prevent towns/villages from becoming one another
+         */
+        public static readonly Version Feature_Component_Fix_Version = new("5.1.0.0");
+
         public static readonly string Name = typeof(Main).Namespace;
         public static readonly string DisplayName = "Player Settlement"; // to be shown to humans in-game
         public static readonly string HarmonyDomain = "com.b0tlanner.bannerlord." + Name.ToLower();
@@ -313,10 +328,13 @@ namespace BannerlordPlayerSettlement
 
                     if (townMeta.settlement == null || !townMeta.settlement.IsReady)
                     {
-                        MBObjectManager.Instance.LoadXml(townMeta.Document);
+
+                        var doc = townMeta.Document;
+
+                        MBObjectManager.Instance.LoadXml(doc);
 
                         string townStringId;
-                        if (!string.IsNullOrEmpty(townMeta.Version) && !string.IsNullOrEmpty(townMeta.StringId) && new Version(townMeta.Version).CompareTo(new Version(Main.Version)) >= 0)
+                        if (!string.IsNullOrEmpty(townMeta.Version) && !string.IsNullOrEmpty(townMeta.StringId) && new Version(townMeta.Version).CompareTo(Feature_StringId_Version) >= 0)
                         {
                             townStringId = townMeta.StringId;
                         }
@@ -330,7 +348,7 @@ namespace BannerlordPlayerSettlement
                         if (townMeta.settlement != null && !townMeta.settlement.IsReady)
                         {
                             MBObjectManager.Instance.UnregisterObject(townMeta.settlement);
-                            MBObjectManager.Instance.LoadXml(townMeta.Document);
+                            MBObjectManager.Instance.LoadXml(doc);
 
                             townMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(townStringId);
                         }
@@ -357,8 +375,10 @@ namespace BannerlordPlayerSettlement
                             continue;
                         }
 
+                        var vDoc = village.Document;
+
                         string villageStringId;
-                        if (!string.IsNullOrEmpty(village.Version) && !string.IsNullOrEmpty(village.StringId) && new Version(village.Version).CompareTo(new Version(Main.Version)) >= 0)
+                        if (!string.IsNullOrEmpty(village.Version) && !string.IsNullOrEmpty(village.StringId) && new Version(village.Version).CompareTo(Feature_StringId_Version) >= 0)
                         {
                             villageStringId = village.StringId;
                         }
@@ -371,13 +391,13 @@ namespace BannerlordPlayerSettlement
 
                         if (village.settlement == null || !village.settlement.IsReady)
                         {
-                            MBObjectManager.Instance.LoadXml(village.Document);
+                            MBObjectManager.Instance.LoadXml(vDoc);
 
                             village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
 
                             if (village.settlement != null && !village.settlement.IsReady)
                             {
-                                MBObjectManager.Instance.LoadXml(village.Document);
+                                MBObjectManager.Instance.LoadXml(vDoc);
 
                                 village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
                             }
@@ -407,10 +427,12 @@ namespace BannerlordPlayerSettlement
                         continue;
                     }
 
+                    var doc = castleMeta.Document;
+
                     if (castleMeta.settlement == null || !castleMeta.settlement.IsReady)
                     {
                         string castleStringId;
-                        if (!string.IsNullOrEmpty(castleMeta.Version) && !string.IsNullOrEmpty(castleMeta.StringId) && new Version(castleMeta.Version).CompareTo(new Version(Main.Version)) >= 0)
+                        if (!string.IsNullOrEmpty(castleMeta.Version) && !string.IsNullOrEmpty(castleMeta.StringId) && new Version(castleMeta.Version).CompareTo(Feature_StringId_Version) >= 0)
                         {
                             castleStringId = castleMeta.StringId;
                         }
@@ -421,7 +443,7 @@ namespace BannerlordPlayerSettlement
 
                         //var configFile = Path.Combine(ConfigDir, $"PlayerCastle_{castleId}.xml");
                         //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
-                        MBObjectManager.Instance.LoadXml(castleMeta.Document);
+                        MBObjectManager.Instance.LoadXml(doc);
 
                         castleMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(castleStringId);
 
@@ -429,7 +451,7 @@ namespace BannerlordPlayerSettlement
                         {
                             //MBObjectManager.Instance.UnregisterObject(castleMeta.settlement);
                             //MBObjectManager.Instance.LoadOneXmlFromFile(configFile, null, true);
-                            MBObjectManager.Instance.LoadXml(castleMeta.Document);
+                            MBObjectManager.Instance.LoadXml(doc);
 
                             castleMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(castleStringId);
                         }
@@ -456,8 +478,10 @@ namespace BannerlordPlayerSettlement
                             continue;
                         }
 
+                        var vDoc = village.Document;
+
                         string villageStringId;
-                        if (!string.IsNullOrEmpty(village.Version) && !string.IsNullOrEmpty(village.StringId) && new Version(village.Version).CompareTo(new Version(Main.Version)) >= 0)
+                        if (!string.IsNullOrEmpty(village.Version) && !string.IsNullOrEmpty(village.StringId) && new Version(village.Version).CompareTo(Feature_StringId_Version) >= 0)
                         {
                             villageStringId = village.StringId;
                         }
@@ -470,13 +494,13 @@ namespace BannerlordPlayerSettlement
 
                         if (village.settlement == null || !village.settlement.IsReady)
                         {
-                            MBObjectManager.Instance.LoadXml(village.Document);
+                            MBObjectManager.Instance.LoadXml(vDoc);
 
                             village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
 
                             if (village.settlement != null && !village.settlement.IsReady)
                             {
-                                MBObjectManager.Instance.LoadXml(village.Document);
+                                MBObjectManager.Instance.LoadXml(vDoc);
 
                                 village.settlement = MBObjectManager.Instance.GetObject<Settlement>(villageStringId);
                             }

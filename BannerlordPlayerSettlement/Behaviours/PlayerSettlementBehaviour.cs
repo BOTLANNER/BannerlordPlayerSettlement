@@ -48,6 +48,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         public static bool OldSaveLoaded = false;
         public static bool TriggerSaveAfterUpgrade = false;
+        public static bool TriggerSaveLoadAfterUpgrade = false;
 
         public SettlementType SettlementRequest = SettlementType.None;
 
@@ -453,6 +454,12 @@ namespace BannerlordPlayerSettlement.Behaviours
                     MBInformationManager.AddQuickInformation(message, 0, null, "");
                     LogManager.Log.NotifyBad(message.ToString());
                     PlayerSettlementBehaviour.OldSaveLoaded = false;
+                    return;
+                }
+                if (PlayerSettlementBehaviour.TriggerSaveLoadAfterUpgrade)
+                {
+                    PlayerSettlementBehaviour.TriggerSaveLoadAfterUpgrade = false;
+                    SaveHandler.SaveLoad(overwrite: true);
                     return;
                 }
                 if (PlayerSettlementBehaviour.TriggerSaveAfterUpgrade)
@@ -1338,6 +1345,9 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             node.Attributes["id"].Value = newId;
 
+            var nodeComponent = node.SelectSingleNode("descendant::Town");
+            nodeComponent.Attributes["id"].Value = newId + "_castle_comp";
+
             // If a gate position has been placed, use that instead.
             if (gateSupported && Main.Settings!.AllowGatePosition && gatePlacementFrame != null)
             {
@@ -1784,7 +1794,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             node.Attributes["culture"].Value = $"Culture.{culture.StringId}";
 
             var newNodeComponent = node.SelectSingleNode("descendant::Village");
-            newNodeComponent.Attributes["id"].Value = newNodeComponent.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", bound.IsCastle ? "castle" : "town");
+            newNodeComponent.Attributes["id"].Value = newNodeComponent.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", bound.IsCastle ? "castle" : "town") + "_random_" + identifierUniqueness;
             newNodeComponent.Attributes["village_type"].Value = $"VillageType.{villageType}";
             newNodeComponent.Attributes["bound"].Value = $"Settlement.{bound.StringId}";
 
@@ -2375,6 +2385,9 @@ namespace BannerlordPlayerSettlement.Behaviours
             var newId = item.Id + "_random_" + identifierUniqueness;
 
             node.Attributes["id"].Value = newId;
+
+            var nodeComponent = node.SelectSingleNode("descendant::Town");
+            nodeComponent.Attributes["id"].Value = newId + "_town_comp";
 
             node.Attributes["posX"].Value = atPos.X.ToString();
             node.Attributes["posY"].Value = atPos.Y.ToString();

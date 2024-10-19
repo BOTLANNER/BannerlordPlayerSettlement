@@ -953,6 +953,55 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     return;
                                 }
                             }
+                            else if (moveUpHeld)
+                            {
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    var editModifier = 0.02f;
+                                    var edited = MarkEdited(settlementVisualEntity);
+
+                                    // Not deep edit, only applies for root
+                                    if (edited?.Transform != null)
+                                    {
+                                        if (edited.Transform.Offsets == null)
+                                        {
+                                            edited.Transform.Offsets = Vec3.Zero;
+                                        }
+                                        edited.Transform.Offsets!.z += editModifier;
+                                    }
+
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
+                            else if (moveDownHeld)
+                            {
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    var editModifier = 0.02f;
+                                    var edited = MarkEdited(settlementVisualEntity);
+                                    // Not deep edit, only applies for root
+                                    if (edited?.Transform != null)
+                                    {
+                                        if (edited.Transform.Offsets == null)
+                                        {
+                                            edited.Transform.Offsets = Vec3.Zero;
+                                        }
+                                        edited.Transform.Offsets!.z -= editModifier;
+                                    }
+
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
                             else
                             {
                                 holdTime = 0f;
@@ -966,6 +1015,37 @@ namespace BannerlordPlayerSettlement.Behaviours
                             else if (cycleBackRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
                             {
                                 UpdateSettlementVisualEntity(false);
+                                return;
+                            }
+                            else if (moveUpRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                var editModifier = 0.02f;
+                                var edited = MarkEdited(settlementVisualEntity);
+                                // Not deep edit, only applies for root
+                                if (edited?.Transform != null)
+                                {
+                                    if (edited.Transform.Offsets == null)
+                                    {
+                                        edited.Transform.Offsets = Vec3.Zero;
+                                    }
+                                    edited.Transform.Offsets!.z += editModifier;
+                                }
+                                return;
+                            }
+                            else if (moveDownRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                var editModifier = 0.02f;
+                                var edited = MarkEdited(settlementVisualEntity);
+                                // Not deep edit, only applies for root
+                                if (edited?.Transform != null)
+                                {
+                                    if (edited.Transform.Offsets == null)
+                                    {
+                                        edited.Transform.Offsets = Vec3.Zero;
+                                    }
+                                    edited.Transform.Offsets!.z -= editModifier;
+                                }
+
                                 return;
                             }
                         }

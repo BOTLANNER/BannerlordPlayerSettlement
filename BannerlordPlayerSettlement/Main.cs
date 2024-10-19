@@ -265,7 +265,6 @@ namespace BannerlordPlayerSettlement
                                 DefaultCategory
                             )
                         );
-                        defaultHotKeyManager.Build();
                     }
 
                     var cycleHotKeyManager = HotKeyManager.CreateWithOwnCategory(CycleCategory, CycleCategory);
@@ -314,7 +313,6 @@ namespace BannerlordPlayerSettlement
                                 CycleCategory
                             )
                         );
-                        cycleHotKeyManager.Build();
                     }
 
                     var scaleHotKeyManager = HotKeyManager.CreateWithOwnCategory(ScaleCategory, ScaleCategory);
@@ -343,7 +341,6 @@ namespace BannerlordPlayerSettlement
                                 ScaleCategory
                             )
                         );
-                        scaleHotKeyManager.Build();
                     }
 
                     var rotateHotKeyManager = HotKeyManager.CreateWithOwnCategory(RotateCategory, RotateCategory);
@@ -402,8 +399,12 @@ namespace BannerlordPlayerSettlement
                                 RotateCategory
                             )
                         );
-                        rotateHotKeyManager.Build();
                     }
+
+                    defaultHotKeyManager?.Build();
+                    cycleHotKeyManager?.Build();
+                    scaleHotKeyManager?.Build();
+                    rotateHotKeyManager?.Build();
                 }
 
                 LogManager.EventTracer.Trace();

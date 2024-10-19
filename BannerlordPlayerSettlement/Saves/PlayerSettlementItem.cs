@@ -73,6 +73,9 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(209)]
         public string PrefabId = null;
 
+        [SaveableField(210)]
+        public List<DeepTransformEdit>? DeepEdits = new();
+
         public SettlementType GetSettlementType()
         {
             return (SettlementType) Type;

@@ -7,11 +7,13 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 
+using Bannerlord.ButterLib.HotKeys;
 using Bannerlord.UIExtenderEx;
 
 using BannerlordPlayerSettlement.Behaviours;
 using BannerlordPlayerSettlement.Descriptors;
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.HotKeys;
 using BannerlordPlayerSettlement.Patches.Compatibility.Interfaces;
 using BannerlordPlayerSettlement.Saves;
 using BannerlordPlayerSettlement.UI.Viewmodels;
@@ -29,6 +31,7 @@ using TaleWorlds.MountAndBlade;
 using TaleWorlds.ObjectSystem;
 
 using Debug = TaleWorlds.Library.Debug;
+using InputKey = TaleWorlds.InputSystem.InputKey;
 
 namespace BannerlordPlayerSettlement
 {
@@ -56,6 +59,11 @@ namespace BannerlordPlayerSettlement
         public static readonly string HarmonyDomain = "com.b0tlanner.bannerlord." + Name.ToLower();
         public static readonly string ModuleName = "PlayerSettlement";
 
+        public static readonly string DefaultCategory = ModuleName;
+        public static readonly string CycleCategory = ModuleName + "Cycle";
+        public static readonly string RotateCategory = ModuleName + "Rotate";
+        public static readonly string ScaleCategory = ModuleName + "Scale";
+
         public static Settings? Settings;
 
         private bool _loaded;
@@ -69,6 +77,58 @@ namespace BannerlordPlayerSettlement
         public Dictionary<string, List<CultureSettlementTemplate>> CultureTemplates;
 
         private string? _blacklistFile;
+
+        private ModifierKey helpKey;
+        public HotKeyBase HelpKey => helpKey;
+
+        private ModifierKey cycleModifierKey;
+        public HotKeyBase CycleModifierKey => cycleModifierKey;
+
+        private ModifierKey rotateModifierKey;
+        public HotKeyBase RotateModifierKey => rotateModifierKey;
+
+        private ModifierKey rotateAlternateModifierKey;
+        public HotKeyBase RotateAlternateModifierKey => rotateAlternateModifierKey;
+
+        private ModifierKey scaleModifierKey;
+        public HotKeyBase ScaleModifierKey => scaleModifierKey;
+
+        private ModifierKey deepEditToggleKey;
+        public HotKeyBase DeepEditToggleKey => deepEditToggleKey;
+
+        private ModifierKey deepEditApplyKey;
+        public HotKeyBase DeepEditApplyKey => deepEditApplyKey;
+
+        private ModifierKey cycleBackKey;
+        public HotKeyBase CycleBackKey => cycleBackKey;
+
+        private ModifierKey cycleNextKey;
+        public HotKeyBase CycleNextKey => cycleNextKey;
+
+        private ModifierKey moveUpKey;
+        public HotKeyBase MoveUpKey => moveUpKey;
+
+        private ModifierKey moveDownKey;
+        public HotKeyBase MoveDownKey => moveDownKey;
+
+        private ModifierKey scaleSmallerKey;
+        public HotKeyBase ScaleSmallerKey => scaleSmallerKey;
+
+        private ModifierKey scaleBiggerKey;
+        public HotKeyBase ScaleBiggerKey => scaleBiggerKey;
+
+        private ModifierKey rotatePreviousKey;
+        public HotKeyBase RotatePreviousKey => rotatePreviousKey;
+
+        private ModifierKey rotateNextKey;
+        public HotKeyBase RotateNextKey => rotateNextKey;
+
+        private ModifierKey rotateBackwardsKey;
+        public HotKeyBase RotateBackwardsKey => rotateBackwardsKey;
+
+        private ModifierKey rotateForwardKey;
+        public HotKeyBase RotateForwardKey => rotateForwardKey;
+
         public string? BlacklistFile => _blacklistFile;
         public static MBReadOnlyList<string?> BlacklistedTemplates => _blacklistedTemplates;
 
@@ -136,6 +196,214 @@ namespace BannerlordPlayerSettlement
                     }
 
                     CultureTemplates = GatherTemplates();
+
+                    var categoryName = TaleWorlds.MountAndBlade.Module.CurrentModule.GlobalTextManager.GetGameText("str_key_category_name");
+
+                    var defaultHotKeyManager = HotKeyManager.CreateWithOwnCategory(DefaultCategory, DefaultCategory);
+                    if (defaultHotKeyManager != null)
+                    {
+                        TextObject description = new TextObject("{=player_settlement_n_85}Player Settlements");
+                        categoryName.AddVariationWithId(DefaultCategory, description, new List<GameTextManager.ChoiceTag>());
+
+                        helpKey = defaultHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_73}Show Help",
+                                "{=player_settlement_n_74}During player settlement placement when building, will show contextual help info.",
+                                TaleWorlds.InputSystem.InputKey.F1,
+                                DefaultCategory
+                            )
+                        );
+                        cycleModifierKey = defaultHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_75}Cycle Mode",
+                                "{=player_settlement_n_76}During player settlement placement when building, will switch to cycle mode when held.",
+                                TaleWorlds.InputSystem.InputKey.LeftShift,
+                                DefaultCategory
+                            )
+                        );
+                        rotateModifierKey = defaultHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_77}Rotation Mode",
+                                "{=player_settlement_n_78}During player settlement placement when building, will switch to rotation mode when held.",
+                                TaleWorlds.InputSystem.InputKey.LeftAlt,
+                                DefaultCategory
+                            )
+                        );
+                        scaleModifierKey = defaultHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_79}Scale Mode",
+                                "{=player_settlement_n_80}During player settlement placement when building, will switch to scaling mode when held.",
+                                TaleWorlds.InputSystem.InputKey.LeftControl,
+                                DefaultCategory
+                            )
+                        );
+                        deepEditToggleKey = defaultHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_81}Deep Edit Toggle",
+                                "{=player_settlement_n_82}During player settlement placement when building, will toggle between placement and deep edit modes.",
+                                TaleWorlds.InputSystem.InputKey.Tab,
+                                DefaultCategory
+                            )
+                        );
+                        deepEditApplyKey = defaultHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_83}Deep Edit Finish",
+                                "{=player_settlement_n_84}During player settlement placement when building in deep edit mode, will finish and apply either to gate position selection when applicable or confirmation to finalise",
+                                TaleWorlds.InputSystem.InputKey.Space,
+                                DefaultCategory
+                            )
+                        );
+                        defaultHotKeyManager.Build();
+                    }
+
+                    var cycleHotKeyManager = HotKeyManager.CreateWithOwnCategory(CycleCategory, CycleCategory);
+                    if (cycleHotKeyManager != null)
+                    {
+                        TextObject description = new TextObject("{=player_settlement_n_86}Player Settlements: Cycle Mode");
+                        categoryName.AddVariationWithId(CycleCategory, description, new List<GameTextManager.ChoiceTag>());
+
+                        cycleBackKey = cycleHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_87}Cycle Back",
+                                "{=player_settlement_n_88}During player settlement placement when building, will cycle to the previous settlement model (or previous submodel when in deep edit mode).",
+                                InputKey.Q,
+                                CycleCategory
+                            )
+                        );
+                        cycleNextKey = cycleHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_89}Cycle Next",
+                                "{=player_settlement_n_90}During player settlement placement when building, will cycle to the next settlement model (or next submodel when in deep edit mode).",
+                                InputKey.E,
+                                CycleCategory
+                            )
+                        );
+                        moveDownKey = cycleHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_91}Move Down",
+                                "{=player_settlement_n_92}During player settlement placement when building in deep edit mode, will move the selected object down.",
+                                InputKey.S,
+                                CycleCategory
+                            )
+                        );
+                        moveUpKey = cycleHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_93}Move Up",
+                                "{=player_settlement_n_94}During player settlement placement when building in deep edit mode, will move the selected object up.",
+                                InputKey.W,
+                                CycleCategory
+                            )
+                        );
+                        cycleHotKeyManager.Build();
+                    }
+
+                    var scaleHotKeyManager = HotKeyManager.CreateWithOwnCategory(ScaleCategory, ScaleCategory);
+                    if (scaleHotKeyManager != null)
+                    {
+                        TextObject description = new TextObject("{=player_settlement_n_95}Player Settlements: Scale Mode");
+                        categoryName.AddVariationWithId(ScaleCategory, description, new List<GameTextManager.ChoiceTag>());
+
+                        scaleSmallerKey = scaleHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_96}Scale Down",
+                                "{=player_settlement_n_97}During player settlement placement when building, will scale down to the model.",
+                                TaleWorlds.InputSystem.InputKey.Q,
+                                ScaleCategory
+                            )
+                        );
+                        scaleBiggerKey = scaleHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_98}Scale Up",
+                                "{=player_settlement_n_99}During player settlement placement when building, will scale up to the model.",
+                                TaleWorlds.InputSystem.InputKey.E,
+                                ScaleCategory
+                            )
+                        );
+                        scaleHotKeyManager.Build();
+                    }
+
+                    var rotateHotKeyManager = HotKeyManager.CreateWithOwnCategory(RotateCategory, RotateCategory);
+                    if (rotateHotKeyManager != null)
+                    {
+                        TextObject description = new TextObject("{=player_settlement_n_100}Player Settlements: Rotate Mode");
+                        categoryName.AddVariationWithId(RotateCategory, description, new List<GameTextManager.ChoiceTag>());
+
+                        rotatePreviousKey = rotateHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_101}Rotate Left",
+                                "{=player_settlement_n_102}During player settlement placement when building, will rotate the model to the left.",
+                                TaleWorlds.InputSystem.InputKey.Q,
+                                RotateCategory
+                            )
+                        );
+                        rotateNextKey = rotateHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_103}Rotate Right",
+                                "{=player_settlement_n_104}During player settlement placement when building, will rotate the model to the right.",
+                                TaleWorlds.InputSystem.InputKey.E,
+                                RotateCategory
+                            )
+                        );
+                        rotateBackwardsKey = rotateHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_105}Rotate Back",
+                                "{=player_settlement_n_106}During player settlement placement when building, will rotate the model backwards.",
+                                TaleWorlds.InputSystem.InputKey.S,
+                                RotateCategory
+                            )
+                        );
+                        rotateForwardKey = rotateHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_107}Rotate Forward",
+                                "{=player_settlement_n_108}During player settlement placement when building, will rotate the model forwards.",
+                                TaleWorlds.InputSystem.InputKey.W,
+                                RotateCategory
+                            )
+                        );
+                        rotateAlternateModifierKey = rotateHotKeyManager.Add
+                        (
+                            new ModifierKey
+                            (
+                                "{=player_settlement_n_109}Alternate Rotation Axis",
+                                "{=player_settlement_n_110}During player settlement placement when building in deep edit mode, will switch to alternate rotation mode when held together with the 'Rotation Modifier'. This changes the axis of rotation when using forwards and backwards rotation keys.",
+                                TaleWorlds.InputSystem.InputKey.LeftControl,
+                                RotateCategory
+                            )
+                        );
+                        rotateHotKeyManager.Build();
+                    }
                 }
 
                 LogManager.EventTracer.Trace();

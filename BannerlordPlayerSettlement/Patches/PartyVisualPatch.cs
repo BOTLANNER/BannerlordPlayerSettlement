@@ -118,6 +118,29 @@ namespace BannerlordPlayerSettlement.Patches
                             frame.rotation = playerSettlementItem.RotationMat3;
                             __instance.StrategicEntity.SetFrame(ref frame);
                         }
+                        if (playerSettlementItem?.DeepEdits != null)
+                        {
+                            var settlementVisualEntity = __instance.StrategicEntity;
+                            List<GameEntity> settlementVisualEntityChildren = new();
+                            settlementVisualEntity.GetChildrenRecursive(ref settlementVisualEntityChildren);
+
+                            foreach (var dte in playerSettlementItem.DeepEdits)
+                            {
+                                var entity = dte.Index < 0 ? settlementVisualEntity : settlementVisualEntityChildren[dte.Index];
+                                var local = entity!.GetFrame();
+                                local.rotation = dte?.Transform?.RotationScale != null ? dte.Transform.RotationScale : local.rotation;
+                                if (dte!.Index >= 0)
+                                {
+                                    local.origin = dte?.Transform?.Position != null ? dte.Transform.Position : local.origin;
+                                }
+                                else
+                                {
+                                    local.origin = dte?.Transform?.Offsets != null ? local.origin + dte.Transform.Offsets : local.origin;
+                                }
+
+                                entity.SetFrame(ref local);
+                            }
+                        }
                     }
                     bool flag1 = false;
                     if (__instance.PartyBase.Settlement.IsFortification)

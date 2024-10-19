@@ -31,6 +31,7 @@ using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
 using TaleWorlds.Core;
 using TaleWorlds.Engine;
+using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
 using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
@@ -115,11 +116,19 @@ namespace BannerlordPlayerSettlement.Behaviours
         private int currentModelOptionIdx = -1;
         private GameEntity? settlementVisualEntity = null;
         private MatrixFrame? settlementPlacementFrame = null;
-        private float settlementRotationBearing = 0f;
-        private float settlementRotationVelocity = 0f;
         private Action? applyPending = null;
-        private float settlementScale = 1f;
         private float holdTime = 0f;
+        private string? settlementVisualPrefab = null;
+        #endregion
+
+        #region Settlement Deep Edit
+        private bool deepEdit = false;
+        private GameEntity? currentDeepTarget;
+        private float deepEditScale = 1f;
+        private string? deepEditPrefab = null;
+
+        private List<DeepTransformEdit> deepTransformEdits = new List<DeepTransformEdit>();
+        private List<GameEntity> settlementVisualEntityChildren = new();
         #endregion
 
         #region Gate Placement
@@ -132,6 +141,7 @@ namespace BannerlordPlayerSettlement.Behaviours
         #endregion
 
         public bool IsPlacingSettlement => settlementVisualEntity != null && applyPending != null;
+        public bool IsDeepEdit => deepEdit && currentDeepTarget != null && IsPlacingSettlement && !IsPlacingGate;
         public bool IsPlacingGate => ghostGateVisualEntity != null && applyPending != null;
 
         #region Overrides
@@ -570,19 +580,25 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             if (Main.Settings != null && Main.Settings.Enabled && PlayerSettlementInfo.Instance != null)
             {
+                if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
+                {
+                    return;
+                }
+                if (mapState.Handler is not MapScreen mapScreen)
+                {
+                    return;
+                }
+
                 if (ghostGateVisualEntity != null)
                 {
-                    if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
-                    {
-                        return;
-                    }
-                    if (mapState.Handler is not MapScreen mapScreen)
-                    {
-                        return;
-                    }
 
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
                     Campaign.Current.SetTimeControlModeLock(true);
+
+                    if (mapScreen.Input.IsKeyReleased(Main.Submodule!.HelpKey.GetInputKey()))
+                    {
+                        ShowGatePosHelp(forceShow: true);
+                    }
 
                     Vec3 worldMouseNear = Vec3.Zero;
                     Vec3 worldMouseFar = Vec3.Zero;
@@ -607,30 +623,92 @@ namespace BannerlordPlayerSettlement.Behaviours
                     return;
                 }
 
-                if (settlementVisualEntity != null)
+
+                var deepEditChanged = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.DeepEditToggleKey.GetInputKey());
+                if (IsPlacingSettlement && deepEditChanged)
                 {
-                    if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
-                    {
-                        return;
-                    }
-                    if (mapState.Handler is not MapScreen mapScreen)
-                    {
-                        return;
-                    }
+                    ToggleDeepEdit();
+                    return;
+                }
+
+                if (IsPlacingSettlement)
+                {
 
                     Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
                     Campaign.Current.SetTimeControlModeLock(true);
 
-                    var scaleModifierDown = mapScreen.SceneLayer.Input.IsControlDown();
-                    var cycleModifierDown = mapScreen.SceneLayer.Input.IsShiftDown();
+                    if (mapScreen.Input.IsKeyReleased(Main.Submodule!.HelpKey.GetInputKey()))
+                    {
+                        if (IsDeepEdit)
+                        {
+                            ShowDeepEditHelp(forceShow: true);
+                        }
+                        else
+                        {
+                            ShowSettlementPlacementHelp(forceShow: true);
+                        }
+                    }
+
+                    if (deepEditPrefab == settlementVisualPrefab)
+                    {
+                        foreach (var dte in deepTransformEdits)
+                        {
+                            var entity = dte.Index < 0 ? settlementVisualEntity : settlementVisualEntityChildren[dte.Index];
+                            var local = entity!.GetFrame();
+                            local.rotation = dte?.Transform?.RotationScale != null ? dte.Transform.RotationScale : local.rotation;
+                            if (dte!.Index >= 0)
+                            {
+                                local.origin = dte?.Transform?.Position != null ? dte.Transform.Position : local.origin;
+                            }
+                            // No else statement. Offsets do not get applied here otherwise it would cause infinite motion. Rather, offsets are calculated at the end.
+
+                            this.SetFrame(entity, ref local, atGround: false);
+                        }
+                    }
+
+                    if (mapScreen.Input.IsKeyDown(Main.Submodule!.DeepEditApplyKey.GetInputKey()))
+                    {
+                        if (IsDeepEdit)
+                        {
+                            // Don't show help as gate placement will show its own, or apply will occur directly
+                            ToggleDeepEdit(showHelp: false);
+
+                            if (deepEditPrefab == settlementVisualPrefab)
+                            {
+                                foreach (var dte in deepTransformEdits)
+                                {
+                                    var entity = dte.Index < 0 ? settlementVisualEntity : settlementVisualEntityChildren[dte.Index];
+                                    var local = entity!.GetFrame();
+                                    local.rotation = dte?.Transform?.RotationScale != null ? dte.Transform.RotationScale : local.rotation;
+                                    if (dte!.Index >= 0)
+                                    {
+                                        local.origin = dte?.Transform?.Position != null ? dte.Transform.Position : local.origin;
+                                    }
+                                    else
+                                    {
+                                        // Offsets must be applied here as the next phase wont reapply or recalculate for offsets
+                                        local.origin = dte?.Transform?.Offsets != null ? local.origin + dte.Transform.Offsets : local.origin;
+                                    }
+
+                                    entity.SetFrame(ref local);
+                                }
+                            }
+
+                            StartGatePlacement();
+                            return;
+                        }
+                    }
+
+                    var scaleModifierDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.ScaleModifierKey.GetInputKey());
+                    var cycleModifierDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.CycleModifierKey.GetInputKey());
 
                     if (scaleModifierDown)
                     {
-                        var scaleBackRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(57);
-                        var scaleForwardRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(58);
+                        var scaleBackRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.ScaleSmallerKey.GetInputKey());
+                        var scaleForwardRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.ScaleBiggerKey.GetInputKey());
 
-                        var scaleBackHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(57);
-                        var scaleForwardHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(58);
+                        var scaleBackHeld = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.ScaleSmallerKey.GetInputKey());
+                        var scaleForwardHeld = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.ScaleBiggerKey.GetInputKey());
 
                         var holdWait = 1 / Main.Settings.CycleSpeed;
 
@@ -642,8 +720,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                             }
                             else if ((holdTime + holdWait) < Time.ApplicationTime)
                             {
-                                settlementScale += 0.02f;
+                                deepEditScale += 0.02f;
                                 holdTime = 0f;
+                                MarkEdited(currentDeepTarget);
                                 return;
                             }
                         }
@@ -655,12 +734,13 @@ namespace BannerlordPlayerSettlement.Behaviours
                             }
                             else if ((holdTime + holdWait) < Time.ApplicationTime)
                             {
-                                settlementScale -= 0.02f;
-                                if (settlementScale <= 0.15f)
+                                deepEditScale -= 0.02f;
+                                if (deepEditScale <= 0.15f)
                                 {
-                                    settlementScale = 0.1f;
+                                    deepEditScale = 0.1f;
                                 }
                                 holdTime = 0f;
+                                MarkEdited(currentDeepTarget);
                                 return;
                             }
                         }
@@ -671,69 +751,223 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         if (scaleForwardRelease && holdTime.ApproximatelyEqualsTo(0f))
                         {
-                            settlementScale += 0.02f;
+                            deepEditScale += 0.02f;
+                            MarkEdited(currentDeepTarget);
                             return;
                         }
                         else if (scaleBackRelease && holdTime.ApproximatelyEqualsTo(0f))
                         {
-                            settlementScale -= 0.02f;
-                            if (settlementScale <= 0.15f)
+                            deepEditScale -= 0.02f;
+                            if (deepEditScale <= 0.15f)
                             {
-                                settlementScale = 0.1f;
+                                deepEditScale = 0.1f;
                             }
+                            MarkEdited(currentDeepTarget);
                             return;
                         }
                     }
                     else if (cycleModifierDown)
                     {
-                        var cycleBackRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(57);
-                        var cycleForwardRelease = mapScreen.SceneLayer.Input.IsGameKeyDownAndReleased(58);
+                        var cycleBackRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.CycleBackKey.GetInputKey());
+                        var cycleForwardRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.CycleNextKey.GetInputKey());
 
-                        var cycleBackHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(57);
-                        var cycleForwardHeld = mapScreen.SceneLayer.Input.IsGameKeyDown(58);
+                        var cycleBackHeld = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.CycleBackKey.GetInputKey());
+                        var cycleForwardHeld = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.CycleNextKey.GetInputKey());
+
+                        var moveUpRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.MoveUpKey.GetInputKey());
+                        var moveDownRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.MoveDownKey.GetInputKey());
+
+                        var moveUpHeld = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.MoveUpKey.GetInputKey());
+                        var moveDownHeld = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.MoveDownKey.GetInputKey());
 
                         var holdWait = 1 / Main.Settings.CycleSpeed;
-
-                        if (cycleForwardHeld)
+                        if (IsDeepEdit)
                         {
-                            if (holdTime.ApproximatelyEqualsTo(0f))
+                            if (cycleForwardHeld)
                             {
-                                holdTime = Time.ApplicationTime;
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    UpdateDeepTarget(true);
+                                    holdTime = 0f;
+                                    return;
+                                }
                             }
-                            else if ((holdTime + holdWait) < Time.ApplicationTime)
+                            else if (cycleBackHeld)
                             {
-                                UpdateSettlementVisualEntity(true);
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    UpdateDeepTarget(false);
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
+                            else if (moveUpHeld)
+                            {
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    var editModifier = 0.02f;
+                                    var edited = MarkEdited(currentDeepTarget);
+                                    if (currentDeepTarget != settlementVisualEntity && edited?.Transform?.Position != null)
+                                    {
+                                        edited.Transform.Position.z += editModifier;
+                                    }
+                                    else if (currentDeepTarget == settlementVisualEntity)
+                                    {
+                                        if (edited?.Transform != null)
+                                        {
+                                            if (edited.Transform.Offsets == null)
+                                            {
+                                                edited.Transform.Offsets = Vec3.Zero;
+                                            }
+                                            edited.Transform.Offsets!.z += editModifier;
+                                        }
+                                    }
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
+                            else if (moveDownHeld)
+                            {
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    var editModifier = 0.02f;
+                                    var edited = MarkEdited(currentDeepTarget);
+                                    if (currentDeepTarget != settlementVisualEntity && edited?.Transform?.Position != null)
+                                    {
+                                        edited.Transform.Position.z -= editModifier;
+                                    }
+                                    else if (currentDeepTarget == settlementVisualEntity)
+                                    {
+                                        if (edited?.Transform != null)
+                                        {
+                                            if (edited.Transform.Offsets == null)
+                                            {
+                                                edited.Transform.Offsets = Vec3.Zero;
+                                            }
+                                            edited.Transform.Offsets!.z -= editModifier;
+                                        }
+                                    }
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
+                            else
+                            {
                                 holdTime = 0f;
+                            }
+
+                            if (cycleForwardRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                UpdateDeepTarget(true);
                                 return;
                             }
-                        }
-                        else if (cycleBackHeld)
-                        {
-                            if (holdTime.ApproximatelyEqualsTo(0f))
+                            else if (cycleBackRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
                             {
-                                holdTime = Time.ApplicationTime;
+                                UpdateDeepTarget(false);
+                                return;
                             }
-                            else if ((holdTime + holdWait) < Time.ApplicationTime)
+                            else if (moveUpRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
                             {
-                                UpdateSettlementVisualEntity(false);
-                                holdTime = 0f;
+                                var editModifier = 0.02f;
+                                var edited = MarkEdited(currentDeepTarget);
+                                if (currentDeepTarget != settlementVisualEntity && edited?.Transform?.Position != null)
+                                {
+                                    edited.Transform.Position.z += editModifier;
+                                }
+                                else if (currentDeepTarget == settlementVisualEntity)
+                                {
+                                    if (edited?.Transform != null)
+                                    {
+                                        if (edited.Transform.Offsets == null)
+                                        {
+                                            edited.Transform.Offsets = Vec3.Zero;
+                                        }
+                                        edited.Transform.Offsets!.z += editModifier;
+                                    }
+                                }
+                                return;
+                            }
+                            else if (moveDownRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                var editModifier = 0.02f;
+                                var edited = MarkEdited(currentDeepTarget);
+                                if (currentDeepTarget != settlementVisualEntity && edited?.Transform?.Position != null)
+                                {
+                                    edited.Transform.Position.z -= editModifier;
+                                }
+                                else if (currentDeepTarget == settlementVisualEntity)
+                                {
+                                    if (edited?.Transform != null)
+                                    {
+                                        if (edited.Transform.Offsets == null)
+                                        {
+                                            edited.Transform.Offsets = Vec3.Zero;
+                                        }
+                                        edited.Transform.Offsets!.z -= editModifier;
+                                    }
+                                }
                                 return;
                             }
                         }
                         else
                         {
-                            holdTime = 0f;
-                        }
+                            if (cycleForwardHeld)
+                            {
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    UpdateSettlementVisualEntity(true);
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
+                            else if (cycleBackHeld)
+                            {
+                                if (holdTime.ApproximatelyEqualsTo(0f))
+                                {
+                                    holdTime = Time.ApplicationTime;
+                                }
+                                else if ((holdTime + holdWait) < Time.ApplicationTime)
+                                {
+                                    UpdateSettlementVisualEntity(false);
+                                    holdTime = 0f;
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                holdTime = 0f;
+                            }
 
-                        if (cycleForwardRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
-                        {
-                            UpdateSettlementVisualEntity(true);
-                            return;
-                        }
-                        else if (cycleBackRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
-                        {
-                            UpdateSettlementVisualEntity(false);
-                            return;
+                            if (cycleForwardRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                UpdateSettlementVisualEntity(true);
+                                return;
+                            }
+                            else if (cycleBackRelease && cycleModifierDown && holdTime.ApproximatelyEqualsTo(0f))
+                            {
+                                UpdateSettlementVisualEntity(false);
+                                return;
+                            }
                         }
                     }
                     else
@@ -742,59 +976,396 @@ namespace BannerlordPlayerSettlement.Behaviours
                     }
 
 
-
-                    Vec3 worldMouseNear = Vec3.Zero;
-                    Vec3 worldMouseFar = Vec3.Zero;
-                    mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
-                    Vec3 clippedMouseNear = worldMouseNear;
-                    Vec3 clippedMouseFar = worldMouseFar;
+                    var previous = settlementVisualEntity!.GetFrame();
                     PathFaceRecord currentFace = PathFaceRecord.NullFaceRecord;
-                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
-                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
-                    MatrixFrame identity = MatrixFrame.Identity;
-                    identity.origin = intersectionPoint2;
 
-                    var previous = settlementVisualEntity.GetFrame();
+                    MatrixFrame identity = previous; //MatrixFrame.Identity;
 
-                    var rotateModifierDown = mapScreen.SceneLayer.Input.IsAltDown();
-                    if (inputInformation.RotateLeftKeyDown && rotateModifierDown)
+                    // When not in deep edit, the settlement visual must follow the mouse
+                    if (!IsDeepEdit)
                     {
-                        this.settlementRotationVelocity = inputInformation.Dt * 2f;
+                        Vec3 worldMouseNear = Vec3.Zero;
+                        Vec3 worldMouseFar = Vec3.Zero;
+                        mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
+                        Vec3 clippedMouseNear = worldMouseNear;
+                        Vec3 clippedMouseFar = worldMouseFar;
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+
+
+                        identity.origin = intersectionPoint2;
                     }
-                    else if (inputInformation.RotateRightKeyDown && rotateModifierDown)
+
+                    var settlementDte = deepTransformEdits.FirstOrDefault(dte => dte.Index < 0);
+
+                    this.SetFrame(settlementVisualEntity, ref identity, atGround: true, settlementDte?.Transform?.Offsets);
+
+
+                    var editTarget = currentDeepTarget ?? settlementVisualEntity;
+
+                    MatrixFrame frame = editTarget!.GetGlobalFrame();
+
+
+                    var rotateSidesVelocity = 0f;
+                    var rotateForwardVelocity = 0f;
+                    var rotateModifierDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotateModifierKey.GetInputKey());
+                    var rotateExtraModifierDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotateAlternateModifierKey.GetInputKey());
+
+                    var rotateLeftKeyDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotatePreviousKey.GetInputKey());
+                    var rotateRightKeyDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotateNextKey.GetInputKey());
+
+                    var rotateForwardKeyDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotateForwardKey.GetInputKey());
+                    var rotateBackwardKeyDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotateBackwardsKey.GetInputKey());
+
+                    // When in deep edit, the targeted model must follow the mouse when both rotate modifier and left mouse is down/held
+                    if (IsDeepEdit && rotateModifierDown && mapScreen.SceneLayer.Input.IsKeyDown(TaleWorlds.InputSystem.InputKey.LeftMouseButton))
                     {
-                        this.settlementRotationVelocity = inputInformation.Dt * -2f;
+                        Vec3 worldMouseNear = Vec3.Zero;
+                        Vec3 worldMouseFar = Vec3.Zero;
+                        mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
+                        Vec3 clippedMouseNear = worldMouseNear;
+                        Vec3 clippedMouseFar = worldMouseFar;
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+
+
+                        frame.origin.x = intersectionPoint2.x;
+                        frame.origin.y = intersectionPoint2.y;
+                        MarkEdited(editTarget);
                     }
-                    this.settlementRotationVelocity = this.settlementRotationVelocity + inputInformation.HorizontalCameraInput * 1.75f * inputInformation.Dt;
+
+                    if (rotateForwardKeyDown && rotateModifierDown)
+                    {
+                        rotateForwardVelocity = inputInformation.Dt * 2f;
+                        MarkEdited(editTarget);
+                    }
+                    else if (rotateBackwardKeyDown && rotateModifierDown)
+                    {
+                        rotateForwardVelocity = inputInformation.Dt * -2f;
+                        MarkEdited(editTarget);
+                    }
+                    rotateForwardVelocity = rotateForwardVelocity * 2.75f * inputInformation.Dt;
+
+                    if (rotateLeftKeyDown && rotateModifierDown)
+                    {
+                        rotateSidesVelocity = inputInformation.Dt * 2f;
+                        MarkEdited(editTarget);
+                    }
+                    else if (rotateRightKeyDown && rotateModifierDown)
+                    {
+                        rotateSidesVelocity = inputInformation.Dt * -2f;
+                        MarkEdited(editTarget);
+                    }
+                    rotateSidesVelocity = rotateSidesVelocity + inputInformation.HorizontalCameraInput * 1.75f * inputInformation.Dt;
                     if (inputInformation.RightMouseButtonDown && rotateModifierDown)
                     {
-                        this.settlementRotationVelocity += 0.01f * inputInformation.MouseSensitivity * inputInformation.MouseMoveX;
+                        rotateSidesVelocity += 0.01f * inputInformation.MouseSensitivity * inputInformation.MouseMoveX;
 
                         // Divide by 5 for actual settings
-                        this.settlementRotationVelocity *= (Main.Settings.MouseRotationModifier / 5);
+                        rotateSidesVelocity *= (Main.Settings.MouseRotationModifier / 5);
+                        MarkEdited(editTarget);
                     }
-                    else if (rotateModifierDown && (inputInformation.RotateLeftKeyDown || inputInformation.RotateRightKeyDown))
+                    else if (rotateModifierDown && (rotateLeftKeyDown || rotateRightKeyDown))
                     {
                         // Divide by 5 for actual settings
-                        this.settlementRotationVelocity *= (Main.Settings.KeyRotationModifier / 5);
+                        rotateSidesVelocity *= (Main.Settings.KeyRotationModifier / 5);
+                        MarkEdited(editTarget);
                     }
 
 
-                    var bearing = this.settlementRotationBearing + this.settlementRotationVelocity;
-                    identity.rotation.RotateAboutUp(-bearing);
-                    identity.Scale(new Vec3(settlementScale, settlementScale, settlementScale));
-                    this.settlementRotationBearing = bearing;
-                    this.settlementRotationVelocity = 0f;
+                    var sidesBearing = rotateSidesVelocity;
+                    frame.rotation.RotateAboutUp(-sidesBearing);
 
-                    settlementPlacementFrame = identity;
-                    this.SetFrame(settlementVisualEntity, ref identity);
+                    if (rotateExtraModifierDown)
+                    {
+                        var forwardBearing = rotateForwardVelocity;
+                        frame.rotation.RotateAboutSide(-forwardBearing);
+                    }
+                    else
+                    {
+                        var forwardBearing = rotateForwardVelocity;
+                        frame.rotation.RotateAboutForward(-forwardBearing);
+                    }
+                    frame.Scale(new Vec3(deepEditScale, deepEditScale, deepEditScale));
 
-                    bool flag = Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
-                    mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+                    // Reset otherwise scale gets infinitely affected
+                    deepEditScale = 1f;
+
+                    editTarget.SetGlobalFrame(frame);
+
+                    var edit = deepTransformEdits.FirstOrDefault(dte => dte.Index == settlementVisualEntityChildren.IndexOf(editTarget));
+                    if (edit != null)
+                    {
+                        var lFrame = editTarget.GetFrame();
+                        edit.Transform = new TransformSaveable
+                        {
+                            Position = edit.Index < 0 ? null : lFrame.origin,
+                            Offsets = edit.Index < 0 ? lFrame.origin - identity.origin : null,
+                            RotationScale = lFrame.rotation
+                        };
+                    }
+
+
+                    // Store last frame after all edits
+                    settlementPlacementFrame = settlementVisualEntity.GetFrame();
+
+                    if (!IsDeepEdit)
+                    {
+                        bool flag = currentFace.IsValid() && Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
+                        mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+                    }
 
                 }
-
             }
+        }
+
+        private static void ShowDeepEditHelp(bool forceShow = false)
+        {
+            if (Main.Settings!.DisableAutoHints && !forceShow)
+            {
+                return;
+            }
+
+            TextObject deepEditMessage = new TextObject("{=player_settlement_38}Press {HELP_KEY} for help. \r\nPress {APPLY_KEY} to apply or press {ESC_KEY} to cancel.  \r\nUse {DEEP_EDIT_KEY} to switch from deep edit mode to placement mode. \r\nUse {CYCLE_MODIFIER_KEY} and {CYCLE_BACK_KEY} / {CYCLE_NEXT_KEY} to change selected sub model.\r\nUse {ROTATE_MODIFIER_KEY} and {MOUSE_CLICK} to reposition. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_BACK_KEY} / {ROTATE_NEXT_KEY} to change rotation. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change forward rotation. \r\nUse {ROTATE_MODIFIER_KEY} + {ROTATE_MODIFIER_ALTERNATE} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change axis rotation. \r\nUse {SCALE_MODIFIER_KEY} and {SCALE_BACK_KEY} / {SCALE_NEXT_KEY} to change scale. \r\nUse {CYCLE_MODIFIER_KEY} and {MOVE_UP_KEY} / {MOVE_DOWN_KEY} to move up or down.");
+            deepEditMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
+            deepEditMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
+            deepEditMessage.SetTextVariable("APPLY_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.DeepEditApplyKey.GetInputKey().ToString()));
+            deepEditMessage.SetTextVariable("DEEP_EDIT_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.DeepEditToggleKey.GetInputKey().ToString()));
+            deepEditMessage.SetTextVariable("CYCLE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleModifierKey).ToString()));
+            deepEditMessage.SetTextVariable("CYCLE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleBackKey).ToString()));
+            deepEditMessage.SetTextVariable("CYCLE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleNextKey).ToString()));
+            deepEditMessage.SetTextVariable("MOVE_UP_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.MoveUpKey).ToString()));
+            deepEditMessage.SetTextVariable("MOVE_DOWN_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.MoveDownKey).ToString()));
+            deepEditMessage.SetTextVariable("MOUSE_CLICK", HyperlinkTexts.GetKeyHyperlinkText(InputKey.LeftMouseButton.ToString()));
+            deepEditMessage.SetTextVariable("ROTATE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateModifierKey).ToString()));
+            deepEditMessage.SetTextVariable("ROTATE_MODIFIER_ALTERNATE", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateAlternateModifierKey).ToString()));
+            deepEditMessage.SetTextVariable("ROTATE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotatePreviousKey).ToString()));
+            deepEditMessage.SetTextVariable("ROTATE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateNextKey).ToString()));
+            deepEditMessage.SetTextVariable("ROTATE_FORWARD_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateForwardKey).ToString()));
+            deepEditMessage.SetTextVariable("ROTATE_BACKWARD_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateBackwardsKey).ToString()));
+            deepEditMessage.SetTextVariable("SCALE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleModifierKey).ToString()));
+            deepEditMessage.SetTextVariable("SCALE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleSmallerKey).ToString()));
+            deepEditMessage.SetTextVariable("SCALE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleBiggerKey).ToString()));
+            MBInformationManager.AddQuickInformation(deepEditMessage, 5000, Hero.MainHero?.CharacterObject);
+        }
+
+        private DeepTransformEdit? MarkEdited(GameEntity? currentDeepTarget)
+        {
+            if (settlementVisualEntity == null || currentDeepTarget == null)
+            {
+                LogManager.EventTracer.Trace($"Unable to mark edited: settlementVisualEntity = {settlementVisualEntity} currentDeepTarget = {currentDeepTarget}");
+                return null;
+            }
+
+            if (deepEditPrefab != settlementVisualPrefab)
+            {
+                deepTransformEdits.Clear();
+                deepEditPrefab = settlementVisualPrefab;
+            }
+
+            var idx = settlementVisualEntityChildren.IndexOf(currentDeepTarget);
+
+            var edit = deepTransformEdits.FirstOrDefault(dte => dte.Index == idx);
+            if (edit == null)
+            {
+                var frame = currentDeepTarget.GetFrame();
+                edit = new DeepTransformEdit
+                {
+                    Index = idx,
+                    Name = currentDeepTarget.Name,
+                    Transform = new TransformSaveable
+                    {
+                        Position = frame.origin,
+                        Offsets = Vec3.Zero,
+                        RotationScale = frame.rotation
+                    }
+                };
+                deepTransformEdits.Add(edit);
+            }
+            return edit;
+        }
+
+        private void ToggleDeepEdit(bool showHelp = true)
+        {
+            deepEdit = !deepEdit;
+            if (deepEdit)
+            {
+                if (showHelp)
+                {
+                    ShowDeepEditHelp();
+                }
+
+                deepEditPrefab = settlementVisualPrefab;
+                UpdateDeepTarget(settlementVisualEntity);
+            }
+            else
+            {
+                if (showHelp)
+                {
+                    ShowSettlementPlacementHelp();
+                }
+                RefreshVisualSelection();
+            }
+        }
+
+        private void UpdateDeepTarget(bool forward)
+        {
+            bool foundValidTarget = false;
+            if (forward)
+            {
+                var idx = settlementVisualEntityChildren.IndexOf(currentDeepTarget!);
+                if (idx < 0)
+                {
+                    // Currently on root, go to first child.
+                    idx = 0;
+
+                    do
+                    {
+                        if (UpdateDeepTarget(idx))
+                        {
+                            foundValidTarget = true;
+                            break;
+                        }
+                        else
+                        {
+                            idx += 1;
+                            if (idx == settlementVisualEntityChildren.Count)
+                            {
+                                UpdateDeepTarget(-1);
+                                return;
+                            }
+                        }
+                    } while (!foundValidTarget);
+
+                    return;
+                }
+
+
+                do
+                {
+                    idx += 1;
+
+                    if (idx == settlementVisualEntityChildren.Count)
+                    {
+                        // Reached final child, loop around to root
+                        UpdateDeepTarget(-1);
+                        return;
+                    }
+
+                    if (UpdateDeepTarget(idx))
+                    {
+                        foundValidTarget = true;
+                        break;
+                    }
+                } while (!foundValidTarget);
+
+                return;
+            }
+            else
+            {
+                var idx = settlementVisualEntityChildren.IndexOf(currentDeepTarget!);
+                if (idx < 0)
+                {
+                    // Currently on root, go to last child.
+                    idx = settlementVisualEntityChildren.Count - 1;
+
+                    do
+                    {
+                        if (UpdateDeepTarget(idx))
+                        {
+                            foundValidTarget = true;
+                            break;
+                        }
+                        else
+                        {
+                            idx -= 1;
+                            if (idx < 0)
+                            {
+                                UpdateDeepTarget(-1);
+                                return;
+                            }
+                        }
+                    } while (!foundValidTarget);
+
+                    return;
+                }
+
+
+                do
+                {
+                    idx -= 1;
+
+                    if (idx < 0)
+                    {
+                        // Reached first child, loop around to root
+                        UpdateDeepTarget(-1);
+                        return;
+                    }
+
+                    if (UpdateDeepTarget(idx))
+                    {
+                        foundValidTarget = true;
+                        break;
+                    }
+                } while (!foundValidTarget);
+
+                return;
+            }
+        }
+
+        private bool UpdateDeepTarget(GameEntity? target)
+        {
+
+            if (target == null)
+            {
+                ResetDeepEdits();
+                return false;
+            }
+
+            var idx = settlementVisualEntityChildren.IndexOf(target);
+
+            return UpdateDeepTarget(idx);
+        }
+
+        private bool UpdateDeepTarget(int idx)
+        {
+            RefreshVisualSelection();
+
+            GameEntity? target = idx < 0 ? settlementVisualEntity : settlementVisualEntityChildren[idx];
+
+            currentDeepTarget = target;
+
+            // Recursively highlight target and submodels as green to indicate selection
+            bool UpdateEntities(GameEntity parent)
+            {
+                bool foundMesh = false;
+                var childEntities = parent!.GetEntityAndChildren().ToList();
+
+                for (int j = 0; j < childEntities.Count; j++)
+                {
+                    GameEntity entity = childEntities[j];
+
+                    if (entity != parent)
+                    {
+                        foundMesh = UpdateEntities(entity) || foundMesh;
+                    }
+
+                    MetaMesh? dummyMetaMesh = entity.GetMetaMesh(0);
+                    if (dummyMetaMesh == null)
+                        continue;
+
+                    for (int i = 0; i < dummyMetaMesh.MeshCount; i++)
+                    {
+                        Mesh entityMesh = dummyMetaMesh.GetMeshAtIndex(i);
+                        var material = entityMesh.GetMaterial();
+                        entityMesh.SetMaterial("plain_green");
+                        foundMesh = true;
+                    }
+                }
+
+                return foundMesh;
+            }
+            return UpdateEntities(target!);
         }
 
         // // TODO: Might be useful to ensure reachable
@@ -807,19 +1378,23 @@ namespace BannerlordPlayerSettlement.Behaviours
         //    return new Vec3(vec2, single, -1f);
         //}
 
-        private void SetFrame(GameEntity? entity, ref MatrixFrame frame)
+        private void SetFrame(GameEntity? entity, ref MatrixFrame frame, bool atGround = true, Vec3? offset = null)
         {
-            if (entity != null && !entity.GetFrame().NearlyEquals(frame, 1E-05f))
+            if (entity != null /*&& !entity.GetFrame().NearlyEquals(frame, 1E-05f)*/)
             {
                 entity.SetFrame(ref frame);
 
-                // Match ground height
-                var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
-                Vec3 vec3 = new Vec3(frame.origin.x, frame.origin.y, 0f, -1f)
+                if (atGround)
                 {
-                    z = mapScene.GetGroundHeightAtPosition(new Vec2(frame.origin.x, frame.origin.y).ToVec3(0f), BodyFlags.CommonCollisionExcludeFlags)
-                };
-                entity.SetLocalPosition(vec3);
+                    // Match ground height
+                    var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
+                    Vec3 vec3 = new Vec3(frame.origin.x, frame.origin.y, 0f, -1f)
+                    {
+                        z = mapScene.GetGroundHeightAtPosition(new Vec2(frame.origin.x, frame.origin.y).ToVec3(0f), BodyFlags.CommonCollisionExcludeFlags)
+                    };
+                    frame.origin = vec3;
+                    entity.SetLocalPosition(vec3 + (offset ?? Vec3.Zero));
+                }
             }
         }
 
@@ -845,8 +1420,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             {
                 try
                 {
-                    TextObject gatePosMessage = new TextObject("{=player_settlement_34}Choose your gate position. Click anywhere to apply or press 'ESC' to go back to settlement placement.");
-                    MBInformationManager.AddQuickInformation(gatePosMessage, 3000, Hero.MainHero?.CharacterObject);
+                    ShowGatePosHelp();
                     ShowGhostGateVisualEntity(true);
                     return;
                 }
@@ -855,6 +1429,19 @@ namespace BannerlordPlayerSettlement.Behaviours
                     LogManager.Log.NotifyBad(e);
                 }
             }
+        }
+
+        private static void ShowGatePosHelp(bool forceShow = false)
+        {
+            if (Main.Settings!.DisableAutoHints && !forceShow)
+            {
+                return;
+            }
+            TextObject gatePosMessage = new TextObject("{=player_settlement_36}Choose your gate position. \r\nPress {HELP_KEY} for help. \r\nClick {MOUSE_CLICK} anywhere to apply or press {ESC_KEY} to go back to settlement placement.");
+            gatePosMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
+            gatePosMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
+            gatePosMessage.SetTextVariable("MOUSE_CLICK", HyperlinkTexts.GetKeyHyperlinkText(InputKey.LeftMouseButton.ToString()));
+            MBInformationManager.AddQuickInformation(gatePosMessage, 3000, Hero.MainHero?.CharacterObject);
         }
 
         public void ApplyNow()
@@ -893,11 +1480,9 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             ClearEntities();
 
-            settlementRotationBearing = 0f;
-            settlementScale = 1f;
-            settlementRotationVelocity = 0f;
             settlementPlacementFrame = null;
             applyPending = null;
+            settlementVisualPrefab = null;
 
             SettlementRequest = SettlementType.None;
 
@@ -905,12 +1490,25 @@ namespace BannerlordPlayerSettlement.Behaviours
             ghostGateVisualEntity = null;
             gatePlacementFrame = null;
 
+            ResetDeepEdits();
+
+            settlementVisualEntityChildren.Clear();
+
             LogManager.EventTracer.Trace();
+        }
+
+        private void ResetDeepEdits()
+        {
+            deepTransformEdits.Clear();
+            deepEditScale = 1f;
+            deepEdit = false;
+            deepEditPrefab = null;
+            currentDeepTarget = null;
         }
 
         private void ClearEntities()
         {
-
+            settlementVisualPrefab = null;
             if (settlementVisualEntity != null)
             {
                 try
@@ -1333,8 +1931,6 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             var castleNumber = PlayerSettlementInfo.Instance!.Castles!.Count + 1;
 
-            // For now gate position is the same as the main position.
-            // TODO: Determine if gate position can be calculated with rotation and ensure it is a reachable terrain.
             var gPos = atPos;
 
             var item = availableModels[currentModelOptionIdx];
@@ -1412,6 +2008,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 Type = (int) SettlementType.Castle,
                 SettlementName = settlementName,
                 RotationMat3 = settlementPlacementFrame?.rotation,
+                DeepEdits = new List<DeepTransformEdit>(deepEditPrefab == settlementVisualPrefab && deepTransformEdits != null ? deepTransformEdits : new()),
                 Version = Main.Version,
                 StringId = newId,
                 PrefabId = item.Id
@@ -1628,7 +2225,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             try
                             {
                                 var nodes = cst.Document.SelectNodes($"descendant::Settlement[@template_type='Village']").OfType<XmlNode>();
-                                
+
                                 foreach (var node in nodes)
                                 {
                                     var id = node.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", bound.IsCastle ? "castle" : "town");
@@ -1795,9 +2392,9 @@ namespace BannerlordPlayerSettlement.Behaviours
             node.Attributes["culture"].Value = $"Culture.{culture.StringId}";
 
             var newNodeComponent = node.SelectSingleNode("descendant::Village");
-            newNodeComponent.Attributes["id"].Value = newNodeComponent.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", bound.IsCastle ? "castle" : "town") + "_random_" + identifierUniqueness;
+            newNodeComponent.Attributes["id"].Value = newNodeComponent.Attributes["id"].Value.Replace("{{OWNER_TYPE}}", (bound?.IsCastle ?? false) ? "castle" : "town") + "_random_" + identifierUniqueness;
             newNodeComponent.Attributes["village_type"].Value = $"VillageType.{villageType}";
-            newNodeComponent.Attributes["bound"].Value = $"Settlement.{bound.StringId}";
+            newNodeComponent.Attributes["bound"].Value = $"Settlement.{bound?.StringId}";
 
             TextObject encyclopediaText = new TextObject("{=player_settlement_24}{SETTLEMENT_NAME} was founded by {HERO_NAME} of the {FACTION_TERM} on {BUILD_TIME}");
             encyclopediaText.SetTextVariable("SETTLEMENT_NAME", PlayerSettlementItem.EncyclopediaLinkWithName(newId, new TextObject(settlementName)));
@@ -1825,6 +2422,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 Type = (int) SettlementType.Village,
                 SettlementName = settlementName,
                 RotationMat3 = settlementPlacementFrame?.rotation,
+                DeepEdits = new List<DeepTransformEdit>(deepEditPrefab == settlementVisualPrefab && deepTransformEdits != null ? deepTransformEdits : new()),
                 Version = Main.Version,
                 StringId = newId,
                 PrefabId = item.Id
@@ -1832,7 +2430,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             if (boundTarget == null)
             {
-                if (PlayerSettlementInfo.Instance.PlayerVillages == null)
+                if (PlayerSettlementInfo.Instance!.PlayerVillages == null)
                 {
                     PlayerSettlementInfo.Instance.PlayerVillages = new();
                 }
@@ -2153,7 +2751,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             try
                             {
                                 var nodes = cst.Document.SelectNodes($"descendant::Settlement[@template_type='Town']").OfType<XmlNode>();
-                               
+
                                 foreach (var node in nodes)
                                 {
                                     var id = node.Attributes["id"].Value;
@@ -2253,7 +2851,29 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             UpdateSettlementVisualEntity(true, retry: true);
 
-            TextObject settlementPlacementMessage = new TextObject("{=player_settlement_35}Choose your settlement. \r\nClick anywhere to apply or press 'ESC' to cancel. \r\nUse 'Shift' and rotation keys ('Q' and 'E' by default) to change visual options.\r\nUse 'Alt' and rotation keys ('Q' and 'E' by default) to change rotation. \r\nUse 'Ctrl' and rotation keys ('Q' and 'E' by default) to change scale.");
+            ShowSettlementPlacementHelp();
+        }
+
+        private static void ShowSettlementPlacementHelp(bool forceShow = false)
+        {
+            if (Main.Settings!.DisableAutoHints && !forceShow)
+            {
+                return;
+            }
+            TextObject settlementPlacementMessage = new TextObject("{=player_settlement_37}Choose your settlement. \r\nPress {HELP_KEY} for help. \r\nClick {MOUSE_CLICK} anywhere to apply or press {ESC_KEY} to cancel.  \r\nUse {DEEP_EDIT_KEY} to switch to deep edit mode. \r\nUse {CYCLE_MODIFIER_KEY} and {CYCLE_BACK_KEY} / {CYCLE_NEXT_KEY} to change visual options.\r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_BACK_KEY} / {ROTATE_NEXT_KEY} to change rotation. \r\nUse {SCALE_MODIFIER_KEY} and {SCALE_BACK_KEY} / {SCALE_NEXT_KEY} to change scale.");
+            settlementPlacementMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
+            settlementPlacementMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
+            settlementPlacementMessage.SetTextVariable("MOUSE_CLICK", HyperlinkTexts.GetKeyHyperlinkText(InputKey.LeftMouseButton.ToString()));
+            settlementPlacementMessage.SetTextVariable("DEEP_EDIT_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.DeepEditToggleKey.GetInputKey().ToString()));
+            settlementPlacementMessage.SetTextVariable("CYCLE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleModifierKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("CYCLE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleBackKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("CYCLE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleNextKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("ROTATE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateModifierKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("ROTATE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotatePreviousKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("ROTATE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateNextKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("SCALE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleModifierKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("SCALE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleSmallerKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("SCALE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleBiggerKey).ToString()));
             MBInformationManager.AddQuickInformation(settlementPlacementMessage, 5000, Hero.MainHero?.CharacterObject);
         }
 
@@ -2424,6 +3044,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 Type = (int) SettlementType.Town,
                 SettlementName = settlementName,
                 RotationMat3 = settlementPlacementFrame?.rotation,
+                DeepEdits = new List<DeepTransformEdit>(deepEditPrefab == settlementVisualPrefab && deepTransformEdits != null ? deepTransformEdits : new()),
                 Version = Main.Version,
                 StringId = newId,
                 PrefabId = item.Id
@@ -2442,11 +3063,15 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         public void RefreshVisualSelection()
         {
+            deepEditScale = 1f;
+            currentDeepTarget = null;
+
             currentModelOptionIdx -= 1;
             UpdateSettlementVisualEntity(forward: true, retry: true);
         }
 
         static Exception? previousVisualUpdateException = null;
+
         private void UpdateSettlementVisualEntity(bool forward, bool retry = false)
         {
             try
@@ -2475,9 +3100,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                 }
 
                 ClearEntities();
-                //settlementRotationBearing = 0f;
-                //settlementRotationVelocity = 0f;
-                settlementPlacementFrame = null;
+
+                var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
 
                 var template = availableModels[currentModelOptionIdx];
 
@@ -2491,7 +3115,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 LogManager.EventTracer.Trace(traceDetail);
 
                 var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
-                Vec2 position2D = MobileParty.MainParty.Position2D;
+                Vec2 position2D = atPos;
 
                 string prefabId = template.Id;
                 string entityId = GhostSettlementEntityId;
@@ -2507,6 +3131,16 @@ namespace BannerlordPlayerSettlement.Behaviours
                 if (settlementVisualEntity == null)
                 {
                     Reset();
+                }
+                settlementVisualEntityChildren.Clear();
+
+                // Recursiveley gather all submodels for deep editing
+                settlementVisualEntity?.GetChildrenRecursive(ref settlementVisualEntityChildren);
+                settlementVisualPrefab = prefabId;
+
+                if (settlementVisualPrefab != deepEditPrefab)
+                {
+                    ResetDeepEdits();
                 }
             }
             catch (Exception e)

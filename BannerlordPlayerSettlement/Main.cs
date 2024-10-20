@@ -298,7 +298,7 @@ namespace BannerlordPlayerSettlement
                             new ModifierKey
                             (
                                 "{=player_settlement_n_91}Move Down",
-                                "{=player_settlement_n_92}During player settlement placement when building in deep edit mode, will move the selected object down.",
+                                "{=player_settlement_n_92}During player settlement placement when building, will move the selected object down.",
                                 InputKey.S,
                                 CycleCategory
                             )
@@ -308,7 +308,7 @@ namespace BannerlordPlayerSettlement
                             new ModifierKey
                             (
                                 "{=player_settlement_n_93}Move Up",
-                                "{=player_settlement_n_94}During player settlement placement when building in deep edit mode, will move the selected object up.",
+                                "{=player_settlement_n_94}During player settlement placement when building, will move the selected object up.",
                                 InputKey.W,
                                 CycleCategory
                             )
@@ -394,7 +394,7 @@ namespace BannerlordPlayerSettlement
                             new ModifierKey
                             (
                                 "{=player_settlement_n_109}Alternate Rotation Axis",
-                                "{=player_settlement_n_110}During player settlement placement when building in deep edit mode, will switch to alternate rotation mode when held together with the 'Rotation Modifier'. This changes the axis of rotation when using forwards and backwards rotation keys.",
+                                "{=player_settlement_n_110}During player settlement placement when building, will switch to alternate rotation mode when held together with the 'Rotation Modifier'. This changes the axis of rotation when using forwards and backwards rotation keys.",
                                 TaleWorlds.InputSystem.InputKey.LeftControl,
                                 RotateCategory
                             )

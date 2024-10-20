@@ -36,7 +36,6 @@
         <string id="player_settlement_n_30" text="Skip required build duration and instantly completes town construction.  [ Default: OFF ]" />
         <string id="player_settlement_n_31" text="Instant Build" />
         <string id="player_settlement_n_32" text="Specified days before town is done being built.  [ Default: 7 ]" />
-        <string id="player_settlement_n_33" text="Build Duration Days" />
         <string id="player_settlement_n_34" text="Will use the player culture for the town. By default when this is OFF, the town culture can be chosen.  [ Default: OFF ]" />
         <string id="player_settlement_n_35" text="Use Player Culture" />
         <string id="player_settlement_n_36" text="Requires a specified cost in local currency to build new village.  [ Default: ON ]" />
@@ -99,9 +98,9 @@
         <string id="player_settlement_n_89" text="Cycle Next" />
         <string id="player_settlement_n_90" text="During player settlement placement when building, will cycle to the next settlement model (or next submodel when in deep edit mode)." />
         <string id="player_settlement_n_91" text="Move Down" />
-        <string id="player_settlement_n_92" text="During player settlement placement when building in deep edit mode, will move the selected object down." />
+        <string id="player_settlement_n_92" text="During player settlement placement when building, will move the selected object down." />
         <string id="player_settlement_n_93" text="Move Up" />
-        <string id="player_settlement_n_94" text="During player settlement placement when building in deep edit mode, will move the selected object up." />
+        <string id="player_settlement_n_94" text="During player settlement placement when building, will move the selected object up." />
         <string id="player_settlement_n_95" text="Player Settlements: Scale Mode" />
         <string id="player_settlement_n_96" text="Scale Down" />
         <string id="player_settlement_n_97" text="During player settlement placement when building, will scale down to the model." />
@@ -117,7 +116,14 @@
         <string id="player_settlement_n_107" text="Rotate Forward" />
         <string id="player_settlement_n_108" text="During player settlement placement when building, will rotate the model forwards." />
         <string id="player_settlement_n_109" text="Alternate Rotation Axis" />
-        <string id="player_settlement_n_110" text="During player settlement placement when building in deep edit mode, will switch to alternate rotation mode when held together with the 'Rotation Modifier'. This changes the axis of rotation when using forwards and backwards rotation keys." />
-      
+        <string id="player_settlement_n_110" text="During player settlement placement when building, will switch to alternate rotation mode when held together with the 'Rotation Modifier'. This changes the axis of rotation when using forwards and backwards rotation keys." />
+
+        <string id="player_settlement_n_111" text="Specified days before castle is done being built.  [ Default: 7 ]" />
+        <string id="player_settlement_n_112" text="Specified days before village is done being built.  [ Default: 3 ]" />
+        <string id="player_settlement_n_113" text="Build Duration Days (Town)" />
+        <string id="player_settlement_n_114" text="Build Duration Days (Castle)" />
+        <string id="player_settlement_n_115" text="Build Duration Days (Village)" />
+        <string id="player_settlement_n_116" text="Hint Duration" />
+        <string id="player_settlement_n_117" text="Duration to display hints (in seconds). This is in addition to the base time that the game applies by default. [ Default: 5 ]" />
     </strings>
 </base>

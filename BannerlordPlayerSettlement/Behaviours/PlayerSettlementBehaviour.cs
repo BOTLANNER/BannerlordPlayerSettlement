@@ -1226,7 +1226,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             deepEditMessage.SetTextVariable("SCALE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleModifierKey).ToString()));
             deepEditMessage.SetTextVariable("SCALE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleSmallerKey).ToString()));
             deepEditMessage.SetTextVariable("SCALE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleBiggerKey).ToString()));
-            MBInformationManager.AddQuickInformation(deepEditMessage, 5000, Hero.MainHero?.CharacterObject);
+            MBInformationManager.AddQuickInformation(deepEditMessage, Main.Settings.HintDurationSeconds * 1000, Hero.MainHero?.CharacterObject);
         }
 
         private DeepTransformEdit? MarkEdited(GameEntity? currentDeepTarget)
@@ -1521,7 +1521,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             gatePosMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
             gatePosMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
             gatePosMessage.SetTextVariable("MOUSE_CLICK", HyperlinkTexts.GetKeyHyperlinkText(InputKey.LeftMouseButton.ToString()));
-            MBInformationManager.AddQuickInformation(gatePosMessage, 3000, Hero.MainHero?.CharacterObject);
+            MBInformationManager.AddQuickInformation(gatePosMessage, Main.Settings.HintDurationSeconds * 1000, Hero.MainHero?.CharacterObject);
         }
 
         public void ApplyNow()
@@ -2940,7 +2940,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             {
                 return;
             }
-            TextObject settlementPlacementMessage = new TextObject("{=player_settlement_37}Choose your settlement. \r\nPress {HELP_KEY} for help. \r\nClick {MOUSE_CLICK} anywhere to apply or press {ESC_KEY} to cancel.  \r\nUse {DEEP_EDIT_KEY} to switch to deep edit mode. \r\nUse {CYCLE_MODIFIER_KEY} and {CYCLE_BACK_KEY} / {CYCLE_NEXT_KEY} to change visual options.\r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_BACK_KEY} / {ROTATE_NEXT_KEY} to change rotation. \r\nUse {SCALE_MODIFIER_KEY} and {SCALE_BACK_KEY} / {SCALE_NEXT_KEY} to change scale.");
+            TextObject settlementPlacementMessage = new TextObject("{=player_settlement_37}Choose your settlement. \r\nPress {HELP_KEY} for help. \r\nClick {MOUSE_CLICK} anywhere to apply or press {ESC_KEY} to cancel.  \r\nUse {DEEP_EDIT_KEY} to switch to deep edit mode. \r\nUse {CYCLE_MODIFIER_KEY} and {CYCLE_BACK_KEY} / {CYCLE_NEXT_KEY} to change visual options.\r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_BACK_KEY} / {ROTATE_NEXT_KEY} to change rotation. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change forward rotation. \r\nUse {ROTATE_MODIFIER_KEY} + {ROTATE_MODIFIER_ALTERNATE} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change axis rotation. \r\nUse {SCALE_MODIFIER_KEY} and {SCALE_BACK_KEY} / {SCALE_NEXT_KEY} to change scale. \r\nUse {CYCLE_MODIFIER_KEY} and {MOVE_UP_KEY} / {MOVE_DOWN_KEY} to move up or down.");
             settlementPlacementMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
             settlementPlacementMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
             settlementPlacementMessage.SetTextVariable("MOUSE_CLICK", HyperlinkTexts.GetKeyHyperlinkText(InputKey.LeftMouseButton.ToString()));
@@ -2948,13 +2948,18 @@ namespace BannerlordPlayerSettlement.Behaviours
             settlementPlacementMessage.SetTextVariable("CYCLE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleModifierKey).ToString()));
             settlementPlacementMessage.SetTextVariable("CYCLE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleBackKey).ToString()));
             settlementPlacementMessage.SetTextVariable("CYCLE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.CycleNextKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("MOVE_UP_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.MoveUpKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("MOVE_DOWN_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.MoveDownKey).ToString()));
             settlementPlacementMessage.SetTextVariable("ROTATE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateModifierKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("ROTATE_MODIFIER_ALTERNATE", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateAlternateModifierKey).ToString()));
             settlementPlacementMessage.SetTextVariable("ROTATE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotatePreviousKey).ToString()));
             settlementPlacementMessage.SetTextVariable("ROTATE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateNextKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("ROTATE_FORWARD_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateForwardKey).ToString()));
+            settlementPlacementMessage.SetTextVariable("ROTATE_BACKWARD_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.RotateBackwardsKey).ToString()));
             settlementPlacementMessage.SetTextVariable("SCALE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleModifierKey).ToString()));
             settlementPlacementMessage.SetTextVariable("SCALE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleSmallerKey).ToString()));
             settlementPlacementMessage.SetTextVariable("SCALE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleBiggerKey).ToString()));
-            MBInformationManager.AddQuickInformation(settlementPlacementMessage, 5000, Hero.MainHero?.CharacterObject);
+            MBInformationManager.AddQuickInformation(settlementPlacementMessage, Main.Settings.HintDurationSeconds * 1000, Hero.MainHero?.CharacterObject);
         }
 
         private static void InitiTownBuildings(Settlement townSettlement)

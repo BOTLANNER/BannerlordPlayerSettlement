@@ -46,7 +46,18 @@ namespace BannerlordPlayerSettlement.Saves
                 }
 
                 CampaignTime buildStart = CampaignTime.Hours(BuiltAt - 5);
-                CampaignTime buildEnd = buildStart + CampaignTime.Days(Main.Settings.BuildDurationDays);
+
+                int duration = Main.Settings.BuildDurationDays;
+                if (Type == ((int)SettlementType.Castle))
+                {
+                    duration = Main.Settings.BuildCastleDurationDays;
+                }
+                else if (Type == ((int)SettlementType.Village))
+                {
+                    duration = Main.Settings.BuildVillageDurationDays;
+                }
+
+                CampaignTime buildEnd = buildStart + CampaignTime.Days(duration);
                 return buildEnd;
             }
         }

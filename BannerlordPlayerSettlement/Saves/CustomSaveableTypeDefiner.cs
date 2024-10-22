@@ -20,6 +20,7 @@ namespace BannerlordPlayerSettlement.Saves
             AddClassDefinition(typeof(TransformSaveable), 11);
             AddClassDefinition(typeof(DeepTransformEdit), 12);
             AddClassDefinition(typeof(PlayerSettlementItem), 3);
+            AddClassDefinition(typeof(OverwriteSettlementItem), 13);
             AddClassDefinition(typeof(PlayerSettlementInfo), 2);
 
             AddClassDefinition(typeof(SettlementMetaV3), 5);
@@ -35,6 +36,9 @@ namespace BannerlordPlayerSettlement.Saves
 
             ConstructContainerDefinition(typeof(List<PlayerSettlementItem>));
             ConstructContainerDefinition(typeof(PlayerSettlementItem[]));
+
+            ConstructContainerDefinition(typeof(List<OverwriteSettlementItem>));
+            ConstructContainerDefinition(typeof(OverwriteSettlementItem[]));
 
             ConstructContainerDefinition(typeof(List<SettlementMetaV3>));
             ConstructContainerDefinition(typeof(SettlementMetaV3[]));

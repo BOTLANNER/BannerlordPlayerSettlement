@@ -40,6 +40,12 @@ namespace BannerlordPlayerSettlement.Extensions
             return settlement?.StringId?.IsPlayerBuiltStringId() ?? false;
         }
 
+        public static bool IsOverwritten(this Settlement? settlement, out OverwriteSettlementItem? overwriteSettlementItem)
+        {
+            overwriteSettlementItem = null;
+            return settlement?.StringId?.IsOverwritten(out overwriteSettlementItem) ?? false;
+        }
+
         public static bool IsPlayerBuilt(this Settlement? settlement, out PlayerSettlementItem? playerSettlementItem)
         {
             playerSettlementItem = null;
@@ -85,6 +91,53 @@ namespace BannerlordPlayerSettlement.Extensions
 
             playerSettlementItem = null;
             return stringId!.StartsWith("player_settlement_town_") || stringId!.StartsWith("player_settlement_castle_");
+        }
+
+        public static bool IsOverwritten(this string? stringId, out OverwriteSettlementItem? overwriteSettlementItem)
+        {
+            if (string.IsNullOrEmpty(stringId))
+            {
+                overwriteSettlementItem = null;
+                return false;
+            }
+
+            if (PlayerSettlementInfo.Instance != null)
+            {
+                var isOverwrite = PlayerSettlementInfo.Instance.OverwriteSettlements.FirstOrDefault(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
+                if (isOverwrite != null)
+                {
+                    overwriteSettlementItem = isOverwrite;
+                    return true;
+                }
+            }
+
+            overwriteSettlementItem = null;
+            return false;
+        }
+
+        public static SettlementType GetSettlementType(this Settlement? settlement)
+        {
+            if (settlement == null)
+            {
+                return SettlementType.None;
+            }
+
+            if (settlement.IsVillage)
+            {
+                return SettlementType.Village;
+            }
+
+            if (settlement.IsCastle)
+            {
+                return SettlementType.Castle;
+            }
+
+            if (settlement.IsTown)
+            {
+                return SettlementType.Town;
+            }
+
+            return SettlementType.None;
         }
     }
 }

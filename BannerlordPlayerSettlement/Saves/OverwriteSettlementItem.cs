@@ -10,16 +10,7 @@ using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
 {
-    public interface ISettlementItem
-    {
-        void SetBuildComplete(bool completed);
-
-        string? GetSettlementName();
-
-        Settlement? GetSettlement();
-    }
-
-    public class PlayerSettlementItem : ISettlementItem
+    public class OverwriteSettlementItem : ISettlementItem
     {
         [SaveableField(112)]
         public string? ItemXML = null;
@@ -27,12 +18,8 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(113)]
         public Settlement? Settlement = null;
 
-        [System.Obsolete("Replaced with `Identifier`")]
-        [SaveableField(114)]
-        public string ItemIdentifier = null; // "player_settlement_town_village_1";
-
         [SaveableField(115)]
-        public string SettlementName = "{=player_settlement_n_01}Player Settlement";
+        public string SettlementName = null;
 
         [SaveableField(116)]
         public float BuiltAt = -1f;
@@ -56,27 +43,20 @@ namespace BannerlordPlayerSettlement.Saves
 
                 CampaignTime buildStart = CampaignTime.Hours(BuiltAt - 5);
 
-                int duration = IsRebuild ? Main.Settings.RebuildTownDurationDays : Main.Settings.BuildDurationDays;
+                int duration = Main.Settings.RebuildTownDurationDays;
                 if (Type == ((int)SettlementType.Castle))
                 {
-                    duration = IsRebuild ? Main.Settings.RebuildCastleDurationDays : Main.Settings.BuildCastleDurationDays;
+                    duration = Main.Settings.RebuildCastleDurationDays;
                 }
                 else if (Type == ((int)SettlementType.Village))
                 {
-                    duration = IsRebuild ? Main.Settings.RebuildVillageDurationDays : Main.Settings.BuildVillageDurationDays;
+                    duration = Main.Settings.RebuildVillageDurationDays;
                 }
 
                 CampaignTime buildEnd = buildStart + CampaignTime.Days(duration);
                 return buildEnd;
             }
         }
-
-        [SaveableField(201)]
-        public List<PlayerSettlementItem> Villages = new List<PlayerSettlementItem>();
-
-        [System.Obsolete("Replaced with `StringId`")]
-        [SaveableField(202)]
-        public int Identifier = 1;
 
         [SaveableField(204)]
         public int Type = 0;
@@ -96,15 +76,10 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(210)]
         public List<DeepTransformEdit>? DeepEdits = new();
 
-        [SaveableField(211)]
-        public bool IsRebuild = false;
-
         public SettlementType GetSettlementType()
         {
             return (SettlementType) Type;
         }
-
-
 
         public static string EncyclopediaLink(string StringId) => String.Concat(Campaign.Current.EncyclopediaManager.GetIdentifier(typeof(Settlement)), "-", StringId) ?? "";
 

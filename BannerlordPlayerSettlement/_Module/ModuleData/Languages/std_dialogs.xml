@@ -47,6 +47,7 @@
         <string id="player_settlement_39" text="Rebuild Player Settlement" />
         <string id="player_settlement_40" text="We should rebuild this settlement." />
         <string id="player_settlement_41" text="Rebuild Settlement" />
+        <string id="player_settlement_42" text="Rebuild {SETTLEMENT}" />
     
     </strings>
 </base>

@@ -823,6 +823,44 @@ namespace BannerlordPlayerSettlement
                         }
                     }
                 }
+
+                if (metaV3.OverwriteSettlements != null)
+                {
+                    for (int os = 0; os < metaV3.OverwriteSettlements.Count; os++)
+                    {
+                        var overwriteMeta = metaV3.OverwriteSettlements[os];
+
+                        if (overwriteMeta.BuildTime - 5 > Campaign.CurrentTime)
+                        {
+                            // A player settlement has been made in a different save.
+                            // This is an older save than the config is for.
+                            PlayerSettlementBehaviour.OldSaveLoaded = true;
+                            continue;
+                        }
+
+                        string stringId = overwriteMeta.StringId;
+
+                        MBObjectManager.Instance.LoadXml(overwriteMeta.Document);
+
+                        overwriteMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(stringId);
+
+                        if (overwriteMeta.settlement != null && !overwriteMeta.settlement.IsReady)
+                        {
+                            MBObjectManager.Instance.LoadXml(overwriteMeta.Document);
+
+                            overwriteMeta.settlement = MBObjectManager.Instance.GetObject<Settlement>(stringId);
+                        }
+
+
+                        if (overwriteMeta.settlement != null)
+                        {
+                            if (!string.IsNullOrEmpty(overwriteMeta.DisplayName))
+                            {
+                                overwriteMeta.settlement.Name = new TextObject(overwriteMeta.DisplayName);
+                            }
+                        }
+                    }
+                }
             }
         }
 

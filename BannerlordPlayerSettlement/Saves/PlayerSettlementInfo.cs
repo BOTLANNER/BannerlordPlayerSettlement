@@ -52,26 +52,6 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(107)]
         public bool BuildComplete = false;
 
-        //public CampaignTime BuildEnd
-        //{
-        //    get
-        //    {
-        //        if (Main.Settings == null || !Main.Settings.Enabled)
-        //        {
-        //            return CampaignTime.Never;
-        //        }
-
-        //        if (Main.Settings.InstantBuild)
-        //        {
-        //            return CampaignTime.Now;
-        //        }
-
-        //        CampaignTime buildStart = CampaignTime.Hours(BuiltAt - 5);
-        //        CampaignTime buildEnd = buildStart + CampaignTime.Days(Main.Settings.BuildDurationDays);
-        //        return buildEnd;
-        //    }
-        //}
-
         // Reintroduced for additional villages added to base game towns
         //[System.Obsolete("Replaced with `Towns[0].Villages`")]
         [SaveableField(111)]
@@ -89,6 +69,10 @@ namespace BannerlordPlayerSettlement.Saves
                                      Castles?.SelectMany(c => c.Villages ?? new()) ?? new List<PlayerSettlementItem>()).Concat(
                                      PlayerVillages ?? new List<PlayerSettlementItem>())
                                     .Count();
+
+
+        [SaveableField(213)]
+        public List<OverwriteSettlementItem> OverwriteSettlements = new List<OverwriteSettlementItem>();
 
         public PlayerSettlementInfo()
         {

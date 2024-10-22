@@ -1,4 +1,6 @@
-﻿using TaleWorlds.Library;
+﻿using System.Collections.Generic;
+
+using TaleWorlds.Library;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves

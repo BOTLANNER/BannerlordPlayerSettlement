@@ -104,6 +104,11 @@ namespace BannerlordPlayerSettlement.Patches
             }
             else if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
             {
+                if (PlayerSettlementBehaviour.Instance.IsDeepEdit)
+                {
+                    // TODO: Determine if raycast could select a part?
+                    return false;
+                }
                 PlayerSettlementBehaviour.Instance.StartGatePlacement();
                 return false;
             }
@@ -172,7 +177,7 @@ namespace BannerlordPlayerSettlement.Patches
                     LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
                 }
 
-                PartyVisual visualOfParty = PartyVisualManager.Current.GetVisualOfParty(besiegedSettlement.Party);
+                PartyVisual visualOfParty = PartyVisualManager.Current.GetVisualOfParty(besiegedSettlement!.Party);
                 Tuple<MatrixFrame, PartyVisual> item = null;
                 if (____preSelectedSiegeEntityID != UIntPtr.Zero)
                 {

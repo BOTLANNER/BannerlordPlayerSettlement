@@ -1,5 +1,6 @@
 ﻿
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 
 using HarmonyLib;
 
@@ -31,9 +32,9 @@ namespace BannerlordPlayerSettlement.Patches
                 PlayerSettlementBehaviour.Instance.IsPlacingSettlement && 
                 Game.Current.GameStateManager.ActiveState is MapState mapState && 
                 mapState.Handler is MapScreen mapScreen &&
-                (mapScreen.SceneLayer.Input.IsAltDown() ||
-                        mapScreen.SceneLayer.Input.IsControlDown() ||
-                        mapScreen.SceneLayer.Input.IsShiftDown())
+                (mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.RotateModifierKey.GetInputKey()) ||
+                        mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.CycleModifierKey.GetInputKey()) ||
+                        mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.ScaleModifierKey.GetInputKey()))
                     //(inputInformation.RightMouseButtonDown ||
                     //    inputInformation.RotateLeftKeyDown ||
                     //    inputInformation.RotateRightKeyDown)

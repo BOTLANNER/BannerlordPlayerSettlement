@@ -16,7 +16,11 @@ namespace BannerlordPlayerSettlement.Saves
             base.DefineClassTypes();
 
             AddClassDefinition(typeof(Mat3Saveable), 9);
+            AddClassDefinition(typeof(Vec3Saveable), 10);
+            AddClassDefinition(typeof(TransformSaveable), 11);
+            AddClassDefinition(typeof(DeepTransformEdit), 12);
             AddClassDefinition(typeof(PlayerSettlementItem), 3);
+            AddClassDefinition(typeof(OverwriteSettlementItem), 13);
             AddClassDefinition(typeof(PlayerSettlementInfo), 2);
 
             AddClassDefinition(typeof(SettlementMetaV3), 5);
@@ -27,8 +31,14 @@ namespace BannerlordPlayerSettlement.Saves
         {
             base.DefineContainerDefinitions();
 
+            ConstructContainerDefinition(typeof(List<DeepTransformEdit>));
+            ConstructContainerDefinition(typeof(DeepTransformEdit[]));
+
             ConstructContainerDefinition(typeof(List<PlayerSettlementItem>));
             ConstructContainerDefinition(typeof(PlayerSettlementItem[]));
+
+            ConstructContainerDefinition(typeof(List<OverwriteSettlementItem>));
+            ConstructContainerDefinition(typeof(OverwriteSettlementItem[]));
 
             ConstructContainerDefinition(typeof(List<SettlementMetaV3>));
             ConstructContainerDefinition(typeof(SettlementMetaV3[]));

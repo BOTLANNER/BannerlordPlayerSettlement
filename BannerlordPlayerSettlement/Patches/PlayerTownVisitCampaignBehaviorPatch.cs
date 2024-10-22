@@ -40,6 +40,19 @@ namespace BannerlordPlayerSettlement.Patches
                         return false;
                     }
                 }
+                else if (Settlement.CurrentSettlement != null && Settlement.CurrentSettlement.IsOverwritten(out OverwriteSettlementItem? overwriteSettlementItem))
+                {
+                    if (Main.Settings!.InstantBuild)
+                    {
+                        return true;
+                    }
+
+                    if (overwriteSettlementItem?.BuildEnd.IsFuture ?? true)
+                    {
+                        Campaign.Current.CurrentMenuContext.SwitchToMenu(PlayerSettlementBehaviour.PlayerSettlementUnderConstructionMenu);
+                        return false;
+                    }
+                }
             }
             catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return true;
@@ -68,6 +81,19 @@ namespace BannerlordPlayerSettlement.Patches
                         return false;
                     }
                 }
+                else if (Settlement.CurrentSettlement != null && Settlement.CurrentSettlement.IsOverwritten(out OverwriteSettlementItem? overwriteSettlementItem))
+                {
+                    if (Main.Settings!.InstantBuild)
+                    {
+                        return true;
+                    }
+
+                    if (overwriteSettlementItem?.BuildEnd.IsFuture ?? true)
+                    {
+                        Campaign.Current.CurrentMenuContext.SwitchToMenu(PlayerSettlementBehaviour.PlayerSettlementUnderConstructionMenu);
+                        return false;
+                    }
+                }
             }
             catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
             return true;
@@ -89,6 +115,19 @@ namespace BannerlordPlayerSettlement.Patches
                     }
 
                     if (castle?.BuildEnd.IsFuture ?? true)
+                    {
+                        Campaign.Current.CurrentMenuContext.SwitchToMenu(PlayerSettlementBehaviour.PlayerSettlementUnderConstructionMenu);
+                        return false;
+                    }
+                }
+                else if (Settlement.CurrentSettlement != null && Settlement.CurrentSettlement.IsOverwritten(out OverwriteSettlementItem? overwriteSettlementItem))
+                {
+                    if (Main.Settings!.InstantBuild)
+                    {
+                        return true;
+                    }
+
+                    if (overwriteSettlementItem?.BuildEnd.IsFuture ?? true)
                     {
                         Campaign.Current.CurrentMenuContext.SwitchToMenu(PlayerSettlementBehaviour.PlayerSettlementUnderConstructionMenu);
                         return false;

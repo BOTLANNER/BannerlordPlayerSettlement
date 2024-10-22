@@ -176,7 +176,7 @@ namespace BannerlordPlayerSettlement.Saves
             }
         }
 
-        public PlayerSettlementItem? FindSettlement(Settlement settlement)
+        public PlayerSettlementItem? FindSettlement(Settlement? settlement)
         {
             if (settlement == null)
             {

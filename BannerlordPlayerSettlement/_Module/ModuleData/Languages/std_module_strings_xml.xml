@@ -124,6 +124,18 @@
         <string id="player_settlement_n_114" text="Build Duration Days (Castle)" />
         <string id="player_settlement_n_115" text="Build Duration Days (Village)" />
         <string id="player_settlement_n_116" text="Hint Duration" />
-        <string id="player_settlement_n_117" text="Duration to display hints (in seconds). This is in addition to the base time that the game applies by default. [ Default: 5 ]" />
+        <string id="player_settlement_n_117" text="Duration to display hints (in seconds). This is in addition to the base time that the game applies by default. [ Default: 3 ]" />
+        <string id="player_settlement_n_118" text="Specified days before town is done being rebuilt.  [ Default: 5 ]" />
+        <string id="player_settlement_n_119" text="Specified days before castle is done being rebuilt.  [ Default: 4 ]" />
+        <string id="player_settlement_n_120" text="Specified days before village is done being rebuilt.  [ Default: 2 ]" />
+        <string id="player_settlement_n_121" text="Rebuild Duration Days (Town)" />
+        <string id="player_settlement_n_122" text="Rebuild Duration Days (Castle)" />
+        <string id="player_settlement_n_123" text="Rebuild Duration Days (Village)" />
+        <string id="player_settlement_n_124" text="Specified cost in local currency to rebuild a town.  [ Default: 5 000 ]" />
+        <string id="player_settlement_n_125" text="Required Town Rebuild Cost" />
+        <string id="player_settlement_n_126" text="Specified cost in local currency to rebuild a village.  [ Default: 1 000 ]" />
+        <string id="player_settlement_n_127" text="Required Village Rebuild Cost" />
+        <string id="player_settlement_n_128" text="Specified cost in local currency to rebuild a castle.  [ Default: 3 500 ]" />
+        <string id="player_settlement_n_129" text="Required Castle Rebuild Cost" />
     </strings>
 </base>

@@ -16,5 +16,6 @@
         <string id="player_settlement_h_10" text="Maximum number of villages have been built" />
         <string id="player_settlement_h_11" text="No candidate for village to be bound to" />
         <string id="player_settlement_h_12" text="Show/Hide player settlement build options" />
+        <string id="player_settlement_h_13" text="Cannot rebuild settlement: {REASON}" />
     </strings>
 </base>

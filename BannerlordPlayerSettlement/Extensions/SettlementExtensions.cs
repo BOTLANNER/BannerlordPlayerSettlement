@@ -40,6 +40,12 @@ namespace BannerlordPlayerSettlement.Extensions
             return settlement?.StringId?.IsPlayerBuiltStringId() ?? false;
         }
 
+        public static bool IsPlayerBuilt(this Settlement? settlement, out PlayerSettlementItem? playerSettlementItem)
+        {
+            playerSettlementItem = null;
+            return settlement?.StringId?.IsPlayerBuiltStringId(out playerSettlementItem) ?? false;
+        }
+
         public static bool IsPlayerBuiltStringId(this string? stringId)
         {
             return stringId.IsPlayerBuiltStringId(out _);

@@ -92,11 +92,11 @@ Default cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]
         [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
         public bool DisableAutoHints { get; set; } = false;
 
-        private const string HintDurationSeconds_Hint = @"{=player_settlement_n_117}Duration to display hints (in seconds). This is in addition to the base time that the game applies by default. [ Default: 5 ]";
+        private const string HintDurationSeconds_Hint = @"{=player_settlement_n_117}Duration to display hints (in seconds). This is in addition to the base time that the game applies by default. [ Default: 3 ]";
 
         [SettingPropertyInteger("{=player_settlement_n_116}Hint Duration", 1, 120, HintText = HintDurationSeconds_Hint, RequireRestart = false, Order = 27)]
         [SettingPropertyGroup("{=player_settlement_n_70}Settlement Placement")]
-        public int HintDurationSeconds { get; set; } = 5;
+        public int HintDurationSeconds { get; set; } = 3;
 
         private const string Enabled_Hint = "{=player_settlement_n_21}Enables Player Settlement mod and adds the option map screen.  [ Default: ON ]";
 
@@ -128,6 +128,12 @@ Default cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]
         [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
         public int RequiredGold { get; set; } = 10_000;
 
+        private const string RebuildTownRequiredGold_Hint = "{=player_settlement_n_124}Specified cost in local currency to rebuild a town.  [ Default: 5 000 ]";
+
+        [SettingPropertyInteger("{=player_settlement_n_125}Required Town Rebuild Cost", 1, 100_000_000, HintText = RebuildTownRequiredGold_Hint, RequireRestart = false, Order = 4)]
+        [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
+        public int RebuildTownRequiredGold { get; set; } = 5_000;
+
         private const string InstantBuild_Hint = "{=player_settlement_n_30}Skip required build duration and instantly completes town construction.  [ Default: OFF ]";
 
         [SettingPropertyBool("{=player_settlement_n_31}Instant Build", HintText = InstantBuild_Hint, RequireRestart = false, Order = 5, IsToggle = false)]
@@ -152,6 +158,24 @@ Default cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]
         [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
         public int BuildVillageDurationDays { get; set; } = 3;
 
+        private const string RebuildTownDurationDays_Hint = "{=player_settlement_n_118}Specified days before town is done being rebuilt.  [ Default: 5 ]";
+
+        [SettingPropertyInteger("{=player_settlement_n_121}Rebuild Duration Days (Town)", 1, 2480, HintText = RebuildTownDurationDays_Hint, RequireRestart = false, Order = 6)]
+        [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
+        public int RebuildTownDurationDays { get; set; } = 5;
+
+        private const string RebuildCastleDurationDays_Hint = "{=player_settlement_n_119}Specified days before castle is done being rebuilt.  [ Default: 4 ]";
+
+        [SettingPropertyInteger("{=player_settlement_n_122}Rebuild Duration Days (Castle)", 1, 2480, HintText = RebuildCastleDurationDays_Hint, RequireRestart = false, Order = 6)]
+        [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
+        public int RebuildCastleDurationDays { get; set; } = 7;
+
+        private const string RebuildVillageDurationDays_Hint = "{=player_settlement_n_120}Specified days before village is done being rebuilt.  [ Default: 2 ]";
+
+        [SettingPropertyInteger("{=player_settlement_n_123}Rebuild Duration Days (Village)", 1, 2480, HintText = RebuildVillageDurationDays_Hint, RequireRestart = false, Order = 6)]
+        [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
+        public int RebuildVillageDurationDays { get; set; } = 2;
+
         private const string ForcePlayerCulture_Hint = "{=player_settlement_n_34}Will use the player culture for the town. By default when this is OFF, the town culture can be chosen.  [ Default: OFF ]";
 
         [SettingPropertyBool("{=player_settlement_n_35}Use Player Culture", HintText = ForcePlayerCulture_Hint, RequireRestart = false, Order = 7, IsToggle = false)]
@@ -169,6 +193,12 @@ Default cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]
         [SettingPropertyInteger("{=player_settlement_n_39}Required Village Cost", 1, 100_000_000, HintText = RequiredVillageGold_Hint, RequireRestart = false, Order = 9)]
         [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
         public int RequiredVillageGold { get; set; } = 3_000;
+
+        private const string RebuildVillageRequiredGold_Hint = "{=player_settlement_n_126}Specified cost in local currency to rebuild a village.  [ Default: 1 000 ]";
+
+        [SettingPropertyInteger("{=player_settlement_n_127}Required Village Rebuild Cost", 1, 100_000_000, HintText = RebuildVillageRequiredGold_Hint, RequireRestart = false, Order = 9)]
+        [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
+        public int RebuildVillageRequiredGold { get; set; } = 1_000;
 
         private const string AutoAllocateVillageType_Hint = "{=player_settlement_n_40}Will automatically determine the type of village, which determines its primary product. By default when this is OFF, the type can be chosen.  [ Default: OFF ]";
 
@@ -193,6 +223,12 @@ Default cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]
         [SettingPropertyInteger("{=player_settlement_n_47}Required Castle Cost", 1, 100_000_000, HintText = RequiredCastleGold_Hint, RequireRestart = false, Order = 13)]
         [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
         public int RequiredCastleGold { get; set; } = 7_500;
+
+        private const string RebuildCastleRequiredGold_Hint = "{=player_settlement_n_128}Specified cost in local currency to rebuild a castle.  [ Default: 3 500 ]";
+
+        [SettingPropertyInteger("{=player_settlement_n_129}Required Castle Rebuild Cost", 1, 100_000_000, HintText = RebuildCastleRequiredGold_Hint, RequireRestart = false, Order = 13)]
+        [SettingPropertyGroup("{=player_settlement_n_65}Player Settlements")]
+        public int RebuildCastleRequiredGold { get; set; } = 3_500;
 
         private const string MaxTowns_Hint = "{=player_settlement_n_48}Maximum number of player built towns allowed. At least one town is required.  [ Default: 10 ]";
 

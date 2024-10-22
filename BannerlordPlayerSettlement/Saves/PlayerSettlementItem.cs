@@ -47,14 +47,14 @@ namespace BannerlordPlayerSettlement.Saves
 
                 CampaignTime buildStart = CampaignTime.Hours(BuiltAt - 5);
 
-                int duration = Main.Settings.BuildDurationDays;
+                int duration = IsRebuild ? Main.Settings.RebuildTownDurationDays : Main.Settings.BuildDurationDays;
                 if (Type == ((int)SettlementType.Castle))
                 {
-                    duration = Main.Settings.BuildCastleDurationDays;
+                    duration = IsRebuild ? Main.Settings.RebuildCastleDurationDays : Main.Settings.BuildCastleDurationDays;
                 }
                 else if (Type == ((int)SettlementType.Village))
                 {
-                    duration = Main.Settings.BuildVillageDurationDays;
+                    duration = IsRebuild ? Main.Settings.RebuildVillageDurationDays : Main.Settings.BuildVillageDurationDays;
                 }
 
                 CampaignTime buildEnd = buildStart + CampaignTime.Days(duration);
@@ -86,6 +86,9 @@ namespace BannerlordPlayerSettlement.Saves
 
         [SaveableField(210)]
         public List<DeepTransformEdit>? DeepEdits = new();
+
+        [SaveableField(211)]
+        public bool IsRebuild = false;
 
         public SettlementType GetSettlementType()
         {

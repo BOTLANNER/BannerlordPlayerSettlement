@@ -2374,6 +2374,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         if (Main.Settings.AddInitialGarrison)
                         {
                             castleSettlement.AddGarrisonParty(true);
+                            castleSettlement.SetGarrisonWagePaymentLimit(Campaign.Current.Models.PartyWageModel.MaxWage);
                         }
 
                         if (Main.Settings.AddInitialMilitia)
@@ -3316,6 +3317,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         if (Main.Settings.AddInitialGarrison)
                         {
                             townSettlement.AddGarrisonParty(true);
+                            townSettlement.SetGarrisonWagePaymentLimit(Campaign.Current.Models.PartyWageModel.MaxWage);
                         }
 
                         if (Main.Settings.AddInitialMilitia)

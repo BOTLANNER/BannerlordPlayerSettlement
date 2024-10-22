@@ -1994,7 +1994,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                             var docX = new XmlDocument();
                             docX.LoadXml(target.ItemXML);
-                            var oldNode = docX.ChildNodes[0].ChildNodes[0];
+                            var oldNode = docX.ChildNodes[0].ChildNodes.OfType<XmlNode>().FirstOrDefault(n => n is not XmlComment);
 
                             var node = item.ItemXML.CloneNode(true);
 
@@ -2008,6 +2008,11 @@ namespace BannerlordPlayerSettlement.Behaviours
                             node.Attributes["posY"].Value = atPos.Y.ToString();
                             node.Attributes["name"].Value = settlementName;
                             node.Attributes["culture"].Value = $"Culture.{culture.StringId}";
+
+                            if (node.Attributes["owner"] != null)
+                            {
+                                node.Attributes["owner"].Value = $"Faction.{Hero.MainHero.Clan.StringId}";
+                            }
 
                             var newNodeComponent = node.SelectSingleNode(settlementType == SettlementType.Village ? "descendant::Village" : "descendant::Town");
                             newNodeComponent.Attributes["id"].Value = oldCompId;

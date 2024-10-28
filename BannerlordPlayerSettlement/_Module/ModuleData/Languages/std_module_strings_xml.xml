@@ -137,5 +137,11 @@
         <string id="player_settlement_n_127" text="Required Village Rebuild Cost" />
         <string id="player_settlement_n_128" text="Specified cost in local currency to rebuild a castle.  [ Default: 3 500 ]" />
         <string id="player_settlement_n_129" text="Required Castle Rebuild Cost" />
+
+        <string id="player_settlement_n_130" text="Player Settlements: Deep Edit Mode" />
+        <string id="player_settlement_n_131" text="Delete Selection" />
+        <string id="player_settlement_n_132" text="During player settlement placement when building in deep edit mode, will delete the selected model." />
+        <string id="player_settlement_n_133" text="Un-Delete Mode" />
+        <string id="player_settlement_n_134" text="During player settlement placement when building in deep edit mode, when held, the 'Delete Selection' button will instead undo the previous delete." />
     </strings>
 </base>

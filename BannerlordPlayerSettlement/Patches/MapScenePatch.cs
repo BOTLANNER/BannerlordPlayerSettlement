@@ -71,51 +71,6 @@ namespace BannerlordPlayerSettlement.Patches
             return true;
         }
 
-        private static void ClearEntity(this GameEntity? entity)
-        {
-            if (entity != null)
-            {
-                try
-                {
-                    try
-                    {
-                        MapScreen.VisualsOfEntities.Remove(entity.Pointer);
-                    }
-                    catch (Exception e)
-                    {
-                        LogManager.Log.NotifyBad(e);
-                    }
-                    foreach (GameEntity child in entity.GetChildren().ToList())
-                    {
-                        try
-                        {
-                            MapScreen.VisualsOfEntities.Remove(child.Pointer);
-                            child.Remove(112);
-                        }
-                        catch (Exception e)
-                        {
-                            LogManager.Log.NotifyBad(e);
-                        }
-                    }
-                    try
-                    {
-                        entity.ClearEntityComponents(true, true, true);
-                        entity.ClearOnlyOwnComponents();
-                        entity.ClearComponents();
-                    }
-                    catch (Exception e)
-                    {
-                        LogManager.Log.NotifyBad(e);
-                    }
-                    entity.Remove(112);
-                }
-                catch (Exception e)
-                {
-                    LogManager.Log.NotifyBad(e);
-                }
-            }
-        }
-
         public static GameEntity? AddPrefabEntityToMapScene(this IMapScene __instance, ref Scene ____scene, ref string entityId, ref Vec2 position, ref string prefabId)
         {
             try

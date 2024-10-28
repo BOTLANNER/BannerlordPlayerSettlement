@@ -146,6 +146,26 @@ namespace BannerlordPlayerSettlement.Patches
 
                                 entity.SetFrame(ref local);
                             }
+
+                            try
+                            {
+                                // After updating all edits, remove the ones marked as deleted (in reverse to avoid child deletes interfering)
+                                foreach (var dte in playerSettlementItem.DeepEdits.AsEnumerable().Reverse().Where(d => d.IsDeleted && d.Index >= 0))
+                                {
+                                    if (dte.Index < 0)
+                                    {
+                                        continue;
+                                    }
+                                    var entity = settlementVisualEntityChildren[dte.Index];
+
+                                    // Delete submodel that has been marked as deleted
+                                    entity.ClearEntity();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
+                            }
                         }
                     }
                     if (__instance.StrategicEntity != null && overwriteItem != null)
@@ -177,6 +197,26 @@ namespace BannerlordPlayerSettlement.Patches
                                 }
 
                                 entity.SetFrame(ref local);
+                            }
+
+                            try
+                            {
+                                // After updating all edits, remove the ones marked as deleted (in reverse to avoid child deletes interfering)
+                                foreach (var dte in overwriteItem.DeepEdits.AsEnumerable().Reverse().Where(d => d.IsDeleted && d.Index >= 0))
+                                {
+                                    if (dte.Index < 0)
+                                    {
+                                        continue;
+                                    }
+                                    var entity = settlementVisualEntityChildren[dte.Index];
+
+                                    // Delete submodel that has been marked as deleted
+                                    entity.ClearEntity();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
                             }
                         }
                     }

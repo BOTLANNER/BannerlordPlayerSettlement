@@ -12,5 +12,8 @@ namespace BannerlordPlayerSettlement.Saves
 
         [SaveableField(603)]
         public TransformSaveable? Transform;
+
+        [SaveableField(604)]
+        public bool IsDeleted;
     }
 }

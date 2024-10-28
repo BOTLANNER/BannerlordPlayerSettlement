@@ -903,7 +903,22 @@ namespace BannerlordPlayerSettlement.Behaviours
                             // No else statement. Offsets do not get applied here otherwise it would cause infinite motion. Rather, offsets are calculated at the end.
 
                             this.SetFrame(entity, ref local, atGround: false);
+
+                            if (dte?.IsDeleted ?? false)
+                            {
+                                entity.SetVisibilityExcludeParents(false);
+                            }
+                            else if (entity != null)
+                            {
+                                entity.SetVisibilityExcludeParents(true);
+                            }
                         }
+                    }
+
+                    if (IsDeepEdit && currentDeepTarget != null && !currentDeepTarget.IsVisibleIncludeParents())
+                    {
+                        UpdateDeepTarget(forward: true);
+                        return;
                     }
 
                     if (mapScreen.Input.IsKeyDown(Main.Submodule!.DeepEditApplyKey.GetInputKey()))
@@ -931,6 +946,15 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     }
 
                                     entity.SetFrame(ref local);
+
+                                    if (dte?.IsDeleted ?? false)
+                                    {
+                                        entity.SetVisibilityExcludeParents(false);
+                                    }
+                                    else if (entity != null)
+                                    {
+                                        entity.SetVisibilityExcludeParents(true);
+                                    }
                                 }
                             }
 
@@ -1296,6 +1320,41 @@ namespace BannerlordPlayerSettlement.Behaviours
                     }
 
 
+                    if (IsDeepEdit)
+                    {
+                        var undeleteModifierDown = mapScreen.SceneLayer.Input.IsKeyDown(Main.Submodule!.UnDeleteModifierKey.GetInputKey());
+                        var deleteRelease = mapScreen.SceneLayer.Input.IsKeyReleased(Main.Submodule!.DeleteKey.GetInputKey());
+                        if (deleteRelease)
+                        {
+                            if (undeleteModifierDown)
+                            {
+                                var edited = deepTransformEdits.LastOrDefault(d => d.IsDeleted && d.Index >= 0);
+
+                                if (edited != null)
+                                {
+                                    edited.IsDeleted = false;
+                                }
+                                UpdateDeepTarget(currentDeepTarget);
+                                return;
+                            }
+                            else if (currentDeepTarget != settlementVisualEntity)
+                            {
+                                if (currentDeepTarget?.IsVisibleIncludeParents() ?? false)
+                                {
+                                    var edited = MarkEdited(currentDeepTarget);
+
+                                    if (edited != null)
+                                    {
+                                        edited.IsDeleted = true;
+                                    }
+                                    UpdateDeepTarget(forward: true);
+                                    return;
+                                }
+                            }
+                        } 
+                    }
+
+
                     var previous = settlementVisualEntity!.GetFrame();
                     PathFaceRecord currentFace = PathFaceRecord.NullFaceRecord;
 
@@ -1446,7 +1505,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 return;
             }
 
-            TextObject deepEditMessage = new TextObject("{=player_settlement_38}Press {HELP_KEY} for help. \r\nPress {APPLY_KEY} to apply or press {ESC_KEY} to cancel.  \r\nUse {DEEP_EDIT_KEY} to switch from deep edit mode to placement mode. \r\nUse {CYCLE_MODIFIER_KEY} and {CYCLE_BACK_KEY} / {CYCLE_NEXT_KEY} to change selected sub model.\r\nUse {ROTATE_MODIFIER_KEY} and {MOUSE_CLICK} to reposition. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_BACK_KEY} / {ROTATE_NEXT_KEY} to change rotation. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change forward rotation. \r\nUse {ROTATE_MODIFIER_KEY} + {ROTATE_MODIFIER_ALTERNATE} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change axis rotation. \r\nUse {SCALE_MODIFIER_KEY} and {SCALE_BACK_KEY} / {SCALE_NEXT_KEY} to change scale. \r\nUse {CYCLE_MODIFIER_KEY} and {MOVE_UP_KEY} / {MOVE_DOWN_KEY} to move up or down.");
+            TextObject deepEditMessage = new TextObject("{=player_settlement_38}Press {HELP_KEY} for help. \r\nPress {APPLY_KEY} to apply or press {ESC_KEY} to cancel.  \r\nUse {DEEP_EDIT_KEY} to switch from deep edit mode to placement mode. \r\nUse {CYCLE_MODIFIER_KEY} and {CYCLE_BACK_KEY} / {CYCLE_NEXT_KEY} to change selected sub model.\r\nUse {ROTATE_MODIFIER_KEY} and {MOUSE_CLICK} to reposition. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_BACK_KEY} / {ROTATE_NEXT_KEY} to change rotation. \r\nUse {ROTATE_MODIFIER_KEY} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change forward rotation. \r\nUse {ROTATE_MODIFIER_KEY} + {ROTATE_MODIFIER_ALTERNATE} and {ROTATE_FORWARD_KEY} / {ROTATE_BACKWARD_KEY} to change axis rotation. \r\nUse {SCALE_MODIFIER_KEY} and {SCALE_BACK_KEY} / {SCALE_NEXT_KEY} to change scale. \r\nUse {CYCLE_MODIFIER_KEY} and {MOVE_UP_KEY} / {MOVE_DOWN_KEY} to move up or down. \r\nUse {DELETE_KEY} to delete selection. \r\nUse {UNDELETE_MODIFIER_KEY} and {DELETE_KEY} to un-delete previous deletion.");
             deepEditMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
             deepEditMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
             deepEditMessage.SetTextVariable("APPLY_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.DeepEditApplyKey.GetInputKey().ToString()));
@@ -1466,6 +1525,8 @@ namespace BannerlordPlayerSettlement.Behaviours
             deepEditMessage.SetTextVariable("SCALE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleModifierKey).ToString()));
             deepEditMessage.SetTextVariable("SCALE_BACK_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleSmallerKey).ToString()));
             deepEditMessage.SetTextVariable("SCALE_NEXT_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.ScaleBiggerKey).ToString()));
+            deepEditMessage.SetTextVariable("UNDELETE_MODIFIER_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.UnDeleteModifierKey).ToString()));
+            deepEditMessage.SetTextVariable("DELETE_KEY", HyperlinkTexts.GetKeyHyperlinkText(((GameKey) Main.Submodule!.DeleteKey).ToString()));
             MBInformationManager.AddQuickInformation(deepEditMessage, Main.Settings.HintDurationSeconds * 1000, Hero.MainHero?.CharacterObject);
         }
 
@@ -1498,10 +1559,12 @@ namespace BannerlordPlayerSettlement.Behaviours
                         Position = frame.origin,
                         Offsets = Vec3.Zero,
                         RotationScale = frame.rotation
-                    }
+                    },
+                    IsDeleted = false
                 };
                 deepTransformEdits.Add(edit);
             }
+            LogManager.EventTracer.Trace($"Mark edited: settlementVisualEntity = {settlementVisualEntity?.Name} currentDeepTarget = {currentDeepTarget?.Name} idx = {idx}");
             return edit;
         }
 
@@ -1651,9 +1714,16 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             RefreshVisualSelection();
 
+            HideDeletedDeepEdits();
+
             GameEntity? target = idx < 0 ? settlementVisualEntity : settlementVisualEntityChildren[idx];
 
             currentDeepTarget = target;
+
+            if (!(currentDeepTarget?.IsVisibleIncludeParents() ?? false))
+            {
+                return false;
+            }
 
             // Recursively highlight target and submodels as green to indicate selection
             bool UpdateEntities(GameEntity parent)
@@ -1686,6 +1756,26 @@ namespace BannerlordPlayerSettlement.Behaviours
                 return foundMesh;
             }
             return UpdateEntities(target!);
+        }
+
+        private void HideDeletedDeepEdits()
+        {
+            if (deepTransformEdits != null)
+            {
+                foreach (var dte in deepTransformEdits.Where(dte => dte.IsDeleted && dte.Index >= 0))
+                {
+                    try
+                    {
+                        GameEntity? entity = settlementVisualEntityChildren[dte.Index];
+                        entity.SetVisibilityExcludeParents(false);
+                    }
+                    catch (Exception e)
+                    {
+                        LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
+                        continue;
+                    }
+                }
+            }
         }
 
         // // TODO: Might be useful to ensure reachable
@@ -1832,94 +1922,34 @@ namespace BannerlordPlayerSettlement.Behaviours
         private void ClearEntities()
         {
             settlementVisualPrefab = null;
-            if (settlementVisualEntity != null)
-            {
-                try
-                {
-                    try
-                    {
-                        MapScreen.VisualsOfEntities.Remove(settlementVisualEntity.Pointer);
-                    }
-                    catch (Exception e)
-                    {
-                        LogManager.Log.NotifyBad(e);
-                    }
-                    foreach (GameEntity child in settlementVisualEntity.GetChildren().ToList())
-                    {
-                        try
-                        {
-                            MapScreen.VisualsOfEntities.Remove(child.Pointer);
-                            child.Remove(112);
-                        }
-                        catch (Exception e)
-                        {
-                            LogManager.Log.NotifyBad(e);
-                        }
-                    }
-                    try
-                    {
-                        settlementVisualEntity.ClearEntityComponents(true, true, true);
-                        settlementVisualEntity.ClearOnlyOwnComponents();
-                        settlementVisualEntity.ClearComponents();
-                    }
-                    catch (Exception e)
-                    {
-                        LogManager.Log.NotifyBad(e);
-                    }
-                    settlementVisualEntity.Remove(112);
-                }
-                catch (Exception e)
-                {
-                    LogManager.Log.NotifyBad(e);
-                }
-            }
+            settlementVisualEntity?.ClearEntity();
             settlementVisualEntity = null;
 
-            if (ghostGateVisualEntity != null)
-            {
-                try
-                {
-                    try
-                    {
-                        MapScreen.VisualsOfEntities.Remove(ghostGateVisualEntity.Pointer);
-                    }
-                    catch (Exception e)
-                    {
-                        LogManager.Log.NotifyBad(e);
-                    }
-                    foreach (GameEntity child in ghostGateVisualEntity.GetChildren().ToList())
-                    {
-                        try
-                        {
-                            MapScreen.VisualsOfEntities.Remove(child.Pointer);
-                            child.Remove(112);
-                        }
-                        catch (Exception e)
-                        {
-                            LogManager.Log.NotifyBad(e);
-                        }
-                    }
-                    try
-                    {
-                        ghostGateVisualEntity.ClearEntityComponents(true, true, true);
-                        ghostGateVisualEntity.ClearOnlyOwnComponents();
-                        ghostGateVisualEntity.ClearComponents();
-                    }
-                    catch (Exception e)
-                    {
-                        LogManager.Log.NotifyBad(e);
-                    }
-                    ghostGateVisualEntity.Remove(112);
-                }
-                catch (Exception e)
-                {
-                    LogManager.Log.NotifyBad(e);
-                }
-            }
+            ghostGateVisualEntity?.ClearEntity();
             ghostGateVisualEntity = null;
 
             LogManager.EventTracer.Trace();
         }
+
+        // TODO: Use to hide parts
+        //private void SetSettlementLevelVisibility()
+        //{
+        //    List<GameEntity> gameEntities = new List<GameEntity>();
+        //    this.StrategicEntity.GetChildrenRecursive(ref gameEntities);
+        //    foreach (GameEntity gameEntity in gameEntities)
+        //    {
+        //        if (((uint) gameEntity.GetUpgradeLevelMask() & this._currentLevelMask) != this._currentLevelMask)
+        //        {
+        //            gameEntity.SetVisibilityExcludeParents(false);
+        //            gameEntity.SetPhysicsState(false, true);
+        //        }
+        //        else
+        //        {
+        //            gameEntity.SetVisibilityExcludeParents(true);
+        //            gameEntity.SetPhysicsState(true, true);
+        //        }
+        //    }
+        //}
 
         public void Tick(float delta)
         {

@@ -64,6 +64,8 @@ namespace BannerlordPlayerSettlement
         public static readonly string RotateCategory = ModuleName + "Rotate";
         public static readonly string ScaleCategory = ModuleName + "Scale";
 
+        public static readonly string DeleteCategory = ModuleName + "Delete";
+
         public static Settings? Settings;
 
         private bool _loaded;
@@ -128,6 +130,12 @@ namespace BannerlordPlayerSettlement
 
         private ModifierKey rotateForwardKey;
         public HotKeyBase RotateForwardKey => rotateForwardKey;
+
+        private BasicHotKey deleteKey;
+        public HotKeyBase DeleteKey => deleteKey;
+
+        private BasicHotKey unDeleteModifierKey;
+        public HotKeyBase UnDeleteModifierKey => unDeleteModifierKey;
 
         public string? BlacklistFile => _blacklistFile;
         public static MBReadOnlyList<string?> BlacklistedTemplates => _blacklistedTemplates;
@@ -401,10 +409,41 @@ namespace BannerlordPlayerSettlement
                         );
                     }
 
+                    var deleteHotKeyManager = HotKeyManager.CreateWithOwnCategory(DeleteCategory, DeleteCategory);
+                    if (deleteHotKeyManager != null)
+                    {
+                        TextObject description = new TextObject("{=player_settlement_n_130}Player Settlements: Deep Edit Mode");
+                        categoryName.AddVariationWithId(DeleteCategory, description, new List<GameTextManager.ChoiceTag>());
+
+                        deleteKey = deleteHotKeyManager.Add
+                        (
+                            new BasicHotKey
+                            (
+                                "{=player_settlement_n_131}Delete Selection",
+                                "{=player_settlement_n_132}During player settlement placement when building in deep edit mode, will delete the selected model.",
+                                TaleWorlds.InputSystem.InputKey.BackSpace,
+                                DeleteCategory,
+                                "delete"
+                            )
+                        );
+                        unDeleteModifierKey = deleteHotKeyManager.Add
+                        (
+                            new BasicHotKey
+                            (
+                                "{=player_settlement_n_133}Un-Delete Mode",
+                                "{=player_settlement_n_134}During player settlement placement when building in deep edit mode, when held, the 'Delete Selection' button will instead undo the previous delete.",
+                                TaleWorlds.InputSystem.InputKey.LeftShift,
+                                DeleteCategory,
+                                "undelete"
+                            )
+                        );
+                    }
+
                     defaultHotKeyManager?.Build();
                     cycleHotKeyManager?.Build();
                     scaleHotKeyManager?.Build();
                     rotateHotKeyManager?.Build();
+                    deleteHotKeyManager?.Build();
                 }
 
                 LogManager.EventTracer.Trace();

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 using BannerlordPlayerSettlement.Extensions;
@@ -85,8 +86,10 @@ namespace BannerlordPlayerSettlement.Patches
         {
             try
             {
+                OverwriteSettlementItem? overwriteItem = null;
                 bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsPlayerBuilt());
-                if (!isPlayerSettlement)
+                bool isOverwrite = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsOverwritten(out overwriteItem));
+                if (!isPlayerSettlement && !isOverwrite)
                 {
                     return true;
                 }
@@ -102,14 +105,17 @@ namespace BannerlordPlayerSettlement.Patches
                 }
                 else if (__instance.PartyBase.IsSettlement)
                 {
-                    SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.PartyBase.Id) });
+                    if (!isOverwrite)
+                    {
+                        SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.PartyBase.Id) }); 
+                    }
                     if (__instance.StrategicEntity == null)
                     {
                         Campaign.Current.MapSceneWrapper.AddNewEntityToMapScene(__instance.PartyBase.Settlement.StringId, __instance.PartyBase.Settlement.Position2D);
                         SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.PartyBase.Id) });
                     }
 
-                    if (__instance.StrategicEntity != null)
+                    if (__instance.StrategicEntity != null && overwriteItem == null)
                     {
                         var playerSettlementItem = PlayerSettlementInfo.Instance?.FindSettlement(__instance.PartyBase.Settlement);
                         if (playerSettlementItem?.RotationMat3 != null)
@@ -117,6 +123,101 @@ namespace BannerlordPlayerSettlement.Patches
                             var frame = __instance.StrategicEntity.GetFrame();
                             frame.rotation = playerSettlementItem.RotationMat3;
                             __instance.StrategicEntity.SetFrame(ref frame);
+                        }
+                        if (playerSettlementItem?.DeepEdits != null)
+                        {
+                            var settlementVisualEntity = __instance.StrategicEntity;
+                            List<GameEntity> settlementVisualEntityChildren = new();
+                            settlementVisualEntity.GetChildrenRecursive(ref settlementVisualEntityChildren);
+
+                            foreach (var dte in playerSettlementItem.DeepEdits)
+                            {
+                                var entity = dte.Index < 0 ? settlementVisualEntity : settlementVisualEntityChildren[dte.Index];
+                                var local = entity!.GetFrame();
+                                local.rotation = dte?.Transform?.RotationScale != null ? dte.Transform.RotationScale : local.rotation;
+                                if (dte!.Index >= 0)
+                                {
+                                    local.origin = dte?.Transform?.Position != null ? dte.Transform.Position : local.origin;
+                                }
+                                else
+                                {
+                                    local.origin = dte?.Transform?.Offsets != null ? local.origin + dte.Transform.Offsets : local.origin;
+                                }
+
+                                entity.SetFrame(ref local);
+                            }
+
+                            try
+                            {
+                                // After updating all edits, remove the ones marked as deleted (in reverse to avoid child deletes interfering)
+                                foreach (var dte in playerSettlementItem.DeepEdits.AsEnumerable().Reverse().Where(d => d.IsDeleted && d.Index >= 0))
+                                {
+                                    if (dte.Index < 0)
+                                    {
+                                        continue;
+                                    }
+                                    var entity = settlementVisualEntityChildren[dte.Index];
+
+                                    // Delete submodel that has been marked as deleted
+                                    entity.ClearEntity();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
+                            }
+                        }
+                    }
+                    if (__instance.StrategicEntity != null && overwriteItem != null)
+                    {
+                        if (overwriteItem?.RotationMat3 != null)
+                        {
+                            var frame = __instance.StrategicEntity.GetFrame();
+                            frame.rotation = overwriteItem.RotationMat3;
+                            __instance.StrategicEntity.SetFrame(ref frame);
+                        }
+                        if (overwriteItem?.DeepEdits != null)
+                        {
+                            var settlementVisualEntity = __instance.StrategicEntity;
+                            List<GameEntity> settlementVisualEntityChildren = new();
+                            settlementVisualEntity.GetChildrenRecursive(ref settlementVisualEntityChildren);
+
+                            foreach (var dte in overwriteItem.DeepEdits)
+                            {
+                                var entity = dte.Index < 0 ? settlementVisualEntity : settlementVisualEntityChildren[dte.Index];
+                                var local = entity!.GetFrame();
+                                local.rotation = dte?.Transform?.RotationScale != null ? dte.Transform.RotationScale : local.rotation;
+                                if (dte!.Index >= 0)
+                                {
+                                    local.origin = dte?.Transform?.Position != null ? dte.Transform.Position : local.origin;
+                                }
+                                else
+                                {
+                                    local.origin = dte?.Transform?.Offsets != null ? local.origin + dte.Transform.Offsets : local.origin;
+                                }
+
+                                entity.SetFrame(ref local);
+                            }
+
+                            try
+                            {
+                                // After updating all edits, remove the ones marked as deleted (in reverse to avoid child deletes interfering)
+                                foreach (var dte in overwriteItem.DeepEdits.AsEnumerable().Reverse().Where(d => d.IsDeleted && d.Index >= 0))
+                                {
+                                    if (dte.Index < 0)
+                                    {
+                                        continue;
+                                    }
+                                    var entity = settlementVisualEntityChildren[dte.Index];
+
+                                    // Delete submodel that has been marked as deleted
+                                    entity.ClearEntity();
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
+                            }
                         }
                     }
                     bool flag1 = false;

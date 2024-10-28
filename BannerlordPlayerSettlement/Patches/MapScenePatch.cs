@@ -9,6 +9,7 @@ using BannerlordPlayerSettlement.Utils;
 using HarmonyLib;
 
 using SandBox;
+using SandBox.View.Map;
 
 using TaleWorlds.CampaignSystem.Map;
 using TaleWorlds.Engine;
@@ -27,6 +28,7 @@ namespace BannerlordPlayerSettlement.Patches
             try
             {
                 PlayerSettlementItem? playerSettlementItem = null;
+                OverwriteSettlementItem? overwriteSettlements = null;
                 if (entityId?.IsPlayerBuiltStringId(out playerSettlementItem)  ?? false)
                 {
                     if (entityId != null && entityId.StartsWith("player_settlement_town_"))
@@ -43,6 +45,21 @@ namespace BannerlordPlayerSettlement.Patches
                     }
 
                     string prefabId = playerSettlementItem?.PrefabId ?? entityId!;
+                    var entity = __instance.AddPrefabEntityToMapScene(ref ____scene, ref entityId!, ref position, ref prefabId!);
+                    if (entity != null)
+                    {
+                        return false;
+                    }
+                }
+                else if (entityId?.IsOverwritten(out overwriteSettlements) ?? false)
+                {
+                    var oldEntity = ____scene.GetCampaignEntityWithName(entityId);
+                    if (oldEntity != null)
+                    {
+                        oldEntity.ClearEntity();
+                    }
+
+                    string prefabId = overwriteSettlements?.PrefabId ?? entityId!;
                     var entity = __instance.AddPrefabEntityToMapScene(ref ____scene, ref entityId!, ref position, ref prefabId!);
                     if (entity != null)
                     {

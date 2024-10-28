@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>5.1.0</Version>
+    <Version>6.0.2</Version>
     <ModuleName>$(MSBuildProjectName)</ModuleName>
   </PropertyGroup>
   
@@ -120,6 +120,10 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="$(GameFolder)\Modules\Bannerlord.UIExtenderEx\bin\Win64_Shipping_Client\*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GameFolder)\Modules\Bannerlord.ButterLib\bin\Win64_Shipping_Client\Bannerlord.ButterLib.dll">
       <HintPath>%(Identity)</HintPath>
       <Private>False</Private>
     </Reference>

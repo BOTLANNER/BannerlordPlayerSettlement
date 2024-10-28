@@ -3,6 +3,7 @@
 using Bannerlord.UIExtenderEx.Attributes;
 
 using BannerlordPlayerSettlement.Behaviours;
+using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Saves;
 
 using TaleWorlds.CampaignSystem;
@@ -239,7 +240,7 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
 
             if (disableReason == null)
             {
-                disableReason = TextObject.Empty;
+                disableReason = TextObjectCompat.Empty;
                 IsCreatePlayerSettlementAllowed = true;
             }
             else

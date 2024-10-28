@@ -26,6 +26,10 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableProperty(304)]
         public List<SettlementMetaV3> ExtraVillages { get; set; } = new();
 
+        [JsonProperty]
+        [SaveableProperty(305)]
+        public List<SettlementMetaV3> OverwriteSettlements { get; set; } = new();
+
         public static MetaV3? Create(PlayerSettlementInfo playerSettlementInfo)
         {
             if (playerSettlementInfo?.Towns == null)
@@ -38,7 +42,8 @@ namespace BannerlordPlayerSettlement.Saves
                 SavedModuleVersion = Main.Version,
                 Castles = new(),
                 Towns = new(),
-                ExtraVillages = new()
+                ExtraVillages = new(),
+                OverwriteSettlements = new()
             };
 
             foreach (var town in playerSettlementInfo.Towns)
@@ -109,6 +114,23 @@ namespace BannerlordPlayerSettlement.Saves
                         PrefabId = v.PrefabId,
                         Version = v.Version,
                         Villages = new(),
+                    });
+                }
+            }
+
+            if (playerSettlementInfo.OverwriteSettlements != null)
+            {
+                foreach (var o in playerSettlementInfo.OverwriteSettlements)
+                {
+                    metaV3.OverwriteSettlements.Add(new SettlementMetaV3
+                    {
+                        XML = o.ItemXML,
+                        BuildTime = o.BuiltAt,
+                        DisplayName = o.SettlementName,
+                        settlement = o.Settlement,
+                        StringId = o.StringId,
+                        PrefabId = o.PrefabId,
+                        Version = o.Version
                     });
                 }
             }

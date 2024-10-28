@@ -20,9 +20,9 @@
         <string id="player_settlement_n_14" text="Mouse Rotation Speed" />
         <string id="player_settlement_n_15" text="Speed at which rotation keys affect settlement when rotating. \nDefault game rotation keys are 'Q' and 'E', unless remapped. \nSettlement rotation applies when 'Alt' is held. [ Default: 100% ]" />
         <string id="player_settlement_n_16" text="Key Rotation Speed" />
-        <string id="player_settlement_n_17" text="Will limit settlement options to selected culture only. \nOtherwise will allow settlement options for all cultures. \nCycle visually between options by holding 'Shift' and using rotation keys. \nDefault game rotation keys are 'Q' and 'E', unless remapped.  [ Default: ON ]" />
+        <string id="player_settlement_n_17" text="Will limit settlement options to selected culture only. \nOtherwise will allow settlement options for all cultures. \nCycle visually between options by holding 'Shift' and using cycle keys. \nDefault cycle keys are 'Q' and 'E', unless remapped.  [ Default: ON ]" />
         <string id="player_settlement_n_18" text="Selected Culture Only" />
-        <string id="player_settlement_n_19" text="Speed at which settlements will visually cycle during placement while holding 'Shift' and a rotation key, or speed at which settlements will scale while holding 'Ctrl' and a rotation key. \nCycle visually between options by holding 'Shift' and using rotation keys. \nDefault game rotation keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]" />
+        <string id="player_settlement_n_19" text="Speed at which settlements will visually cycle during placement while holding 'Shift' and a cycle key, or speed at which settlements will scale while holding 'Ctrl' and a scale key. \nCycle visually between options by holding 'Shift' and using cycle keys. \nScale by holding 'Ctrl' and using scale keys. \nDefault cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]" />
         <string id="player_settlement_n_20" text="Settlement Cycle Speed" />
         <string id="player_settlement_n_21" text="Enables Player Settlement mod and adds the option map screen.  [ Default: ON ]" />
         <string id="player_settlement_n_22" text="Requires clan to be specified tier before being allowed to create a settlement.  [ Default: ON ]" />
@@ -36,7 +36,6 @@
         <string id="player_settlement_n_30" text="Skip required build duration and instantly completes town construction.  [ Default: OFF ]" />
         <string id="player_settlement_n_31" text="Instant Build" />
         <string id="player_settlement_n_32" text="Specified days before town is done being built.  [ Default: 7 ]" />
-        <string id="player_settlement_n_33" text="Build Duration Days" />
         <string id="player_settlement_n_34" text="Will use the player culture for the town. By default when this is OFF, the town culture can be chosen.  [ Default: OFF ]" />
         <string id="player_settlement_n_35" text="Use Player Culture" />
         <string id="player_settlement_n_36" text="Requires a specified cost in local currency to build new village.  [ Default: ON ]" />
@@ -74,6 +73,75 @@
         <string id="player_settlement_n_68" text="Allow choosing settlement gate position when applicable.  [ Default: ON ]" />
         <string id="player_settlement_n_69" text="Allow Setting Gate Position" />
         <string id="player_settlement_n_70" text="Settlement Placement" />
-        
+      
+        <!-- V6 Settings -->
+        <string id="player_settlement_n_71" text="Will disable automatic hints shown during settlement placement. Hints can still be shown by pressing the help key, by default 'F1' unless remapped.  [ Default: OFF ]" />
+        <string id="player_settlement_n_72" text="Disable Automatic Hints" />
+
+        <!-- Keybindings -->
+        <string id="player_settlement_n_73" text="Show Help" />
+        <string id="player_settlement_n_74" text="During player settlement placement when building, will show contextual help info." />
+        <string id="player_settlement_n_75" text="Cycle Mode" />
+        <string id="player_settlement_n_76" text="During player settlement placement when building, will switch to cycle mode when held." />
+        <string id="player_settlement_n_77" text="Rotation Mode" />
+        <string id="player_settlement_n_78" text="During player settlement placement when building, will switch to rotation mode when held." />
+        <string id="player_settlement_n_79" text="Scale Mode" />
+        <string id="player_settlement_n_80" text="During player settlement placement when building, will switch to scaling mode when held." />
+        <string id="player_settlement_n_81" text="Deep Edit Toggle" />
+        <string id="player_settlement_n_82" text="During player settlement placement when building, will toggle between placement and deep edit modes." />
+        <string id="player_settlement_n_83" text="Deep Edit Finish" />
+        <string id="player_settlement_n_84" text="During player settlement placement when building in deep edit mode, will finish and apply either to gate position selection when applicable or confirmation to finalise" />
+        <string id="player_settlement_n_85" text="Player Settlements" />
+        <string id="player_settlement_n_86" text="Player Settlements: Cycle Mode" />
+        <string id="player_settlement_n_87" text="Cycle Back" />
+        <string id="player_settlement_n_88" text="During player settlement placement when building, will cycle to the previous settlement model (or previous submodel when in deep edit mode)." />
+        <string id="player_settlement_n_89" text="Cycle Next" />
+        <string id="player_settlement_n_90" text="During player settlement placement when building, will cycle to the next settlement model (or next submodel when in deep edit mode)." />
+        <string id="player_settlement_n_91" text="Move Down" />
+        <string id="player_settlement_n_92" text="During player settlement placement when building, will move the selected object down." />
+        <string id="player_settlement_n_93" text="Move Up" />
+        <string id="player_settlement_n_94" text="During player settlement placement when building, will move the selected object up." />
+        <string id="player_settlement_n_95" text="Player Settlements: Scale Mode" />
+        <string id="player_settlement_n_96" text="Scale Down" />
+        <string id="player_settlement_n_97" text="During player settlement placement when building, will scale down to the model." />
+        <string id="player_settlement_n_98" text="Scale Up" />
+        <string id="player_settlement_n_99" text="During player settlement placement when building, will scale up to the model." />
+        <string id="player_settlement_n_100" text="Player Settlements: Rotate Mode" />
+        <string id="player_settlement_n_101" text="Rotate Left" />
+        <string id="player_settlement_n_102" text="During player settlement placement when building, will rotate the model to the left." />
+        <string id="player_settlement_n_103" text="Rotate Right" />
+        <string id="player_settlement_n_104" text="During player settlement placement when building, will rotate the model to the right." />
+        <string id="player_settlement_n_105" text="Rotate Back" />
+        <string id="player_settlement_n_106" text="During player settlement placement when building, will rotate the model backwards." />
+        <string id="player_settlement_n_107" text="Rotate Forward" />
+        <string id="player_settlement_n_108" text="During player settlement placement when building, will rotate the model forwards." />
+        <string id="player_settlement_n_109" text="Alternate Rotation Axis" />
+        <string id="player_settlement_n_110" text="During player settlement placement when building, will switch to alternate rotation mode when held together with the 'Rotation Modifier'. This changes the axis of rotation when using forwards and backwards rotation keys." />
+
+        <string id="player_settlement_n_111" text="Specified days before castle is done being built.  [ Default: 7 ]" />
+        <string id="player_settlement_n_112" text="Specified days before village is done being built.  [ Default: 3 ]" />
+        <string id="player_settlement_n_113" text="Build Duration Days (Town)" />
+        <string id="player_settlement_n_114" text="Build Duration Days (Castle)" />
+        <string id="player_settlement_n_115" text="Build Duration Days (Village)" />
+        <string id="player_settlement_n_116" text="Hint Duration" />
+        <string id="player_settlement_n_117" text="Duration to display hints (in seconds). This is in addition to the base time that the game applies by default. [ Default: 3 ]" />
+        <string id="player_settlement_n_118" text="Specified days before town is done being rebuilt.  [ Default: 5 ]" />
+        <string id="player_settlement_n_119" text="Specified days before castle is done being rebuilt.  [ Default: 4 ]" />
+        <string id="player_settlement_n_120" text="Specified days before village is done being rebuilt.  [ Default: 2 ]" />
+        <string id="player_settlement_n_121" text="Rebuild Duration Days (Town)" />
+        <string id="player_settlement_n_122" text="Rebuild Duration Days (Castle)" />
+        <string id="player_settlement_n_123" text="Rebuild Duration Days (Village)" />
+        <string id="player_settlement_n_124" text="Specified cost in local currency to rebuild a town.  [ Default: 5 000 ]" />
+        <string id="player_settlement_n_125" text="Required Town Rebuild Cost" />
+        <string id="player_settlement_n_126" text="Specified cost in local currency to rebuild a village.  [ Default: 1 000 ]" />
+        <string id="player_settlement_n_127" text="Required Village Rebuild Cost" />
+        <string id="player_settlement_n_128" text="Specified cost in local currency to rebuild a castle.  [ Default: 3 500 ]" />
+        <string id="player_settlement_n_129" text="Required Castle Rebuild Cost" />
+
+        <string id="player_settlement_n_130" text="Player Settlements: Deep Edit Mode" />
+        <string id="player_settlement_n_131" text="Delete Selection" />
+        <string id="player_settlement_n_132" text="During player settlement placement when building in deep edit mode, will delete the selected model." />
+        <string id="player_settlement_n_133" text="Un-Delete Mode" />
+        <string id="player_settlement_n_134" text="During player settlement placement when building in deep edit mode, when held, the 'Delete Selection' button will instead undo the previous delete." />
     </strings>
 </base>

@@ -10,7 +10,16 @@ using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
 {
-    public class PlayerSettlementItem
+    public interface ISettlementItem
+    {
+        void SetBuildComplete(bool completed);
+
+        string? GetSettlementName();
+
+        Settlement? GetSettlement();
+    }
+
+    public class PlayerSettlementItem : ISettlementItem
     {
         [SaveableField(112)]
         public string? ItemXML = null;
@@ -46,7 +55,18 @@ namespace BannerlordPlayerSettlement.Saves
                 }
 
                 CampaignTime buildStart = CampaignTime.Hours(BuiltAt - 5);
-                CampaignTime buildEnd = buildStart + CampaignTime.Days(Main.Settings.BuildDurationDays);
+
+                int duration = IsRebuild ? Main.Settings.RebuildTownDurationDays : Main.Settings.BuildDurationDays;
+                if (Type == ((int)SettlementType.Castle))
+                {
+                    duration = IsRebuild ? Main.Settings.RebuildCastleDurationDays : Main.Settings.BuildCastleDurationDays;
+                }
+                else if (Type == ((int)SettlementType.Village))
+                {
+                    duration = IsRebuild ? Main.Settings.RebuildVillageDurationDays : Main.Settings.BuildVillageDurationDays;
+                }
+
+                CampaignTime buildEnd = buildStart + CampaignTime.Days(duration);
                 return buildEnd;
             }
         }
@@ -73,6 +93,12 @@ namespace BannerlordPlayerSettlement.Saves
         [SaveableField(209)]
         public string PrefabId = null;
 
+        [SaveableField(210)]
+        public List<DeepTransformEdit>? DeepEdits = new();
+
+        [SaveableField(211)]
+        public bool IsRebuild = false;
+
         public SettlementType GetSettlementType()
         {
             return (SettlementType) Type;
@@ -83,5 +109,20 @@ namespace BannerlordPlayerSettlement.Saves
         public static string EncyclopediaLink(string StringId) => String.Concat(Campaign.Current.EncyclopediaManager.GetIdentifier(typeof(Settlement)), "-", StringId) ?? "";
 
         public static TextObject EncyclopediaLinkWithName(string StringId, TextObject Name) => HyperlinkTexts.GetSettlementHyperlinkText(EncyclopediaLink(StringId), Name);
+
+        public void SetBuildComplete(bool completed)
+        {
+            BuildComplete = completed;
+        }
+
+        public string? GetSettlementName()
+        {
+            return SettlementName;
+        }
+
+        public Settlement? GetSettlement()
+        {
+            return Settlement;
+        }
     }
 }

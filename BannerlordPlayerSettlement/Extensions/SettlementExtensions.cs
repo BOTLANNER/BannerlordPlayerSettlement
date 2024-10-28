@@ -103,6 +103,10 @@ namespace BannerlordPlayerSettlement.Extensions
 
             if (PlayerSettlementInfo.Instance != null)
             {
+                if (PlayerSettlementInfo.Instance.OverwriteSettlements == null)
+                {
+                    PlayerSettlementInfo.Instance.OverwriteSettlements = new();
+                }
                 var isOverwrite = PlayerSettlementInfo.Instance.OverwriteSettlements.FirstOrDefault(t => t.Settlement?.StringId == stringId || t.StringId == stringId);
                 if (isOverwrite != null)
                 {

@@ -15,6 +15,10 @@
     "Europe1100": {
       "commandName": "Project",
       "commandLineArgs": "\"Modules/Europe1100/ModuleData/settlements/settlements.xml|Modules/Europe1100/ModuleData/settlements/settlements_new.xml\" \"Modules/Europe1100/SceneObj/ECM_129C/scene.xscene\" 10 5 15 4 \"_Europe1100\""
+    },
+    "ToR_SteamWorkshop": {
+      "commandName": "Project",
+      "commandLineArgs": "\"$(BANNERLORD_WORKSHOP_DIR)/3025574678/ModuleData/tor_settlements.xml\" \"$(BANNERLORD_WORKSHOP_DIR)/3025579210/SceneObj/Main_map/scene.xscene\" 1 1 1 1 \"_ToR\" --no-prepend "
     }
   }
 }

@@ -19,8 +19,10 @@ namespace PlayerSettlementPrefabGenerator
         {
             Console.Clear();
 
-            string settlementsDescriptorsFiles = (args[0]).Replace("$(BANNERLORD_GAME_DIR)", Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR"));
-            string entityDescriptorsFiles = (args[1]).Replace("$(BANNERLORD_GAME_DIR)", Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR"));
+            string settlementsDescriptorsFiles = (args[0]).Replace("$(BANNERLORD_GAME_DIR)", Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR"))
+                                                            .Replace("$(BANNERLORD_WORKSHOP_DIR)", Environment.GetEnvironmentVariable("BANNERLORD_WORKSHOP_DIR"));
+            string entityDescriptorsFiles = (args[1]).Replace("$(BANNERLORD_GAME_DIR)", Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR"))
+                                                        .Replace("$(BANNERLORD_WORKSHOP_DIR)", Environment.GetEnvironmentVariable("BANNERLORD_WORKSHOP_DIR"));
 
             townCount = int.Parse(args[2]);
             villagePerTownCount = int.Parse(args[3]);
@@ -33,11 +35,13 @@ namespace PlayerSettlementPrefabGenerator
                 modifier = args[6];
             }
 
+            bool prependGameDir = !args.Contains("--no-prepend");
+
             List<XmlDocument> settlementsDescriptors = new();
             foreach (var item in settlementsDescriptorsFiles.Split("|"))
             {
                 string settlementsDescriptorsFile = item;
-                if (!settlementsDescriptorsFile.StartsWith(Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR")))
+                if (prependGameDir &&!settlementsDescriptorsFile.StartsWith(Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR")))
                 {
                     settlementsDescriptorsFile = Path.Combine(Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR"), settlementsDescriptorsFile);
                 }
@@ -50,7 +54,7 @@ namespace PlayerSettlementPrefabGenerator
             foreach (var item in entityDescriptorsFiles.Split("|"))
             {
                 string entityDescriptorsFile = item;
-                if (!entityDescriptorsFile.StartsWith(Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR")))
+                if (prependGameDir && !entityDescriptorsFile.StartsWith(Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR")))
                 {
                     entityDescriptorsFile = Path.Combine(Environment.GetEnvironmentVariable("BANNERLORD_GAME_DIR"), entityDescriptorsFile);
                 }

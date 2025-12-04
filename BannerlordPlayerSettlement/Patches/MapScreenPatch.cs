@@ -13,7 +13,8 @@ using BannerlordPlayerSettlement.Utils;
 using HarmonyLib;
 
 using SandBox.View.Map;
-
+using SandBox.View.Map.Managers;
+using SandBox.View.Map.Visuals;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Siege;
@@ -29,9 +30,9 @@ namespace BannerlordPlayerSettlement.Patches
     {
 
         static MethodInfo GetFrameAndVisualOfEngines = AccessTools.Property(typeof(MapScreen), "FrameAndVisualOfEngines").GetMethod;
-        public static Dictionary<UIntPtr, Tuple<MatrixFrame, PartyVisual>> FrameAndVisualOfEngines()
+        public static Dictionary<UIntPtr, Tuple<MatrixFrame, SettlementVisual>> FrameAndVisualOfEngines()
         {
-            return (Dictionary<UIntPtr, Tuple<MatrixFrame, PartyVisual>>) GetFrameAndVisualOfEngines.Invoke(null, null);
+            return (Dictionary<UIntPtr, Tuple<MatrixFrame, SettlementVisual>>) GetFrameAndVisualOfEngines.Invoke(null, null);
         }
 
 
@@ -94,7 +95,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(HandleLeftMouseButtonClick))]
-        public static bool HandleLeftMouseButtonClick(ref MapScreen __instance, ref UIntPtr ____preSelectedSiegeEntityID, ref GameEntity[] ____defenderMachinesCircleEntities, ref GameEntity[] ____attackerRangedMachinesCircleEntities, ref GameEntity[] ____attackerRamMachinesCircleEntities, ref GameEntity[] ____attackerTowerMachinesCircleEntities, UIntPtr selectedSiegeEntityID, PartyVisual visualOfSelectedEntity, Vec3 intersectionPoint, PathFaceRecord mouseOverFaceIndex)
+        public static bool HandleLeftMouseButtonClick(ref MapScreen __instance, ref UIntPtr ____preSelectedSiegeEntityID, ref GameEntity[] ____defenderMachinesCircleEntities, ref GameEntity[] ____attackerRangedMachinesCircleEntities, ref GameEntity[] ____attackerRamMachinesCircleEntities, ref GameEntity[] ____attackerTowerMachinesCircleEntities, UIntPtr selectedSiegeEntityID, SettlementVisual visualOfSelectedEntity, Vec3 intersectionPoint, PathFaceRecord mouseOverFaceIndex)
         {
 
             if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingGate && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
@@ -177,8 +178,8 @@ namespace BannerlordPlayerSettlement.Patches
                     LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
                 }
 
-                PartyVisual visualOfParty = PartyVisualManager.Current.GetVisualOfParty(besiegedSettlement!.Party);
-                Tuple<MatrixFrame, PartyVisual> item = null;
+                SettlementVisual visualOfParty = SettlementVisualManager.Current.GetSettlementVisual(besiegedSettlement);
+                Tuple<MatrixFrame, SettlementVisual> item = null;
                 if (____preSelectedSiegeEntityID != UIntPtr.Zero)
                 {
                     item = MapScreenPatch.FrameAndVisualOfEngines()[____preSelectedSiegeEntityID];

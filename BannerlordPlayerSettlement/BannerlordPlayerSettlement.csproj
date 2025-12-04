@@ -16,7 +16,7 @@
   <!-- Versions of Major Dependencies (For Package References & SubModule.xml Substitution) -->
   <PropertyGroup>
     <BuildResourcesVersion>1.1.0.108</BuildResourcesVersion>
-    <HarmonyVersion>2.3.3</HarmonyVersion>
+    <HarmonyVersion>2.4.2</HarmonyVersion>
     <MCM_V5>true</MCM_V5>
   </PropertyGroup>
   

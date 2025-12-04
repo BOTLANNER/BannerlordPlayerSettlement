@@ -16,7 +16,7 @@ using Helpers;
 
 using SandBox;
 using SandBox.View.Map;
-
+using SandBox.View.Map.Managers;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
@@ -25,11 +25,11 @@ using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.GameState;
-using TaleWorlds.CampaignSystem.Overlay;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
 using TaleWorlds.Core;
+using TaleWorlds.Core.ImageIdentifiers;
 using TaleWorlds.Engine;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
@@ -284,7 +284,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         private static bool conv_rebuild_clickable(out TextObject explanation, bool noConversation = false)
         {
-            explanation = new TextObject();
+            explanation = new TextObject("");
 
             if (!noConversation)
             {
@@ -511,7 +511,7 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             try
             {
-                campaignGameSystemStarter.AddGameMenu(PlayerSettlementUnderConstructionMenu, "{=!}{SETTLEMENT_INFO}", new OnInitDelegate(PlayerSettlementBehaviour.game_menu_town_under_construction_on_init), GameOverlays.MenuOverlayType.SettlementWithBoth, GameMenu.MenuFlags.None, null);
+                campaignGameSystemStarter.AddGameMenu(PlayerSettlementUnderConstructionMenu, "{=!}{SETTLEMENT_INFO}", new OnInitDelegate(PlayerSettlementBehaviour.game_menu_town_under_construction_on_init), GameMenu.MenuOverlayType.SettlementWithBoth, GameMenu.MenuFlags.None, null);
                 campaignGameSystemStarter.AddGameMenuOption(PlayerSettlementUnderConstructionMenu, "town_leave", "{=3sRdGQou}Leave", new GameMenuOption.OnConditionDelegate(PlayerSettlementBehaviour.game_menu_town_under_construction_town_leave_on_condition), new GameMenuOption.OnConsequenceDelegate(PlayerSettlementBehaviour.game_menu_town_under_construction_settlement_leave_on_consequence), true, -1, false, null);
 
                 campaignGameSystemStarter.AddGameMenuOption("town", "leave_rebuild", "{=player_settlement_41}Rebuild Settlement", new GameMenuOption.OnConditionDelegate(PlayerSettlementBehaviour.game_menu_rebuild_condition), new GameMenuOption.OnConsequenceDelegate(PlayerSettlementBehaviour.game_menu_rebuild_consequence), false, -1, false, null);
@@ -625,8 +625,6 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             Campaign.Current.GameMenuManager.MenuLocations.Clear();
 
-            Campaign.Current.autoEnterTown = null;
-
             if (settlement.IsTown)
             {
                 args.MenuTitle = new TextObject("{=mVKcvY2U}Town Center", null);
@@ -686,7 +684,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 if (PlayerSettlementBehaviour.OldSaveLoaded)
                 {
                     TextObject message = new TextObject("{=player_settlement_08}A player town has been created on a later save. Older saves are not supported and could cause save corruption or town 'ghosting'.", null);
-                    MBInformationManager.AddQuickInformation(message, 0, null, "");
+                    MBInformationManager.AddQuickInformation(message, 0, null, new Equipment());
                     LogManager.Log.NotifyBad(message.ToString());
                     PlayerSettlementBehaviour.OldSaveLoaded = false;
                     return;
@@ -809,7 +807,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             item.SetBuildComplete(true);
             TextObject message = new TextObject("{=player_settlement_07}{TOWN} construction has completed!", null);
             message.SetTextVariable("TOWN", item.GetSettlementName());
-            MBInformationManager.AddQuickInformation(message, 0, null, "");
+            MBInformationManager.AddQuickInformation(message, 0, null, new Equipment());
             LogManager.Log.NotifyGood(message.ToString());
 
             _settlementBuildComplete.Invoke(item.GetSettlement()!);
@@ -846,8 +844,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                     Vec3 clippedMouseNear = worldMouseNear;
                     Vec3 clippedMouseFar = worldMouseFar;
                     PathFaceRecord currentFace = PathFaceRecord.NullFaceRecord;
-                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
-                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+                    Boolean isOnIsland = false;
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace, out isOnIsland);
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, out isOnIsland, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
                     MatrixFrame identity = MatrixFrame.Identity;
                     identity.origin = intersectionPoint2;
                     identity.Scale(new Vec3(0.25f, 0.25f, 0.25f));
@@ -857,8 +856,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                     gatePlacementFrame = identity;
                     this.SetFrame(ghostGateVisualEntity, ref identity);
 
-                    bool flag = Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
-                    mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+                    //mapScreen.SceneLayer.ActiveCursor = (isOnIsland ? CursorType.Default : CursorType.Disabled);
+                    mapScreen.SceneLayer.ActiveCursor = CursorType.Default;
 
                     return;
                 }
@@ -1368,8 +1367,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                         mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
                         Vec3 clippedMouseNear = worldMouseNear;
                         Vec3 clippedMouseFar = worldMouseFar;
-                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
-                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+                        Boolean isOnIsland = false;
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace, out isOnIsland);
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, out isOnIsland, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
 
 
                         identity.origin = intersectionPoint2;
@@ -1404,8 +1404,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                         mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
                         Vec3 clippedMouseNear = worldMouseNear;
                         Vec3 clippedMouseFar = worldMouseFar;
-                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace);
-                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
+                        Boolean isOnIsland;
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace, out isOnIsland);
+                        mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, out isOnIsland, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast);
 
 
                         frame.origin.x = intersectionPoint2.x;
@@ -1490,7 +1491,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                     if (!IsDeepEdit)
                     {
-                        bool flag = currentFace.IsValid() && Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
+                        bool flag = currentFace.IsValid();
                         mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
                     }
 
@@ -2077,7 +2078,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                 currentModelOptionIdx = new Random().Next(0, availableModels!.Count);
                             }
 
-                            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+                            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.GetPosition2D;
 
                             var gPos = atPos;
 
@@ -2190,7 +2191,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                 settlement.SetBound(bound);
                             }
 
-                            settlement.Name = new TextObject(settlementName);
+                            settlement.Party.SetCustomName(new TextObject(settlementName));
 
                             settlement.Party.SetLevelMaskIsDirty();
                             settlement.IsVisible = true;
@@ -2359,7 +2360,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     descriptionText.SetTextVariable("TOWN", settlementName);
                     descriptionText.SetTextVariable("VILLAGE", settlementName);
 
-                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new BannerImageIdentifier(c.Banner), true, c.Name.ToString())).ToList();
 
                     MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                         titleText: titleText.ToString(),
@@ -2429,7 +2430,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                 currentModelOptionIdx = new Random().Next(0, availableModels.Count);
                             }
 
-                            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+                            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.GetPosition2D;
 
                             var gPos = atPos;
 
@@ -2536,7 +2537,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                 settlement.SetBound(bound);
                             }
 
-                            settlement.Name = new TextObject(settlementName);
+                            settlement.Party.SetCustomName(new TextObject(settlementName));
 
                             settlement.Party.SetLevelMaskIsDirty();
                             settlement.IsVisible = true;
@@ -2721,7 +2722,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     descriptionText.SetTextVariable("TOWN", settlementName);
                     descriptionText.SetTextVariable("VILLAGE", settlementName);
 
-                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new BannerImageIdentifier(c.Banner), true, c.Name.ToString())).ToList();
 
                     MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                         titleText: titleText.ToString(),
@@ -2782,7 +2783,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         castleSettlement.Town.OwnerClan = Hero.MainHero.Clan;
 
-                        castleSettlement.Name = new TextObject(settlementName);
+                        castleSettlement.Party.SetCustomName(new TextObject(settlementName));
 
                         castleSettlement.Party.SetLevelMaskIsDirty();
                         castleSettlement.IsVisible = true;
@@ -2790,10 +2791,10 @@ namespace BannerlordPlayerSettlement.Behaviours
                         castleSettlement.Town.FoodStocks = (float) castleSettlement.Town.FoodStocksUpperLimit();
                         castleSettlement.Party.SetVisualAsDirty();
 
-                        PartyVisualManager.Current.AddNewPartyVisualForParty(castleSettlement.Party);
+                        SettlementVisualManager.Current.AddNewSettlementVisualForParty(castleSettlement.Party);
 
                         castleSettlement.OnGameCreated();
-                        castleSettlement.OnGameInitialized();
+                        castleSettlement.Initialize();
                         castleSettlement.OnFinishLoadState();
 
                         var castle = castleSettlement.Town;
@@ -2817,8 +2818,8 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         if (Main.Settings.AddInitialGarrison)
                         {
-                            castleSettlement.AddGarrisonParty(true);
-                            castleSettlement.SetGarrisonWagePaymentLimit(Campaign.Current.Models.PartyWageModel.MaxWage);
+                            castleSettlement.AddGarrisonParty();
+                            castleSettlement.SetGarrisonWagePaymentLimit(Campaign.Current.Models.PartyWageModel.MaxWagePaymentLimit);
                         }
 
                         if (Main.Settings.AddInitialMilitia)
@@ -2901,7 +2902,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     descriptionText.SetTextVariable("CASTLE", settlementName);
 
 
-                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new BannerImageIdentifier(c.Banner), true, c.Name.ToString())).ToList();
 
                     MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                         titleText: titleText.ToString(),
@@ -2975,10 +2976,10 @@ namespace BannerlordPlayerSettlement.Behaviours
             int num = 0;
             foreach (BuildingType buildingType1 in BuildingType.All)
             {
-                if (buildingType1.BuildingLocation != BuildingLocation.Castle || buildingType1 == DefaultBuildingTypes.Wall)
-                {
-                    continue;
-                }
+                //if (buildingType1.BuildingLocation != BuildingLocation.Castle || buildingType1 == DefaultBuildingTypes.Wall)
+                //{
+                //    continue;
+                //}
                 num = MBRandom.RandomInt(0, 7);
                 if (num < 4)
                 {
@@ -2999,7 +3000,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
             foreach (BuildingType all2 in BuildingType.All)
             {
-                if (castle.Buildings.Any<Building>((Building k) => k.BuildingType == all2) || all2.BuildingLocation != BuildingLocation.Castle)
+                if (castle.Buildings.Any<Building>((Building k) => k.BuildingType == all2)) //|| all2.BuildingLocation != BuildingLocation.Castle)
                 {
                     continue;
                 }
@@ -3009,7 +3010,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             int num2 = 1;
             foreach (BuildingType buildingType2 in BuildingType.All)
             {
-                if (buildingType2.BuildingLocation != BuildingLocation.Daily)
+                if (!buildingType2.IsDailyProject)
                 {
                     continue;
                 }
@@ -3026,7 +3027,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 orderby k.CurrentLevel descending
                 select k)
             {
-                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
+                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.IsDailyProject)
                 {
                     continue;
                 }
@@ -3051,7 +3052,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 PlayerSettlementInfo.Instance!.Castles = new();
             }
 
-            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.GetPosition2D;
 
             var castleNumber = PlayerSettlementInfo.Instance!.Castles!.Count + 1;
 
@@ -3161,7 +3162,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             var titleText = new TextObject("{=player_settlement_22}Choose village bound settlement");
             var descriptionText = new TextObject("{=player_settlement_23}Choose the settlement to which this village is bound");
 
-            List<InquiryElement> inquiryElements1 = GetPotentialVillageBoundOwners().Where(s => s != null).Select(c => new InquiryElement(c, c!.Name.ToString(), new ImageIdentifier(CharacterCode.CreateFrom((c.IsTown || c.IsCastle ? c.Town.Governor ?? Hero.MainHero : Hero.MainHero).CharacterObject)), true, (c.EncyclopediaText ?? c.Name).ToString())).ToList();
+            List<InquiryElement> inquiryElements1 = GetPotentialVillageBoundOwners().Where(s => s != null).Select(c => new InquiryElement(c, c!.Name.ToString(), new CharacterImageIdentifier(CharacterCode.CreateFrom((c.IsTown || c.IsCastle ? c.Town.Governor ?? Hero.MainHero : Hero.MainHero).CharacterObject)), true, (c.EncyclopediaText ?? c.Name).ToString())).ToList();
 
             MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                 titleText: titleText.ToString(),
@@ -3240,17 +3241,17 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         villageSettlement.SetBound(bound);
 
-                        villageSettlement.Name = new TextObject(settlementName);
+                        villageSettlement.Party.SetCustomName(new TextObject(settlementName));
 
                         villageSettlement.Party.SetLevelMaskIsDirty();
                         villageSettlement.IsVisible = true;
                         villageSettlement.IsInspected = true;
                         villageSettlement.Party.SetVisualAsDirty();
 
-                        PartyVisualManager.Current.AddNewPartyVisualForParty(villageSettlement.Party);
+                        SettlementVisualManager.Current.AddNewSettlementVisualForParty(villageSettlement.Party);
 
                         villageSettlement.OnGameCreated();
-                        villageSettlement.OnGameInitialized();
+                        villageSettlement.Initialize();
                         villageSettlement.OnFinishLoadState();
 
                         var village = villageSettlement.Village;
@@ -3276,12 +3277,12 @@ namespace BannerlordPlayerSettlement.Behaviours
                             int targetNotableCountForSettlement = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(villageSettlement, Occupation.RuralNotable);
                             for (int i = 0; i < targetNotableCountForSettlement; i++)
                             {
-                                HeroCreator.CreateHeroAtOccupation(Occupation.RuralNotable, villageSettlement);
+                                HeroCreator.CreateNotable(Occupation.RuralNotable, villageSettlement);
                             }
                             int num = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(villageSettlement, Occupation.Headman);
                             for (int j = 0; j < num; j++)
                             {
-                                HeroCreator.CreateHeroAtOccupation(Occupation.Headman, villageSettlement);
+                                HeroCreator.CreateNotable(Occupation.Headman, villageSettlement);
                             }
 
                             PostNotablesAdded(villageSettlement);
@@ -3290,7 +3291,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         float value = 0f;
                         foreach (ValueTuple<ItemObject, float> production in village.VillageType.Productions)
                         {
-                            float single = Campaign.Current.Models.VillageProductionCalculatorModel.CalculateDailyProductionAmount(village, production.Item1);
+                            float single = Campaign.Current.Models.VillageProductionCalculatorModel.CalculateDailyProductionAmount(village, production.Item1).BaseNumber;
                             value = value + (float) production.Item1.Value * single;
                         }
                         village.TradeTaxAccumulated = (int) (value * (0.6f + 0.3f * MBRandom.RandomFloat) * Campaign.Current.Models.ClanFinanceModel.RevenueSmoothenFraction());
@@ -3384,7 +3385,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     descriptionText.SetTextVariable("VILLAGE", settlementName);
 
 
-                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new BannerImageIdentifier(c.Banner), true, c.Name.ToString())).ToList();
 
                     MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                         titleText: titleText.ToString(),
@@ -3499,7 +3500,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 currentModelOptionIdx = new Random().Next(0, availableModels.Count);
             }
 
-            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.GetPosition2D;
 
             var item = availableModels[currentModelOptionIdx];
 
@@ -3579,7 +3580,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             for (int i = 0; i < settlement.Notables.Count; i++)
             {
                 Hero item = settlement.Notables[i];
-                foreach (Hero lord in settlement.MapFaction.Lords)
+                foreach (Hero lord in settlement.MapFaction.AliveLords)
                 {
                     if (lord != item && lord == lord.Clan.Leader && lord.MapFaction == settlement.MapFaction)
                     {
@@ -3588,7 +3589,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         float mapDiagonal = Campaign.MapDiagonal;
                         foreach (Settlement s in lord.Clan.Settlements)
                         {
-                            float single1 = (settlement == s ? 0f : s.Position2D.Distance(settlement.Position2D));
+                            float single1 = (settlement == s ? 0f : s.GetPosition2D.Distance(settlement.GetPosition2D));
                             if (single1 >= mapDiagonal)
                             {
                                 continue;
@@ -3721,7 +3722,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         townSettlement.Town.OwnerClan = Hero.MainHero.Clan;
 
-                        townSettlement.Name = new TextObject(settlementName);
+                        townSettlement.Party.SetCustomName(new TextObject(settlementName));
 
                         townSettlement.Party.SetLevelMaskIsDirty();
                         townSettlement.IsVisible = true;
@@ -3729,10 +3730,10 @@ namespace BannerlordPlayerSettlement.Behaviours
                         townSettlement.Town.FoodStocks = (float) townSettlement.Town.FoodStocksUpperLimit();
                         townSettlement.Party.SetVisualAsDirty();
 
-                        PartyVisualManager.Current.AddNewPartyVisualForParty(townSettlement.Party);
+                        SettlementVisualManager.Current.AddNewSettlementVisualForParty(townSettlement.Party);
 
                         townSettlement.OnGameCreated();
-                        townSettlement.OnGameInitialized();
+                        townSettlement.Initialize();
                         townSettlement.OnFinishLoadState();
 
                         var town = townSettlement.Town;
@@ -3760,8 +3761,8 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         if (Main.Settings.AddInitialGarrison)
                         {
-                            townSettlement.AddGarrisonParty(true);
-                            townSettlement.SetGarrisonWagePaymentLimit(Campaign.Current.Models.PartyWageModel.MaxWage);
+                            townSettlement.AddGarrisonParty();
+                            townSettlement.SetGarrisonWagePaymentLimit(Campaign.Current.Models.PartyWageModel.MaxWagePaymentLimit);
                         }
 
                         if (Main.Settings.AddInitialMilitia)
@@ -3774,17 +3775,17 @@ namespace BannerlordPlayerSettlement.Behaviours
                             int targetNotableCountForSettlement1 = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(townSettlement, Occupation.Artisan);
                             for (int k = 0; k < targetNotableCountForSettlement1; k++)
                             {
-                                HeroCreator.CreateHeroAtOccupation(Occupation.Artisan, townSettlement);
+                                HeroCreator.CreateNotable(Occupation.Artisan, townSettlement);
                             }
                             int x = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(townSettlement, Occupation.Merchant);
                             for (int l = 0; l < x; l++)
                             {
-                                HeroCreator.CreateHeroAtOccupation(Occupation.Merchant, townSettlement);
+                                HeroCreator.CreateNotable(Occupation.Merchant, townSettlement);
                             }
                             int targetNotableCountForSettlement2 = Campaign.Current.Models.NotableSpawnModel.GetTargetNotableCountForSettlement(townSettlement, Occupation.GangLeader);
                             for (int m = 0; m < targetNotableCountForSettlement2; m++)
                             {
-                                HeroCreator.CreateHeroAtOccupation(Occupation.GangLeader, townSettlement);
+                                HeroCreator.CreateNotable(Occupation.GangLeader, townSettlement);
                             }
 
                             PostNotablesAdded(townSettlement);
@@ -3903,7 +3904,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     descriptionText.SetTextVariable("TOWN", settlementName);
 
 
-                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new ImageIdentifier(BannerCode.CreateFrom(c.BannerKey)), true, c.Name.ToString())).ToList();
+                    List<InquiryElement> inquiryElements1 = GetCultures(true).Select(c => new InquiryElement(c, c.Name.ToString(), new BannerImageIdentifier(c.Banner), true, c.Name.ToString())).ToList();
 
                     MBInformationManager.ShowMultiSelectionInquiry(new MultiSelectionInquiryData(
                         titleText: titleText.ToString(),
@@ -4009,7 +4010,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             var town = townSettlement.Town;
             foreach (BuildingType buildingType in BuildingType.All)
             {
-                if (buildingType.BuildingLocation != BuildingLocation.Settlement || buildingType == DefaultBuildingTypes.Fortifications)
+                if (buildingType == DefaultBuildingTypes.CastleFortifications)
                 {
                     continue;
                 }
@@ -4037,7 +4038,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
             foreach (BuildingType all1 in BuildingType.All)
             {
-                if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1) || all1.BuildingLocation != BuildingLocation.Settlement)
+                if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1) /*|| all1..BuildingLocation != BuildingLocation.Settlement*/)
                 {
                     continue;
                 }
@@ -4047,7 +4048,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             int num2 = 1;
             foreach (BuildingType buildingType2 in BuildingType.All)
             {
-                if (buildingType2.BuildingLocation != BuildingLocation.Daily)
+                if (!buildingType2.IsDailyProject)
                 {
                     continue;
                 }
@@ -4064,7 +4065,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 orderby k.CurrentLevel descending
                 select k)
             {
-                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.BuildingLocation == BuildingLocation.Daily)
+                if (building1.CurrentLevel == 3 || building1.CurrentLevel == building1.BuildingType.StartLevel || building1.BuildingType.IsDailyProject)
                 {
                     continue;
                 }
@@ -4089,7 +4090,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 PlayerSettlementInfo.Instance!.Towns = new();
             }
 
-            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+            var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.GetPosition2D;
 
             var townNumber = PlayerSettlementInfo.Instance!.Towns!.Count + 1;
 
@@ -4228,7 +4229,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                 ClearEntities();
 
-                var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.Position2D;
+                var atPos = settlementPlacementFrame?.origin != null ? settlementPlacementFrame.Value.origin.AsVec2 : MobileParty.MainParty.GetPosition2D;
 
                 var template = availableModels[currentModelOptionIdx];
 
@@ -4252,7 +4253,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 {
                     LogManager.EventTracer.Trace($"settlementVisualEntity != settlementVisualEntity2 - Prefab: '{prefabId}', Entity: '{GhostSettlementEntityId}'");
                 }
-                settlementVisualEntity?.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor | BodyFlags.CommonCollisionExcludeFlags | BodyFlags.CommonFocusRayCastExcludeFlags | BodyFlags.CommonFlagsThatDoNotBlocksRay);
+                settlementVisualEntity?.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor | BodyFlags.CommonCollisionExcludeFlags | BodyFlags.CommonFocusRayCastExcludeFlags | BodyFlags.CommonFlagsThatDoNotBlockRay);
                 previousVisualUpdateException = null;
 
                 if (settlementVisualEntity == null)
@@ -4348,7 +4349,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 LogManager.EventTracer.Trace($"Requesting swap model for gate ghost build to: {GhostGateEntityId}");
 
                 var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
-                Vec2 position2D = MobileParty.MainParty.Position2D;
+                Vec2 position2D = MobileParty.MainParty.GetPosition2D;
 
                 string prefabId = GhostGatePrefabId;
                 string entityId = GhostGateEntityId;
@@ -4358,7 +4359,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 {
                     LogManager.EventTracer.Trace($"settlementVisualEntity != settlementVisualEntity2 - Prefab: '{prefabId}', Entity: '{entityId}'");
                 }
-                ghostGateVisualEntity?.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor | BodyFlags.CommonCollisionExcludeFlags | BodyFlags.CommonFocusRayCastExcludeFlags | BodyFlags.CommonFlagsThatDoNotBlocksRay);
+                ghostGateVisualEntity?.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor | BodyFlags.CommonCollisionExcludeFlags | BodyFlags.CommonFocusRayCastExcludeFlags | BodyFlags.CommonFlagsThatDoNotBlockRay);
                 previousVisualUpdateException = null;
 
                 if (ghostGateVisualEntity == null)
@@ -4391,27 +4392,27 @@ namespace BannerlordPlayerSettlement.Behaviours
         private List<InquiryElement> GetVillageTypeInquiry()
         {
             List<InquiryElement> inquiryElements = new();
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.BattanianHorseRanch, DefaultVillageTypes.BattanianHorseRanch.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.BattanianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.BattanianHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.CattleRange, DefaultVillageTypes.CattleRange.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.CattleRange.PrimaryProduction), true, DefaultVillageTypes.CattleRange.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.ClayMine, DefaultVillageTypes.ClayMine.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.ClayMine.PrimaryProduction), true, DefaultVillageTypes.ClayMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.DateFarm, DefaultVillageTypes.DateFarm.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.DateFarm.PrimaryProduction), true, DefaultVillageTypes.DateFarm.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.DesertHorseRanch, DefaultVillageTypes.DesertHorseRanch.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.DesertHorseRanch.PrimaryProduction), true, DefaultVillageTypes.DesertHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.EuropeHorseRanch, DefaultVillageTypes.EuropeHorseRanch.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.EuropeHorseRanch.PrimaryProduction), true, DefaultVillageTypes.EuropeHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.Fisherman, DefaultVillageTypes.Fisherman.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.Fisherman.PrimaryProduction), true, DefaultVillageTypes.Fisherman.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.FlaxPlant, DefaultVillageTypes.FlaxPlant.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.FlaxPlant.PrimaryProduction), true, DefaultVillageTypes.FlaxPlant.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.HogFarm, DefaultVillageTypes.HogFarm.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.HogFarm.PrimaryProduction), true, DefaultVillageTypes.HogFarm.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.IronMine, DefaultVillageTypes.IronMine.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.IronMine.PrimaryProduction), true, DefaultVillageTypes.IronMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.Lumberjack, DefaultVillageTypes.Lumberjack.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.Lumberjack.PrimaryProduction), true, DefaultVillageTypes.Lumberjack.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.OliveTrees, DefaultVillageTypes.OliveTrees.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.OliveTrees.PrimaryProduction), true, DefaultVillageTypes.OliveTrees.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SaltMine, DefaultVillageTypes.SaltMine.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.SaltMine.PrimaryProduction), true, DefaultVillageTypes.SaltMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SheepFarm, DefaultVillageTypes.SheepFarm.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.SheepFarm.PrimaryProduction), true, DefaultVillageTypes.SheepFarm.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SilkPlant, DefaultVillageTypes.SilkPlant.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.SilkPlant.PrimaryProduction), true, DefaultVillageTypes.SilkPlant.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SilverMine, DefaultVillageTypes.SilverMine.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.SilverMine.PrimaryProduction), true, DefaultVillageTypes.SilverMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SteppeHorseRanch, DefaultVillageTypes.SteppeHorseRanch.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.SteppeHorseRanch.PrimaryProduction), true, DefaultVillageTypes.SteppeHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SturgianHorseRanch, DefaultVillageTypes.SturgianHorseRanch.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.SturgianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.SturgianHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VineYard, DefaultVillageTypes.VineYard.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.VineYard.PrimaryProduction), true, DefaultVillageTypes.VineYard.ShortName.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VlandianHorseRanch, DefaultVillageTypes.VlandianHorseRanch.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.WheatFarm, DefaultVillageTypes.WheatFarm.ShortName.ToString(), new ImageIdentifier(DefaultVillageTypes.WheatFarm.PrimaryProduction), true, DefaultVillageTypes.WheatFarm.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.BattanianHorseRanch, DefaultVillageTypes.BattanianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.BattanianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.BattanianHorseRanch.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.CattleRange, DefaultVillageTypes.CattleRange.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.CattleRange.PrimaryProduction), true, DefaultVillageTypes.CattleRange.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.ClayMine, DefaultVillageTypes.ClayMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.ClayMine.PrimaryProduction), true, DefaultVillageTypes.ClayMine.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.DateFarm, DefaultVillageTypes.DateFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.DateFarm.PrimaryProduction), true, DefaultVillageTypes.DateFarm.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.DesertHorseRanch, DefaultVillageTypes.DesertHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.DesertHorseRanch.PrimaryProduction), true, DefaultVillageTypes.DesertHorseRanch.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.EuropeHorseRanch, DefaultVillageTypes.EuropeHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.EuropeHorseRanch.PrimaryProduction), true, DefaultVillageTypes.EuropeHorseRanch.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.Fisherman, DefaultVillageTypes.Fisherman.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.Fisherman.PrimaryProduction), true, DefaultVillageTypes.Fisherman.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.FlaxPlant, DefaultVillageTypes.FlaxPlant.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.FlaxPlant.PrimaryProduction), true, DefaultVillageTypes.FlaxPlant.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.HogFarm, DefaultVillageTypes.HogFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.HogFarm.PrimaryProduction), true, DefaultVillageTypes.HogFarm.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.IronMine, DefaultVillageTypes.IronMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.IronMine.PrimaryProduction), true, DefaultVillageTypes.IronMine.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.Lumberjack, DefaultVillageTypes.Lumberjack.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.Lumberjack.PrimaryProduction), true, DefaultVillageTypes.Lumberjack.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.OliveTrees, DefaultVillageTypes.OliveTrees.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.OliveTrees.PrimaryProduction), true, DefaultVillageTypes.OliveTrees.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SaltMine, DefaultVillageTypes.SaltMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SaltMine.PrimaryProduction), true, DefaultVillageTypes.SaltMine.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SheepFarm, DefaultVillageTypes.SheepFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SheepFarm.PrimaryProduction), true, DefaultVillageTypes.SheepFarm.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SilkPlant, DefaultVillageTypes.SilkPlant.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SilkPlant.PrimaryProduction), true, DefaultVillageTypes.SilkPlant.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SilverMine, DefaultVillageTypes.SilverMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SilverMine.PrimaryProduction), true, DefaultVillageTypes.SilverMine.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SteppeHorseRanch, DefaultVillageTypes.SteppeHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SteppeHorseRanch.PrimaryProduction), true, DefaultVillageTypes.SteppeHorseRanch.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SturgianHorseRanch, DefaultVillageTypes.SturgianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SturgianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.SturgianHorseRanch.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VineYard, DefaultVillageTypes.VineYard.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VineYard.PrimaryProduction), true, DefaultVillageTypes.VineYard.ShortName.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VlandianHorseRanch, DefaultVillageTypes.VlandianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction.Name.ToString()));
+            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.WheatFarm, DefaultVillageTypes.WheatFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.WheatFarm.PrimaryProduction), true, DefaultVillageTypes.WheatFarm.PrimaryProduction.Name.ToString()));
 
             return inquiryElements;
         }

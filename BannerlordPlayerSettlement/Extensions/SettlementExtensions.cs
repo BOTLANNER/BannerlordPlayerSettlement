@@ -12,16 +12,16 @@ namespace BannerlordPlayerSettlement.Extensions
 {
     public static class SettlementExtensions
     {
-        static MethodInfo Position2DSetter = AccessTools.Property(typeof(Settlement), "Position2D").SetMethod;
-        static MethodInfo GatePositionSetter = AccessTools.Property(typeof(Settlement), "GatePosition").SetMethod;
-        public static void SetPosition2D(this Settlement settlement, Vec2 position, Vec2? gatePosition)
-        {
-            Position2DSetter.Invoke(settlement, new object[] { position });
-            if (gatePosition != null)
-            {
-                GatePositionSetter.Invoke(settlement, new object[] { gatePosition });
-            }
-        }
+        //static MethodInfo Position2DSetter = AccessTools.Property(typeof(Settlement), "Position2D").SetMethod;
+        //static MethodInfo GatePositionSetter = AccessTools.Property(typeof(Settlement), "GatePosition").SetMethod;
+        //public static void SetPosition2D(this Settlement settlement, Vec2 position, Vec2? gatePosition)
+        //{
+        //    Position2DSetter.Invoke(settlement, new object[] { position });
+        //    if (gatePosition != null)
+        //    {
+        //        GatePositionSetter.Invoke(settlement, new object[] { gatePosition });
+        //    }
+        //}
 
         static MethodInfo BoundSetter = AccessTools.Property(typeof(Village), nameof(Village.Bound)).SetMethod;
 

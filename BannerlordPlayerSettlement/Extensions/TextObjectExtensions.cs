@@ -25,6 +25,6 @@ namespace BannerlordPlayerSettlement.Extensions
 
     public static class TextObjectCompat
     {
-        public static readonly TextObject Empty = new TextObject();
+        public static readonly TextObject Empty = new TextObject("");
     }
 }

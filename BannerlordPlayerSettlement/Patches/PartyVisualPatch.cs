@@ -1,19 +1,17 @@
 ﻿
+using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.Saves;
+using BannerlordPlayerSettlement.Utils;
+using HarmonyLib;
+using Helpers;
+using SandBox.View.Map;
+using SandBox.View.Map.Managers;
+using SandBox.View.Map.Visuals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-using BannerlordPlayerSettlement.Extensions;
-using BannerlordPlayerSettlement.Saves;
-using BannerlordPlayerSettlement.Utils;
-
-using HarmonyLib;
-
-using Helpers;
-
-using SandBox.View.Map;
-
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Siege;
@@ -24,38 +22,38 @@ using TaleWorlds.MountAndBlade.View;
 namespace BannerlordPlayerSettlement.Patches
 {
 
-    [HarmonyPatch(typeof(PartyVisual))]
-    public static class PartyVisualPatch
+    [HarmonyPatch(typeof(SettlementVisual))]
+    public static class SettlementVisualPatch
     {
-        static MethodInfo SetStrategicEntity = AccessTools.Property(typeof(PartyVisual), "StrategicEntity").SetMethod;
-        static MethodInfo SetTownPhysicalEntities = AccessTools.Property(typeof(PartyVisual), "TownPhysicalEntities").SetMethod;
-        static MethodInfo SetCircleLocalFrame = AccessTools.Property(typeof(PartyVisual), "CircleLocalFrame").SetMethod;
+        static MethodInfo SetStrategicEntity = AccessTools.Property(typeof(SettlementVisual), "StrategicEntity").SetMethod;
+        static MethodInfo SetTownPhysicalEntities = AccessTools.Property(typeof(SettlementVisual), "TownPhysicalEntities").SetMethod;
+        static MethodInfo SetCircleLocalFrame = AccessTools.Property(typeof(SettlementVisual), "CircleLocalFrame").SetMethod;
 
-        static MethodInfo GetMapScene = AccessTools.Property(typeof(PartyVisual), "MapScene").GetMethod;
+        static MethodInfo GetMapScene = AccessTools.Property(typeof(SettlementVisual), "MapScene").GetMethod;
 
-        static MethodInfo PopulateSiegeEngineFrameListsFromChildren = AccessTools.Method(typeof(PartyVisual), "PopulateSiegeEngineFrameListsFromChildren");
-        static MethodInfo UpdateDefenderSiegeEntitiesCache = AccessTools.Method(typeof(PartyVisual), "UpdateDefenderSiegeEntitiesCache");
-        static MethodInfo InitializePartyCollider = AccessTools.Method(typeof(PartyVisual), "InitializePartyCollider");
+        static MethodInfo PopulateSiegeEngineFrameListsFromChildren = AccessTools.Method(typeof(SettlementVisual), "PopulateSiegeEngineFrameListsFromChildren");
+        static MethodInfo UpdateDefenderSiegeEntitiesCache = AccessTools.Method(typeof(SettlementVisual), "UpdateDefenderSiegeEntitiesCache");
+        static MethodInfo InitializePartyCollider = AccessTools.Method(typeof(SettlementVisual), "InitializePartyCollider");
 
-        static FastInvokeHandler AddNewPartyVisualForPartyInvoker = MethodInvoker.GetHandler(AccessTools.Method(typeof(PartyVisualManager), nameof(AddNewPartyVisualForParty)));
+        static FastInvokeHandler AddNewSettlementVisualForPartyInvoker = MethodInvoker.GetHandler(AccessTools.Method(typeof(SettlementVisualManager), nameof(AddNewSettlementVisualForParty)));
 
-        public static void AddNewPartyVisualForParty(this PartyVisualManager partyVisualManager, PartyBase partyBase)
+        public static void AddNewSettlementVisualForParty(this SettlementVisualManager SettlementVisualManager, PartyBase partyBase)
         {
-            AddNewPartyVisualForPartyInvoker(partyVisualManager, partyBase );
+            AddNewSettlementVisualForPartyInvoker(SettlementVisualManager, partyBase );
         }
 
-        public static Scene MapScene(this PartyVisual __instance)
+        public static Scene MapScene(this SettlementVisual __instance)
         {
             return (Scene) GetMapScene.Invoke(__instance, null);
         }
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(OnMapHoverSiegeEngine))]
-        public static bool OnMapHoverSiegeEngine(ref PartyVisual __instance, MatrixFrame engineFrame)
+        public static bool OnMapHoverSiegeEngine(ref SettlementVisual __instance, MatrixFrame engineFrame)
         {
             try
             {
-                bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsPlayerBuilt());
+                bool isPlayerSettlement = (__instance.MapEntity != null && __instance.MapEntity.Settlement.IsPlayerBuilt());
                 bool playerSiegeEvent = (PlayerSiege.PlayerSiegeEvent != null && PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt());
                 if (!playerSiegeEvent && !isPlayerSettlement)
                 {
@@ -71,7 +69,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(OnMapHoverSiegeEngine))]
-        public static Exception? FixOnMapHoverSiegeEngine(ref Exception __exception, ref PartyVisual __instance)
+        public static Exception? FixOnMapHoverSiegeEngine(ref Exception __exception, ref SettlementVisual __instance)
         {
             if (__exception != null)
             {
@@ -82,42 +80,42 @@ namespace BannerlordPlayerSettlement.Patches
         }
         [HarmonyPrefix]
         [HarmonyPatch(nameof(OnStartup))]
-        public static bool OnStartup(ref PartyVisual __instance, ref Dictionary<int, List<GameEntity>> ____gateBannerEntitiesWithLevels, ref float ____entityAlpha)
+        public static bool OnStartup(ref SettlementVisual __instance, ref Dictionary<int, List<GameEntity>> ____gateBannerEntitiesWithLevels, ref float ____entityAlpha)
         {
             try
             {
                 OverwriteSettlementItem? overwriteItem = null;
-                bool isPlayerSettlement = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsPlayerBuilt());
-                bool isOverwrite = (__instance.PartyBase != null && __instance.PartyBase.Settlement.IsOverwritten(out overwriteItem));
+                bool isPlayerSettlement = (__instance.MapEntity != null && __instance.MapEntity.Settlement.IsPlayerBuilt());
+                bool isOverwrite = (__instance.MapEntity != null && __instance.MapEntity.Settlement.IsOverwritten(out overwriteItem));
                 if (!isPlayerSettlement && !isOverwrite)
                 {
                     return true;
                 }
                 bool flag = false;
-                if (__instance.PartyBase.IsMobile)
+                if (__instance.MapEntity.IsMobile)
                 {
                     SetStrategicEntity.Invoke(__instance, new object[] { GameEntity.CreateEmpty(__instance.MapScene(), true) });
-                    if (!__instance.PartyBase.IsVisible)
+                    if (!__instance.MapEntity.IsVisible)
                     {
                         GameEntity strategicEntity = __instance.StrategicEntity;
                         strategicEntity.EntityFlags = strategicEntity.EntityFlags | EntityFlags.DoNotTick;
                     }
                 }
-                else if (__instance.PartyBase.IsSettlement)
+                else if (__instance.MapEntity.IsSettlement)
                 {
                     if (!isOverwrite)
                     {
-                        SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.PartyBase.Id) }); 
+                        SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.MapEntity.Id) }); 
                     }
                     if (__instance.StrategicEntity == null)
                     {
-                        Campaign.Current.MapSceneWrapper.AddNewEntityToMapScene(__instance.PartyBase.Settlement.StringId, __instance.PartyBase.Settlement.Position2D);
-                        SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.PartyBase.Id) });
+                        Campaign.Current.MapSceneWrapper.AddNewEntityToMapScene(__instance.MapEntity.Settlement.StringId, __instance.MapEntity.Position);
+                        SetStrategicEntity.Invoke(__instance, new object[] { __instance.MapScene().GetCampaignEntityWithName(__instance.MapEntity.Id) });
                     }
 
                     if (__instance.StrategicEntity != null && overwriteItem == null)
                     {
-                        var playerSettlementItem = PlayerSettlementInfo.Instance?.FindSettlement(__instance.PartyBase.Settlement);
+                        var playerSettlementItem = PlayerSettlementInfo.Instance?.FindSettlement(__instance.MapEntity.Settlement);
                         if (playerSettlementItem?.RotationMat3 != null)
                         {
                             var frame = __instance.StrategicEntity.GetFrame();
@@ -221,7 +219,7 @@ namespace BannerlordPlayerSettlement.Patches
                         }
                     }
                     bool flag1 = false;
-                    if (__instance.PartyBase.Settlement.IsFortification)
+                    if (__instance.MapEntity.Settlement.IsFortification)
                     {
                         List<GameEntity> gameEntities = new List<GameEntity>();
                         __instance.StrategicEntity.GetChildrenRecursive(ref gameEntities);
@@ -241,8 +239,8 @@ namespace BannerlordPlayerSettlement.Patches
                         {
                             if (gameEntity.HasTag("main_map_city_gate"))
                             {
-                                MatrixFrame globalFrame = gameEntity.GetGlobalFrame();
-                                PartyBase.IsPositionOkForTraveling(globalFrame.origin.AsVec2);
+                                //MatrixFrame globalFrame = gameEntity.GetGlobalFrame();
+                                //PartyBase.IsPositionOkForTraveling(globalFrame.origin.AsVec2);
                                 flag1 = true;
                                 gameEntities1.Add(gameEntity);
                             }
@@ -284,10 +282,10 @@ namespace BannerlordPlayerSettlement.Patches
                             }
                         }
                         ____gateBannerEntitiesWithLevels = nums;
-                        if (__instance.PartyBase.Settlement.IsFortification)
+                        if (__instance.MapEntity.Settlement.IsFortification)
                         {
-                            __instance.PartyBase.Settlement.Town.BesiegerCampPositions1 = matricesFrame.ToArray();
-                            __instance.PartyBase.Settlement.Town.BesiegerCampPositions2 = matricesFrame1.ToArray();
+                            __instance.MapEntity.Settlement.Town.BesiegerCampPositions1 = matricesFrame.ToArray();
+                            __instance.MapEntity.Settlement.Town.BesiegerCampPositions2 = matricesFrame1.ToArray();
                         }
                         foreach (GameEntity gameEntity1 in gameEntities1)
                         {
@@ -296,33 +294,33 @@ namespace BannerlordPlayerSettlement.Patches
                     }
                     if (!flag1)
                     {
-                        if (!__instance.PartyBase.Settlement.IsTown)
+                        if (!__instance.MapEntity.Settlement.IsTown)
                         {
-                            bool isCastle = __instance.PartyBase.Settlement.IsCastle;
+                            bool isCastle = __instance.MapEntity.Settlement.IsCastle;
                         }
-                        if (!PartyBase.IsPositionOkForTraveling(__instance.PartyBase.Settlement.GatePosition))
-                        {
-                            Vec2 gatePosition = __instance.PartyBase.Settlement.GatePosition;
-                        }
+                        //if (!PartyBase.IsPositionOkForTraveling(__instance.MapEntity.Settlement.GatePosition))
+                        //{
+                        //    Vec2 gatePosition = __instance.MapEntity.Settlement.GatePosition.ToVec2();
+                        //}
                     }
                 }
-                CharacterObject visualPartyLeader = PartyBaseHelper.GetVisualPartyLeader(__instance.PartyBase);
+                CharacterObject visualPartyLeader = PartyBaseHelper.GetVisualPartyLeader(__instance.MapEntity);
                 if (!flag)
                 {
                     SetCircleLocalFrame.Invoke(__instance, new object[] { MatrixFrame.Identity });
-                    if (__instance.PartyBase.IsSettlement)
+                    if (__instance.MapEntity.IsSettlement)
                     {
                         MatrixFrame circleLocalFrame = __instance.CircleLocalFrame;
                         Mat3 mat3 = circleLocalFrame.rotation;
-                        if (__instance.PartyBase.Settlement.IsVillage)
+                        if (__instance.MapEntity.Settlement.IsVillage)
                         {
                             mat3.ApplyScaleLocal(1.75f);
                         }
-                        else if (__instance.PartyBase.Settlement.IsTown)
+                        else if (__instance.MapEntity.Settlement.IsTown)
                         {
                             mat3.ApplyScaleLocal(5.75f);
                         }
-                        else if (!__instance.PartyBase.Settlement.IsCastle)
+                        else if (!__instance.MapEntity.Settlement.IsCastle)
                         {
                             mat3.ApplyScaleLocal(1.75f);
                         }
@@ -333,7 +331,7 @@ namespace BannerlordPlayerSettlement.Patches
                         circleLocalFrame.rotation = mat3;
                         SetCircleLocalFrame.Invoke(__instance, new object[] { circleLocalFrame });
                     }
-                    else if ((visualPartyLeader == null || !visualPartyLeader.HasMount()) && !__instance.PartyBase.MobileParty.IsCaravan)
+                    else if ((visualPartyLeader == null || !visualPartyLeader.HasMount()) && !__instance.MapEntity.MobileParty.IsCaravan)
                     {
                         MatrixFrame matrixFrame = __instance.CircleLocalFrame;
                         Mat3 mat31 = matrixFrame.rotation;
@@ -350,56 +348,56 @@ namespace BannerlordPlayerSettlement.Patches
                         SetCircleLocalFrame.Invoke(__instance, new object[] { circleLocalFrame1 });
                     }
                 }
-                __instance.StrategicEntity.SetVisibilityExcludeParents(__instance.PartyBase.IsVisible);
-                AgentVisuals humanAgentVisuals = __instance.HumanAgentVisuals;
-                if (humanAgentVisuals != null)
-                {
-                    GameEntity entity = humanAgentVisuals.GetEntity();
-                    if (entity != null)
-                    {
-                        entity.SetVisibilityExcludeParents(__instance.PartyBase.IsVisible);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                }
-                AgentVisuals mountAgentVisuals = __instance.MountAgentVisuals;
-                if (mountAgentVisuals != null)
-                {
-                    GameEntity entity1 = mountAgentVisuals.GetEntity();
-                    if (entity1 != null)
-                    {
-                        entity1.SetVisibilityExcludeParents(__instance.PartyBase.IsVisible);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                }
-                AgentVisuals caravanMountAgentVisuals = __instance.CaravanMountAgentVisuals;
-                if (caravanMountAgentVisuals != null)
-                {
-                    GameEntity entity2 = caravanMountAgentVisuals.GetEntity();
-                    if (entity2 != null)
-                    {
-                        entity2.SetVisibilityExcludeParents(__instance.PartyBase.IsVisible);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                }
+                __instance.StrategicEntity.SetVisibilityExcludeParents(__instance.MapEntity.IsVisible);
+                //AgentVisuals humanAgentVisuals = __instance.HumanAgentVisuals;
+                //if (humanAgentVisuals != null)
+                //{
+                //    GameEntity entity = humanAgentVisuals.GetEntity();
+                //    if (entity != null)
+                //    {
+                //        entity.SetVisibilityExcludeParents(__instance.MapEntity.IsVisible);
+                //    }
+                //    else
+                //    {
+                //    }
+                //}
+                //else
+                //{
+                //}
+                //AgentVisuals mountAgentVisuals = __instance.MountAgentVisuals;
+                //if (mountAgentVisuals != null)
+                //{
+                //    GameEntity entity1 = mountAgentVisuals.GetEntity();
+                //    if (entity1 != null)
+                //    {
+                //        entity1.SetVisibilityExcludeParents(__instance.MapEntity.IsVisible);
+                //    }
+                //    else
+                //    {
+                //    }
+                //}
+                //else
+                //{
+                //}
+                //AgentVisuals caravanMountAgentVisuals = __instance.CaravanMountAgentVisuals;
+                //if (caravanMountAgentVisuals != null)
+                //{
+                //    GameEntity entity2 = caravanMountAgentVisuals.GetEntity();
+                //    if (entity2 != null)
+                //    {
+                //        entity2.SetVisibilityExcludeParents(__instance.MapEntity.IsVisible);
+                //    }
+                //    else
+                //    {
+                //    }
+                //}
+                //else
+                //{
+                //}
                 __instance.StrategicEntity.SetReadyToRender(true);
                 __instance.StrategicEntity.SetEntityEnvMapVisibility(false);
-                ____entityAlpha = (__instance.PartyBase.IsVisible ? 1f : 0f);
-                InitializePartyCollider.Invoke(__instance, new object[] { __instance.PartyBase });
+                ____entityAlpha = (__instance.MapEntity.IsVisible ? 1f : 0f);
+                InitializePartyCollider.Invoke(__instance, new object[] { __instance.MapEntity });
                 List<GameEntity> gameEntities2 = new List<GameEntity>();
                 __instance.StrategicEntity.GetChildrenRecursive(ref gameEntities2);
                 if (!MapScreen.VisualsOfEntities.ContainsKey(__instance.StrategicEntity.Pointer))
@@ -414,7 +412,7 @@ namespace BannerlordPlayerSettlement.Patches
                     }
                     MapScreen.VisualsOfEntities.Add(gameEntity2.Pointer, __instance);
                 }
-                if (__instance.PartyBase.IsSettlement)
+                if (__instance.MapEntity.IsSettlement)
                 {
                     __instance.StrategicEntity.SetAsPredisplayEntity();
                 }
@@ -426,16 +424,16 @@ namespace BannerlordPlayerSettlement.Patches
             return true;
         }
 
-        [HarmonyFinalizer]
-        [HarmonyPatch(nameof(PartyVisual.OnStartup))]
-        public static Exception? FixOnStartup(ref Exception __exception, ref PartyVisual __instance)
-        {
-            if (__exception != null)
-            {
-                var e = __exception;
-                LogManager.Log.NotifyBad(e);
-            }
-            return null;
-        }
+        //[HarmonyFinalizer]
+        //[HarmonyPatch(nameof(SettlementVisual.OnStartup))]
+        //public static Exception? FixOnStartup(ref Exception __exception, ref SettlementVisual __instance)
+        //{
+        //    if (__exception != null)
+        //    {
+        //        var e = __exception;
+        //        LogManager.Log.NotifyBad(e);
+        //    }
+        //    return null;
+        //}
     }
 }

@@ -36,28 +36,28 @@ namespace BannerlordPlayerSettlement.Extensions
 
         private static void TryToAssignTradeBoundForVillage(Village village)
         {
-            Settlement settlement = SettlementHelper.FindNearestSettlement((Settlement x) =>
+            Settlement settlement = SettlementHelper.FindNearestSettlementToSettlement(village.Settlement, TaleWorlds.CampaignSystem.Party.MobileParty.NavigationType.All, (Settlement x) =>
             {
                 if (!x.IsTown)
                 {
                     return false;
                 }
                 return x.Town.MapFaction == village.Settlement.MapFaction;
-            }, village.Settlement);
-            if (settlement != null && Campaign.Current.Models.MapDistanceModel.GetDistance(settlement, village.Settlement) < 150f)
+            });
+            if (settlement != null && Campaign.Current.Models.MapDistanceModel.GetDistance(settlement, village.Settlement, settlement.HasPort, village.Settlement.HasPort, TaleWorlds.CampaignSystem.Party.MobileParty.NavigationType.All) < 150f)
             {
                 village.SetTradeBound(settlement);
                 return;
             }
-            Settlement settlement1 = SettlementHelper.FindNearestSettlement((Settlement x) =>
+            Settlement settlement1 = SettlementHelper.FindNearestSettlementToSettlement(village.Settlement, TaleWorlds.CampaignSystem.Party.MobileParty.NavigationType.All, (Settlement x) =>
             {
                 if (!x.IsTown || x.Town.MapFaction == village.Settlement.MapFaction || x.Town.MapFaction.IsAtWarWith(village.Settlement.MapFaction))
                 {
                     return false;
                 }
-                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, village.Settlement) <= 150f;
-            }, village.Settlement);
-            if (settlement1 != null && Campaign.Current.Models.MapDistanceModel.GetDistance(settlement1, village.Settlement) < 150f)
+                return Campaign.Current.Models.MapDistanceModel.GetDistance(x, village.Settlement, x.HasPort, village.Settlement.HasPort, TaleWorlds.CampaignSystem.Party.MobileParty.NavigationType.All) <= 150f;
+            });
+            if (settlement1 != null && Campaign.Current.Models.MapDistanceModel.GetDistance(settlement1, village.Settlement, settlement1.HasPort, village.Settlement.HasPort, TaleWorlds.CampaignSystem.Party.MobileParty.NavigationType.All) < 150f)
             {
                 village.SetTradeBound(settlement);
                 return;

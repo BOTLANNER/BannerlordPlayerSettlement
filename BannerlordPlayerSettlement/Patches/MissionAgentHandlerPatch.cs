@@ -150,8 +150,8 @@ namespace BannerlordPlayerSettlement.Patches
                         }
                     }
                 }
-                __instance.DisableUnavailableWaypoints();
-                __instance.RemoveDeactivatedUsablePlacesFromList();
+                //__instance.DisableUnavailableWaypoints();
+                //__instance.RemoveDeactivatedUsablePlacesFromList();
 
                 return false;
             }

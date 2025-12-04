@@ -667,7 +667,7 @@ namespace BannerlordPlayerSettlement
                     {
                         if (!string.IsNullOrEmpty(townMeta.DisplayName))
                         {
-                            townMeta.settlement.Name = new TextObject(townMeta.DisplayName);
+                            townMeta.settlement.Party.SetCustomName(new TextObject(townMeta.DisplayName));
                         }
                     }
 
@@ -716,7 +716,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(village.DisplayName))
                             {
-                                village.settlement.Name = new TextObject(village.DisplayName);
+                                village.settlement.Party.SetCustomName(new TextObject(village.DisplayName));
                             }
                         }
                     }
@@ -770,7 +770,7 @@ namespace BannerlordPlayerSettlement
                     {
                         if (!string.IsNullOrEmpty(castleMeta.DisplayName))
                         {
-                            castleMeta.settlement.Name = new TextObject(castleMeta.DisplayName);
+                            castleMeta.settlement.Party.SetCustomName(new TextObject(castleMeta.DisplayName));
                         }
                     }
 
@@ -819,7 +819,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(village.DisplayName))
                             {
-                                village.settlement.Name = new TextObject(village.DisplayName);
+                                village.settlement.Party.SetCustomName(new TextObject(village.DisplayName));
                             }
                         }
                     }
@@ -857,7 +857,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(villageMeta.DisplayName))
                             {
-                                villageMeta.settlement.Name = new TextObject(villageMeta.DisplayName);
+                                villageMeta.settlement.Party.SetCustomName(new TextObject(villageMeta.DisplayName));
                             }
                         }
                     }
@@ -895,7 +895,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(overwriteMeta.DisplayName))
                             {
-                                overwriteMeta.settlement.Name = new TextObject(overwriteMeta.DisplayName);
+                                overwriteMeta.settlement.Party.SetCustomName(new TextObject(overwriteMeta.DisplayName));
                             }
                         }
                     }

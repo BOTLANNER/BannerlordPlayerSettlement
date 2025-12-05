@@ -2,6 +2,7 @@
 using System;
 
 using BannerlordPlayerSettlement.Extensions;
+using BannerlordPlayerSettlement.Saves;
 using BannerlordPlayerSettlement.Utils;
 
 using HarmonyLib;
@@ -20,7 +21,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(GetDesiredMachine))]
-        public static bool GetDesiredMachine(ref MapSiegePOIVM __instance, ref SiegeEvent.SiegeEngineConstructionProgress? __result)
+        public static bool GetDesiredMachine(ref MapSiegePOIVM __instance, ref SiegeEvent.SiegeEngineConstructionProgress __result)
         {
             try
             {
@@ -29,7 +30,7 @@ namespace BannerlordPlayerSettlement.Patches
                     __result = null;
                     return true;
                 }
-                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt()))
+                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt() || PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsOverwritten(out OverwriteSettlementItem overwriteSettlementItem)))
                 {
                     return true;
                 }
@@ -85,7 +86,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(GetDesiredMachine))]
-        public static Exception? FixGetDesiredMachine(ref Exception __exception, ref MapSiegePOIVM __instance)
+        public static Exception? FixGetDesiredMachine(Exception? __exception, ref MapSiegePOIVM __instance)
         {
             if (__exception != null)
             {
@@ -108,7 +109,7 @@ namespace BannerlordPlayerSettlement.Patches
                     ____bindMaxHitpoints = 0f;
                     return true;
                 }
-                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt()))
+                if (!(PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsPlayerBuilt() || PlayerSiege.PlayerSiegeEvent.BesiegedSettlement.IsOverwritten(out OverwriteSettlementItem overwriteSettlementItem)))
                 {
                     return true;
                 }
@@ -161,7 +162,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(RefreshHitpoints))]
-        public static Exception? FixRefreshHitpoints(ref Exception __exception, ref MapSiegePOIVM __instance)
+        public static Exception? FixRefreshHitpoints(Exception? __exception, ref MapSiegePOIVM __instance)
         {
             if (__exception != null)
             {

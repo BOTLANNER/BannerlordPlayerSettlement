@@ -100,5 +100,27 @@ namespace BannerlordPlayerSettlement.Extensions
 
             return null;
         }
+
+        public static void SetCampaignGameLoadingType(this Campaign instance, Campaign.GameLoadingType gameLoadingType)
+        {
+            var _gameLoadingTypeField = AccessTools.Field(typeof(Campaign), "_gameLoadingType");
+            _gameLoadingTypeField.SetValue(instance, gameLoadingType);
+        }
+
+        public static T AsCampaignGameLoadingType<T>(this Campaign instance, Campaign.GameLoadingType gameLoadingType, Func<T> func)
+        {
+            var _gameLoadingTypeField = AccessTools.Field(typeof(Campaign), "_gameLoadingType");
+            var _previous = _gameLoadingTypeField.GetValue(instance);
+            try
+            {
+                _gameLoadingTypeField.SetValue(instance, gameLoadingType);
+                return func.Invoke();
+            } 
+            finally
+            {
+                _gameLoadingTypeField.SetValue(instance, _previous);
+            }
+        }
     }
+
 }

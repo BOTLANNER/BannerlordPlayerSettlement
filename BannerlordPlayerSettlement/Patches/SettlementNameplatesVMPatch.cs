@@ -23,11 +23,11 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(OnSettlementOwnerChanged))]
-        private static bool OnSettlementOwnerChanged(ref SettlementNameplatesVM __instance, ref MBBindingList<SettlementNameplateVM> ____nameplates, Settlement settlement, bool openToClaim, Hero newOwner, Hero previousOwner, Hero capturerHero, ChangeOwnerOfSettlementAction.ChangeOwnerOfSettlementDetail detail)
+        private static bool OnSettlementOwnerChanged(ref SettlementNameplatesVM __instance, Settlement settlement, bool openToClaim, Hero newOwner, Hero previousOwner, Hero capturerHero, ChangeOwnerOfSettlementAction.ChangeOwnerOfSettlementDetail detail)
         {
             try
             {
-                SettlementNameplateVM settlementNameplateVM = __instance.Nameplates.FirstOrDefault<SettlementNameplateVM>((SettlementNameplateVM n) => n.Settlement == settlement);
+                SettlementNameplateVM settlementNameplateVM = __instance.AllNameplates.FirstOrDefault<SettlementNameplateVM>((SettlementNameplateVM n) => n.Settlement == settlement);
                 if (settlementNameplateVM != null)
                 {
                     settlementNameplateVM.RefreshDynamicProperties(true);
@@ -44,7 +44,7 @@ namespace BannerlordPlayerSettlement.Patches
                 }
                 foreach (Village boundVillage in settlement.BoundVillages)
                 {
-                    var list = __instance.Nameplates.Where<SettlementNameplateVM>((SettlementNameplateVM n) =>
+                    var list = __instance.AllNameplates.Where<SettlementNameplateVM>((SettlementNameplateVM n) =>
                     {
                         if (!n.Settlement.IsVillage)
                         {
@@ -86,7 +86,7 @@ namespace BannerlordPlayerSettlement.Patches
                 }
                 if (detail == ChangeOwnerOfSettlementAction.ChangeOwnerOfSettlementDetail.ByRebellion)
                 {
-                    SettlementNameplateVM settlementNameplateVM2 = __instance.Nameplates.FirstOrDefault<SettlementNameplateVM>((SettlementNameplateVM n) => n.Settlement == settlement);
+                    SettlementNameplateVM settlementNameplateVM2 = __instance.AllNameplates.FirstOrDefault<SettlementNameplateVM>((SettlementNameplateVM n) => n.Settlement == settlement);
                     if (settlementNameplateVM2 == null)
                     {
                         // return
@@ -98,7 +98,7 @@ namespace BannerlordPlayerSettlement.Patches
                 }
                 if (previousOwner != null && previousOwner.IsRebel)
                 {
-                    SettlementNameplateVM settlementNameplateVM3 = __instance.Nameplates.FirstOrDefault<SettlementNameplateVM>((SettlementNameplateVM n) => n.Settlement == settlement);
+                    SettlementNameplateVM settlementNameplateVM3 = __instance.AllNameplates.FirstOrDefault<SettlementNameplateVM>((SettlementNameplateVM n) => n.Settlement == settlement);
                     if (settlementNameplateVM3 == null)
                     {
                         // return

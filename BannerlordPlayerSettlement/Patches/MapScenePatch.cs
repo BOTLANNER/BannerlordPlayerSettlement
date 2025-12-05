@@ -17,6 +17,8 @@ using TaleWorlds.Library;
 
 namespace BannerlordPlayerSettlement.Patches
 {
+
+
     [HarmonyPatch(typeof(MapScene))]
     public static class MapScenePatch
     {

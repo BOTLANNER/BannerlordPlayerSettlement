@@ -8,6 +8,7 @@ using BannerlordPlayerSettlement.Utils;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Core;
 using TaleWorlds.SaveSystem;
 
 namespace BannerlordPlayerSettlement.Saves
@@ -144,7 +145,20 @@ namespace BannerlordPlayerSettlement.Saves
                     PlayerVillages = new();
                 }
 
-                var campaignGameStarter = SandBoxManager.Instance.GameStarter;
+                // Game.Current.GetGameHandler<SandBoxManager>()
+                // Campaign.Current.SandBoxManager
+
+                var sandboxManager = SandBoxManager.Instance;
+                if (sandboxManager == null)
+                {
+                    sandboxManager = Campaign.Current?.SandBoxManager;
+                }
+                if (sandboxManager == null)
+                {
+                    sandboxManager = Game.Current?.GetGameHandler<SandBoxManager>();
+                }
+
+                var campaignGameStarter = sandboxManager.GameStarter;
                 var craftingCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(b => b is CraftingCampaignBehavior) as CraftingCampaignBehavior;
                 foreach (var town in Towns)
                 {

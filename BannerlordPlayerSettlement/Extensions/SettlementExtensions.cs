@@ -7,21 +7,28 @@ using HarmonyLib;
 
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Library;
+using TaleWorlds.Localization;
 
 namespace BannerlordPlayerSettlement.Extensions
 {
     public static class SettlementExtensions
     {
-        static MethodInfo Position2DSetter = AccessTools.Property(typeof(Settlement), "Position2D").SetMethod;
+        //static MethodInfo Position2DSetter = AccessTools.Property(typeof(Settlement), "Position2D").SetMethod;
         static MethodInfo GatePositionSetter = AccessTools.Property(typeof(Settlement), "GatePosition").SetMethod;
-        public static void SetPosition2D(this Settlement settlement, Vec2 position, Vec2? gatePosition)
+
+        public static void SetName(this Settlement settlement, TextObject name)
         {
-            Position2DSetter.Invoke(settlement, new object[] { position });
-            if (gatePosition != null)
-            {
-                GatePositionSetter.Invoke(settlement, new object[] { gatePosition });
-            }
+            AccessTools.Field(typeof(Settlement), "_name").SetValue(settlement, name);
         }
+
+        //public static void SetPosition2D(this Settlement settlement, Vec2 position, Vec2? gatePosition)
+        //{
+        //    Position2DSetter.Invoke(settlement, new object[] { position });
+        //    if (gatePosition != null)
+        //    {
+        //        GatePositionSetter.Invoke(settlement, new object[] { gatePosition });
+        //    }
+        //}
 
         static MethodInfo BoundSetter = AccessTools.Property(typeof(Village), nameof(Village.Bound)).SetMethod;
 

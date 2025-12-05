@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>6.0.3</Version>
+    <Version>7.0.0</Version>
     <ModuleName>$(MSBuildProjectName)</ModuleName>
   </PropertyGroup>
   
@@ -9,19 +9,19 @@
     <TargetFramework>net472</TargetFramework>
     <Platforms>x64</Platforms>
     <LangVersion>9.0</LangVersion>
-    <Nullable>enable</Nullable>
+    <!--<Nullable>enable</Nullable>-->
     <Configurations>Stable_Debug;Stable_Release;Beta_Debug;Beta_Release</Configurations>
   </PropertyGroup>
 
   <!-- Versions of Major Dependencies (For Package References & SubModule.xml Substitution) -->
   <PropertyGroup>
-    <BuildResourcesVersion>1.1.0.108</BuildResourcesVersion>
-    <HarmonyVersion>2.3.3</HarmonyVersion>
+    <BuildResourcesVersion>1.1.0.129</BuildResourcesVersion>
+    <HarmonyVersion>2.4.2</HarmonyVersion>
     <MCM_V5>true</MCM_V5>
   </PropertyGroup>
   
   <PropertyGroup>
-    <MCMVersion Condition="$(MCM_V5) == 'true'">5.10.2</MCMVersion>
+    <MCMVersion Condition="$(MCM_V5) == 'true'">5.11.3</MCMVersion>
   </PropertyGroup>
 
   <!-- Game Versions for Stable and Beta -->
@@ -85,10 +85,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Nullable" Version="1.3.1">
+    <!--<PackageReference Include="Nullable" Version="1.3.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    </PackageReference>-->
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
   </ItemGroup>
 

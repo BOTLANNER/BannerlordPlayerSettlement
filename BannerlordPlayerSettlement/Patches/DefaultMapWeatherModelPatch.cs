@@ -16,7 +16,7 @@
 //    {
 //        [HarmonyFinalizer]
 //        [HarmonyPatch(nameof(DefaultMapWeatherModel.GetWeatherEventInPosition))]
-//        public static Exception? GetWeatherEventInPosition(ref Exception __exception, ref MapWeatherModel.WeatherEvent __result, ref DefaultMapWeatherModel __instance, Vec2 pos)
+//        public static Exception? GetWeatherEventInPosition(Exception __exception, ref MapWeatherModel.WeatherEvent __result, ref DefaultMapWeatherModel __instance, Vec2 pos)
 //        {
 //            if (__exception != null)
 //            {

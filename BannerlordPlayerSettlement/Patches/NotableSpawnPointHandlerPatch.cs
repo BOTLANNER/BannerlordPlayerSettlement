@@ -120,7 +120,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(NotableSpawnPointHandler.OnBehaviorInitialize))]
-        public static Exception? FixOnBehaviorInitialize(ref Exception __exception, ref NotableSpawnPointHandler __instance)
+        public static Exception? FixOnBehaviorInitialize(Exception? __exception, ref NotableSpawnPointHandler __instance)
         {
             if (__exception != null)
             {

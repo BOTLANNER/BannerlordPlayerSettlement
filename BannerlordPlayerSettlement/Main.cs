@@ -146,6 +146,8 @@ namespace BannerlordPlayerSettlement
         {
             //Ctor
             Submodule = this;
+
+            //Debugger.Launch();
         }
 
         protected override void OnSubModuleLoad()
@@ -667,7 +669,7 @@ namespace BannerlordPlayerSettlement
                     {
                         if (!string.IsNullOrEmpty(townMeta.DisplayName))
                         {
-                            townMeta.settlement.Name = new TextObject(townMeta.DisplayName);
+                            townMeta.settlement.SetName ( new TextObject(townMeta.DisplayName));
                         }
                     }
 
@@ -716,7 +718,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(village.DisplayName))
                             {
-                                village.settlement.Name = new TextObject(village.DisplayName);
+                                village.settlement.SetName( new TextObject(village.DisplayName));
                             }
                         }
                     }
@@ -770,7 +772,7 @@ namespace BannerlordPlayerSettlement
                     {
                         if (!string.IsNullOrEmpty(castleMeta.DisplayName))
                         {
-                            castleMeta.settlement.Name = new TextObject(castleMeta.DisplayName);
+                            castleMeta.settlement.SetName(new TextObject(castleMeta.DisplayName));
                         }
                     }
 
@@ -819,7 +821,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(village.DisplayName))
                             {
-                                village.settlement.Name = new TextObject(village.DisplayName);
+                                village.settlement.SetName(new TextObject(village.DisplayName));
                             }
                         }
                     }
@@ -857,7 +859,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(villageMeta.DisplayName))
                             {
-                                villageMeta.settlement.Name = new TextObject(villageMeta.DisplayName);
+                                villageMeta.settlement.SetName(new TextObject(villageMeta.DisplayName));
                             }
                         }
                     }
@@ -895,7 +897,7 @@ namespace BannerlordPlayerSettlement
                         {
                             if (!string.IsNullOrEmpty(overwriteMeta.DisplayName))
                             {
-                                overwriteMeta.settlement.Name = new TextObject(overwriteMeta.DisplayName);
+                                overwriteMeta.settlement.SetName(new TextObject(overwriteMeta.DisplayName));
                             }
                         }
                     }

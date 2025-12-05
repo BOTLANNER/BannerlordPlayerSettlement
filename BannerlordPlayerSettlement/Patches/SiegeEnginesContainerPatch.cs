@@ -50,7 +50,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(SiegeEnginesContainer.DeploySiegeEngineAtIndex))]
-        public static Exception? FixDeploySiegeEngineAtIndex(ref Exception __exception, ref SiegeEnginesContainer __instance, SiegeEvent.SiegeEngineConstructionProgress siegeEngine, int index)
+        public static Exception? FixDeploySiegeEngineAtIndex(Exception? __exception, ref SiegeEnginesContainer __instance, SiegeEvent.SiegeEngineConstructionProgress siegeEngine, int index)
         {
             if (__exception != null)
             {
@@ -62,7 +62,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(SiegeEnginesContainer.RemoveDeployedSiegeEngine))]
-        public static Exception? FixRemoveDeployedSiegeEngine(ref Exception __exception, ref SiegeEnginesContainer __instance, int index, bool isRanged, bool moveToReserve)
+        public static Exception? FixRemoveDeployedSiegeEngine(Exception? __exception, ref SiegeEnginesContainer __instance, int index, bool isRanged, bool moveToReserve)
         {
             if (__exception != null)
             {

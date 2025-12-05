@@ -22,7 +22,7 @@ namespace BannerlordPlayerSettlement
         public static SaveHandler Instance => _instance;
 
 
-        static FieldInfo ActiveSaveSlotNameField = AccessTools.Field(typeof(MBSaveLoad), "ActiveSaveSlotName");
+        static PropertyInfo ActiveSaveSlotNameProp = AccessTools.Property(typeof(MBSaveLoad), "ActiveSaveSlotName");
         static MethodInfo GetNextAvailableSaveNameMethod = AccessTools.Method(typeof(MBSaveLoad), "GetNextAvailableSaveName");
 
         public static void SaveLoad(bool overwrite = true, Action<string>? afterSave = null)
@@ -38,11 +38,11 @@ namespace BannerlordPlayerSettlement
         {
             CampaignEvents.OnSaveOverEvent.AddNonSerializedListener(Instance, new Action<bool, string>((b, s) => Instance.ApplyInternal(b, s, afterSave)));
 
-            string saveName = (string) ActiveSaveSlotNameField.GetValue(null);
+            string saveName = (string) ActiveSaveSlotNameProp.GetValue(null);
             if (saveName == null)
             {
                 saveName = (string) GetNextAvailableSaveNameMethod.Invoke(null, new object[] { });
-                ActiveSaveSlotNameField.SetValue(null, saveName);
+                ActiveSaveSlotNameProp.SetValue(null, saveName);
             }
 
             if (overwrite)
@@ -57,11 +57,11 @@ namespace BannerlordPlayerSettlement
 
         public void Save(bool overwrite = true)
         {
-            string saveName = (string) ActiveSaveSlotNameField.GetValue(null);
+            string saveName = (string) ActiveSaveSlotNameProp.GetValue(null);
             if (saveName == null)
             {
                 saveName = (string) GetNextAvailableSaveNameMethod.Invoke(null, new object[] { });
-                ActiveSaveSlotNameField.SetValue(null, saveName);
+                ActiveSaveSlotNameProp.SetValue(null, saveName);
             }
 
             if (overwrite)

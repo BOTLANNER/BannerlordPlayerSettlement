@@ -24,6 +24,9 @@ namespace BannerlordPlayerSettlement.Patches
     [HarmonyPatch(typeof(MissionAgentHandler))]
     public static class MissionAgentHandlerPatch
     {
+        static FastInvokeHandler DisableUnavailableWaypointsMethod = MethodInvoker.GetHandler(AccessTools.Method(typeof(MissionAgentHandler), "DisableUnavailableWaypoints"));
+        static FastInvokeHandler RemoveDeactivatedUsablePlacesFromListMethod = MethodInvoker.GetHandler(AccessTools.Method(typeof(MissionAgentHandler), "RemoveDeactivatedUsablePlacesFromList"));
+
         [HarmonyPrefix]
         [HarmonyPatch(nameof(GetAllProps))]
         public static bool GetAllProps(ref MissionAgentHandler __instance, ref int ____disabledFaceId, ref int ____disabledFaceIdForAnimals, ref Dictionary<string, List<UsableMachine>> ____usablePoints)
@@ -150,8 +153,9 @@ namespace BannerlordPlayerSettlement.Patches
                         }
                     }
                 }
-                __instance.DisableUnavailableWaypoints();
-                __instance.RemoveDeactivatedUsablePlacesFromList();
+
+                DisableUnavailableWaypointsMethod.Invoke(__instance);
+                RemoveDeactivatedUsablePlacesFromListMethod.Invoke(__instance);
 
                 return false;
             }
@@ -162,7 +166,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(GetAllProps))]
-        public static Exception? FixGetAllProps(ref Exception __exception, ref MissionAgentHandler __instance)
+        public static Exception? FixGetAllProps(Exception? __exception, ref MissionAgentHandler __instance)
         {
             if (__exception != null)
             {

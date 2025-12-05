@@ -91,7 +91,7 @@ namespace BannerlordPlayerSettlement.Patches
 
         [HarmonyFinalizer]
         [HarmonyPatch(nameof(InitShopSigns))]
-        public static Exception? FixInitShopSigns(ref Exception __exception, ref WorkshopMissionHandler __instance, ref Settlement ____settlement)
+        public static Exception? FixInitShopSigns(Exception? __exception, ref WorkshopMissionHandler __instance, ref Settlement ____settlement)
         {
             if (__exception != null)
             {

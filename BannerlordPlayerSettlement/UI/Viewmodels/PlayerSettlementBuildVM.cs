@@ -125,7 +125,7 @@ namespace BannerlordPlayerSettlement.UI.Viewmodels
 
             if (Main.Settings == null || PlayerSettlementInfo.Instance == null || PlayerSettlementBehaviour.Instance == null /*|| Settlement.CurrentSettlement != null*/)
             {
-                disableReason = new TextObject();
+                disableReason = new TextObject("");
                 IsCreatePlayerSettlementAllowed = false;
                 IsCreatePlayerSettlementVisible = false;
                 this.DisableHint = new HintViewModel(disableReason, null);

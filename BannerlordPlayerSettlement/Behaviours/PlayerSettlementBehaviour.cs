@@ -365,7 +365,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 if (Hero.OneToOneConversationHero == null || Hero.OneToOneConversationHero.Clan != Clan.PlayerClan)
                 {
                     return false;
-                } 
+                }
             }
 
             if (Main.Settings == null || PlayerSettlementInfo.Instance == null || PlayerSettlementBehaviour.Instance == null || PlayerSettlementBehaviour.Instance.HasRequest)
@@ -487,7 +487,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             MapBarExtensionVM.Current?.OnRefresh();
 
-            bool canRebuild = conv_rebuild_condition(); 
+            bool canRebuild = conv_rebuild_condition();
 
             return Main.Settings != null && Main.Settings.Enabled &&
                 !this.HasRequest &&
@@ -1357,7 +1357,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     return;
                                 }
                             }
-                        } 
+                        }
                     }
 
 
@@ -2146,7 +2146,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     }
                                 }
                             }
-                                                        
+
                             TextObject encyclopediaText = target.EncyclopediaText;
 
                             if (node.Attributes["text"] == null)
@@ -2542,7 +2542,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                 settlement.SetBound(bound);
                             }
 
-                            settlement.SetName( new TextObject(settlementName));
+                            settlement.SetName(new TextObject(settlementName));
 
                             settlement.Party.SetLevelMaskIsDirty();
                             settlement.IsVisible = true;
@@ -2788,7 +2788,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                         castleSettlement.Town.OwnerClan = Hero.MainHero.Clan;
 
-                        castleSettlement.SetName( new TextObject(settlementName));
+                        castleSettlement.SetName(new TextObject(settlementName));
 
                         castleSettlement.Party.SetLevelMaskIsDirty();
                         castleSettlement.IsVisible = true;
@@ -2983,57 +2983,30 @@ namespace BannerlordPlayerSettlement.Behaviours
         private static void InitCastleBuildings(Settlement castleSettlement)
         {
             Town castle = castleSettlement.Town;
-            bool flag = false;
-            int num = 0;
-            foreach (BuildingType buildingType1 in BuildingType.All)
-            {
-                if (!castle.Buildings.All<Building>((Building b) => b.BuildingType != buildingType1) || !Campaign.Current.Models.BuildingModel.CanAddBuildingTypeToTown(buildingType1, castle))
-                {
-                    continue;
-                }
-                num = MBRandom.RandomInt(0, 7);
-                if (num < 4)
-                {
-                    flag = false;
-                    break;
-                }
-                flag = true;
-                num -= 3;
-                if (!flag)
-                {
-                    continue;
-                }
-                if (num > 3)
-                {
-                    num = 3;
-                }
-                castle.Buildings.Add(new Building(buildingType1, castle, 0f, num));
-            }
-            foreach (BuildingType all2 in BuildingType.All)
-            {
-                if (castle.Buildings.Any<Building>((Building k) => k.BuildingType == all2))
-                {
-                    continue;
-                }
-                // TODO: Should this be done?
-                castle.Buildings.Add(new Building(all2, castle, 0f, 0));
-            }
+
+
+            // create random number for building levels
+            // TODO: Config default building level?
             int num1 = MBRandom.RandomInt(1, 4);
             int num2 = 1;
-            foreach (BuildingType buildingType2 in BuildingType.All)
+            // add all buildings
+            foreach (BuildingType all2 in BuildingType.All)
             {
-                if (!buildingType2.IsDailyProject)
+                // if already added, skip
+                if (castle.Buildings.Any<Building>((Building k) => k.BuildingType.StringId == all2.StringId))
                 {
                     continue;
                 }
-                Building building = new Building(buildingType2, castle, 0f, 1);
-                castle.Buildings.Add(building);
-                if (num2 == num1)
+                // only castle buildings
+                if (!all2.StringId.StartsWith("building_castle"))
                 {
-                    building.IsCurrentlyDefault = true;
+                    continue;
                 }
-                num2++;
+
+                castle.Buildings.Add(new Building(all2, castle, 0f, num1));
             }
+
+
             foreach (Building building1 in
                 from k in castle.Buildings
                 orderby k.CurrentLevel descending
@@ -3045,6 +3018,15 @@ namespace BannerlordPlayerSettlement.Behaviours
                 }
                 castle.BuildingsInProgress.Enqueue(building1);
             }
+
+            Building dailyDefault = castleSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
+            if (dailyDefault == null)
+            {
+                dailyDefault = castleSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
+                BuildingHelper.ChangeDefaultBuilding(dailyDefault, castleSettlement.Town);
+                dailyDefault.IsCurrentlyDefault = true;
+            }
+
 
             if (castleSettlement.Town.CurrentDefaultBuilding == null)
             {
@@ -4036,59 +4018,27 @@ namespace BannerlordPlayerSettlement.Behaviours
         private static void InitTownBuildings(Settlement townSettlement)
         {
             var town = townSettlement.Town;
-            foreach (BuildingType buildingType in BuildingType.All)
-            {
-                if (!town.Buildings.All<Building>((Building b) => b.BuildingType != buildingType) || !Campaign.Current.Models.BuildingModel.CanAddBuildingTypeToTown(buildingType, town))
-                {
-                    continue;
-                }
-                var num = MBRandom.RandomInt(0, 7);
-                bool flag;
-                if (num < 4)
-                {
-                    flag = false;
-                }
-                else
-                {
-                    flag = true;
-                    num -= 3;
 
-                }
-                if (!flag)
-                {
-                    continue;
-                }
-                if (num > 3)
-                {
-                    num = 3;
-                }
-                town.Buildings.Add(new Building(buildingType, town, 0f, num));
-            }
             foreach (BuildingType all1 in BuildingType.All)
             {
-                if (town.Buildings.Any<Building>((Building k) => k.BuildingType == all1))
+                // TODO: Config default building level?
+                int num1 = MBRandom.RandomInt(1, 4);
+                //LogManager.Log.Info($"Considering building type for default military project: {all1.StringId}-{all1.Name}-{all1.Id}-{all1.IsDailyProject}-{all1.IsMilitaryProject}-{all1.ToString()}");
+
+                if (town.Buildings.Any<Building>((Building k) => k.BuildingType.StringId == all1.StringId))
                 {
                     continue;
                 }
-                // TODO: Reconsider?
-                town.Buildings.Add(new Building(all1, town, 0f, 0));
-            }
-            int num1 = MBRandom.RandomInt(1, 4);
-            int num2 = 1;
-            foreach (BuildingType buildingType2 in BuildingType.All)
-            {
-                if (!buildingType2.IsDailyProject)
+                // TODO: add check has harbor and add as possible building: building_shipyard
+                if (!all1.StringId.StartsWith("building_settlement"))
                 {
                     continue;
                 }
-                Building building = new Building(buildingType2, town, 0f, 1);
-                town.Buildings.Add(building);
-                if (num2 == num1)
-                {
-                    building.IsCurrentlyDefault = true;
-                }
-                num2++;
+
+
+                town.Buildings.Add(new Building(all1, town, 0f, all1.IsDailyProject ? 1 : num1));
             }
+
             foreach (Building building1 in
                 from k in town.Buildings
                 orderby k.CurrentLevel descending
@@ -4099,6 +4049,14 @@ namespace BannerlordPlayerSettlement.Behaviours
                     continue;
                 }
                 town.BuildingsInProgress.Enqueue(building1);
+            }
+
+            Building dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
+            if (dailyDefault == null)
+            {
+                dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
+                BuildingHelper.ChangeDefaultBuilding(dailyDefault, townSettlement.Town);
+                dailyDefault.IsCurrentlyDefault = true;
             }
 
             if (townSettlement.Town.CurrentDefaultBuilding == null)

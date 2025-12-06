@@ -7,7 +7,7 @@ using TaleWorlds.Library;
 
 namespace BannerlordPlayerSettlement.UI.Viewmodels
 {
-    [ViewModelMixin(refreshMethodName: "RefreshValues")]
+    [ViewModelMixin(nameof(MapBarVM.RefreshValues), true)]
 
     public class MapBarExtensionVM : BaseViewModelMixin<MapBarVM>
     {

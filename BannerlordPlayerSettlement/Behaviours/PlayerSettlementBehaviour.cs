@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Xml;
 
 using BannerlordPlayerSettlement.Descriptors;
@@ -26,6 +27,8 @@ using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.GameState;
+using TaleWorlds.CampaignSystem.Map;
+using TaleWorlds.CampaignSystem.Naval;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
@@ -148,18 +151,32 @@ namespace BannerlordPlayerSettlement.Behaviours
         private List<GameEntity> settlementVisualEntityChildren = new();
         #endregion
 
-        #region Gate Placement
+        #region Gate and Port Placement
         const string GhostGateEntityId = "player_settlement_ghost_gate";
         const string GhostGatePrefabId = GhostGateEntityId;
+        const string GhostPortEntityId = GhostGateEntityId;
+        const string GhostPortPrefabId = GhostGateEntityId;
         private GameEntity? ghostGateVisualEntity = null;
         private MatrixFrame? gatePlacementFrame = null;
 
+        private GameEntity? ghostPortVisualEntity = null;
+        private MatrixFrame? portPlacementFrame = null;
+
         bool gateSupported = false;
+        bool portSupported = false;
         #endregion
 
         public bool IsPlacingSettlement => settlementVisualEntity != null && applyPending != null;
-        public bool IsDeepEdit => deepEdit && currentDeepTarget != null && IsPlacingSettlement && !IsPlacingGate;
+        public bool IsDeepEdit => deepEdit && currentDeepTarget != null && IsPlacingSettlement && !IsPlacingGate && !IsPlacingPort;
         public bool IsPlacingGate => ghostGateVisualEntity != null && applyPending != null;
+        public bool IsPlacingPort => ghostPortVisualEntity != null && applyPending != null;
+
+        private Assembly WarSailsAssembly = null;
+        private Type ShipProductionCampaignBehaviorType = null;
+        private MethodInfo DailyTickTownMethod = null;
+        private Type NavalVillageTypesType = null;
+
+        public bool PlacementSupported { get; set; }
 
         #region Overrides
         public override void RegisterEvents()
@@ -835,6 +852,59 @@ namespace BannerlordPlayerSettlement.Behaviours
                     return;
                 }
 
+                if (ghostPortVisualEntity != null)
+                {
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
+                    Campaign.Current.SetTimeControlModeLock(true);
+
+                    if (mapScreen.Input.IsKeyReleased(Main.Submodule!.HelpKey.GetInputKey()))
+                    {
+                        ShowPortPosHelp(forceShow: true);
+                    }
+
+                    Vec3 worldMouseNear = Vec3.Zero;
+                    Vec3 worldMouseFar = Vec3.Zero;
+                    mapScreen.SceneLayer.SceneView.TranslateMouse(ref worldMouseNear, ref worldMouseFar);
+                    Vec3 clippedMouseNear = worldMouseNear;
+                    Vec3 clippedMouseFar = worldMouseFar;
+                    PathFaceRecord currentFace = PathFaceRecord.NullFaceRecord;
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float closestDistanceSquared, out Vec3 _, ref currentFace, out bool isOnLand);
+                    mapScreen.GetCursorIntersectionPoint(ref clippedMouseNear, ref clippedMouseFar, out float _, out Vec3 intersectionPoint2, ref currentFace, out isOnLand, BodyFlags.Disabled | BodyFlags.Moveable | BodyFlags.AILimiter | BodyFlags.Barrier | BodyFlags.Barrier3D | BodyFlags.Ragdoll | BodyFlags.RagdollLimiter | BodyFlags.DoNotCollideWithRaycast | BodyFlags.WaterBody);
+                    MatrixFrame identity = MatrixFrame.Identity;
+                    identity.origin = intersectionPoint2;
+
+                    // No height below sea level?
+                    //identity.origin.z = identity.origin.z < 0f ? 0f : identity.origin.z;
+                    identity.origin.z = mapScreen.MapScene.GetWaterLevelAtPosition(identity.origin.AsVec2, true, false);
+                    identity.Scale(new Vec3(0.25f, 0.25f, 0.25f));
+
+                    var previous = ghostPortVisualEntity.GetFrame();
+
+                    portPlacementFrame = identity;
+                    this.SetFrame(ghostPortVisualEntity, ref identity);
+
+                    bool flag = currentFace.IsValid() && !isOnLand; // && currentFace.FaceIslandIndex == MobileParty.MainParty.CurrentNavigationFace.FaceIslandIndex; // Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
+
+
+                    CampaignVec2 vec2 = new(intersectionPoint2.AsVec2, isOnLand);
+                    flag = flag && NavigationHelper.IsPositionValidForNavigationType(vec2, MobileParty.NavigationType.Naval);
+
+                    if (flag)
+                    {
+                        int[] invalidTerrainTypesForNavigationType = Campaign.Current.Models.PartyNavigationModel.GetInvalidTerrainTypesForNavigationType(MobileParty.NavigationType.Naval);
+                        if (invalidTerrainTypesForNavigationType.Contains<int>(currentFace.FaceGroupIndex) || invalidTerrainTypesForNavigationType.Contains<int>(vec2.Face.FaceGroupIndex))
+                        {
+                            flag = false;
+                        }
+                    }
+
+
+                    mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+                    PlacementSupported = flag;
+
+                    return;
+                }
+
                 if (ghostGateVisualEntity != null)
                 {
 
@@ -864,7 +934,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                     this.SetFrame(ghostGateVisualEntity, ref identity);
 
                     bool flag = currentFace.IsValid() && isOnLand && currentFace.FaceIslandIndex == MobileParty.MainParty.CurrentNavigationFace.FaceIslandIndex; // Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
+
                     mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+                    PlacementSupported = flag;
 
                     return;
                 }
@@ -1498,11 +1570,13 @@ namespace BannerlordPlayerSettlement.Behaviours
                     {
                         bool flag = currentFace.IsValid() && currentFace.FaceIslandIndex == MobileParty.MainParty.CurrentNavigationFace.FaceIslandIndex; // Campaign.Current.MapSceneWrapper.AreFacesOnSameIsland(currentFace, MobileParty.MainParty.CurrentNavigationFace, ignoreDisabled: false);
                         mapScreen.SceneLayer.ActiveCursor = (flag ? CursorType.Default : CursorType.Disabled);
+                        PlacementSupported = flag;
                     }
 
                 }
             }
         }
+
 
         private static void ShowDeepEditHelp(bool forceShow = false)
         {
@@ -1814,10 +1888,10 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
         }
 
-        public void StartGatePlacement()
+        public void StartPortPlacement()
         {
 
-            if (Main.Settings == null || !Main.Settings.AllowGatePosition || !gateSupported)
+            if (Main.Settings == null || !Main.IsWarSails || !portSupported)
             {
                 ApplyNow();
                 return;
@@ -1832,10 +1906,74 @@ namespace BannerlordPlayerSettlement.Behaviours
                 return;
             }
 
-            if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && mapScreen.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && PlacementSupported)
+            {
+                var titleText = new TextObject("{=player_settlement_44}Add a Port").ToString();
+                var confirm = new TextObject("{=player_settlement_45}Do you want to add a port to this settlement?");
+
+                InformationManager.ShowInquiry(new InquiryData(titleText, confirm.ToString(), true, true, GameTexts.FindText("str_yes", null).ToString(), GameTexts.FindText("str_no", null).ToString(),
+                () =>
+                {
+                    InformationManager.HideInquiry();
+
+                    try
+                    {
+                        PlacementSupported = false;
+                        ShowPortPosHelp();
+                        ShowGhostPortVisualEntity(true);
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        LogManager.Log.NotifyBad(e);
+                    }
+                },
+                () =>
+                {
+                    ApplyNow();
+                    return;
+                }), true, false);
+            }
+
+            //if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && PlacementSupported)
+            //{
+            //    try
+            //    {
+            //        PlacementSupported = false;
+            //        ShowPortPosHelp();
+            //        ShowGhostPortVisualEntity(true);
+            //        return;
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        LogManager.Log.NotifyBad(e);
+            //    }
+            //}
+        }
+
+        public void StartGatePlacement()
+        {
+
+            if (Main.Settings == null || !Main.Settings.AllowGatePosition || !gateSupported)
+            {
+                StartPortPlacement();
+                return;
+            }
+
+            if (Game.Current.GameStateManager.ActiveState is not MapState mapState)
+            {
+                return;
+            }
+            if (mapState.Handler is not MapScreen mapScreen)
+            {
+                return;
+            }
+
+            if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && PlacementSupported)
             {
                 try
                 {
+                    PlacementSupported = false;
                     ShowGatePosHelp();
                     ShowGhostGateVisualEntity(true);
                     return;
@@ -1845,6 +1983,19 @@ namespace BannerlordPlayerSettlement.Behaviours
                     LogManager.Log.NotifyBad(e);
                 }
             }
+        }
+
+        private static void ShowPortPosHelp(bool forceShow = false)
+        {
+            if (Main.Settings!.DisableAutoHints && !forceShow)
+            {
+                return;
+            }
+            TextObject portPosMessage = new TextObject("{=player_settlement_43}Choose your port position. \r\nPress {HELP_KEY} for help. \r\nClick {MOUSE_CLICK} anywhere to apply or press {ESC_KEY} to go back to previous.");
+            portPosMessage.SetTextVariable("HELP_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(Main.Submodule!.HelpKey.GetInputKey().ToString()));
+            portPosMessage.SetTextVariable("ESC_KEY", TaleWorlds.Core.HyperlinkTexts.GetKeyHyperlinkText(InputKey.Escape.ToString()));
+            portPosMessage.SetTextVariable("MOUSE_CLICK", HyperlinkTexts.GetKeyHyperlinkText(InputKey.LeftMouseButton.ToString()));
+            MBInformationManager.AddQuickInformation(portPosMessage, Main.Settings.HintDurationSeconds * 1000, Hero.MainHero?.CharacterObject);
         }
 
         private static void ShowGatePosHelp(bool forceShow = false)
@@ -1871,7 +2022,10 @@ namespace BannerlordPlayerSettlement.Behaviours
                 return;
             }
 
-            if (applyPending != null && mapScreen.SceneLayer.Input.GetIsMouseActive() && mapScreen.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            if (applyPending != null &&
+                (
+                    (mapScreen.SceneLayer.Input.GetIsMouseActive() && PlacementSupported))
+                )
             {
                 try
                 {
@@ -1905,12 +2059,17 @@ namespace BannerlordPlayerSettlement.Behaviours
             OverwriteRequest = null;
 
             gateSupported = false;
+            portSupported = false;
             ghostGateVisualEntity = null;
+            ghostPortVisualEntity = null;
             gatePlacementFrame = null;
+            portPlacementFrame = null;
 
             ResetDeepEdits();
 
             settlementVisualEntityChildren.Clear();
+
+            PlacementSupported = false;
 
             _onReset?.Invoke();
             LogManager.EventTracer.Trace();
@@ -1933,6 +2092,9 @@ namespace BannerlordPlayerSettlement.Behaviours
 
             ghostGateVisualEntity?.ClearEntity();
             ghostGateVisualEntity = null;
+
+            ghostPortVisualEntity?.ClearEntity();
+            ghostPortVisualEntity = null;
 
             LogManager.EventTracer.Trace();
         }
@@ -2053,7 +2215,9 @@ namespace BannerlordPlayerSettlement.Behaviours
                 return;
             }
 
+            PlacementSupported = false;
             gateSupported = settlementType != SettlementType.Village;
+            portSupported = Main.IsWarSails && settlementType == SettlementType.Town && target.HasPort;
 
             var title = new TextObject("{=player_settlement_42}Rebuild {SETTLEMENT}");
             title.SetTextVariable("SETTLEMENT", target.Name);
@@ -2144,6 +2308,39 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     {
                                         node.Attributes["gate_posY"].Value = gPos.Y.ToString();
                                     }
+                                }
+
+                                if (portSupported && Main.IsWarSails)
+                                {
+                                    // If had a port, keep port
+                                    var pPos = portPlacementFrame?.origin != null ? portPlacementFrame.Value.origin.AsVec2 : target.PortPosition.ToVec2();
+
+                                    if (pPos != Vec2.Invalid)
+                                    {
+                                        if (node.Attributes["port_posX"] == null)
+                                        {
+                                            XmlAttribute portPosXAttribute = node.OwnerDocument.CreateAttribute("port_posX");
+                                            portPosXAttribute.Value = pPos.X.ToString();
+                                            node.Attributes.SetNamedItem(portPosXAttribute);
+                                        }
+                                        else
+                                        {
+                                            node.Attributes["port_posX"].Value = pPos.X.ToString();
+                                        }
+
+                                        if (node.Attributes["port_posY"] == null)
+                                        {
+                                            XmlAttribute portPosYAttribute = node.OwnerDocument.CreateAttribute("port_posY");
+                                            portPosYAttribute.Value = pPos.Y.ToString();
+                                            node.Attributes.SetNamedItem(portPosYAttribute);
+                                        }
+                                        else
+                                        {
+                                            node.Attributes["port_posY"].Value = pPos.Y.ToString();
+                                        }
+
+                                    }
+
                                 }
                             }
 
@@ -2409,6 +2606,8 @@ namespace BannerlordPlayerSettlement.Behaviours
         {
             SettlementType settlementType = target.GetSettlementType();
             gateSupported = settlementType != SettlementType.Village;
+            portSupported = Main.IsWarSails && settlementType == SettlementType.Town;
+            PlacementSupported = false;
 
             InformationManager.ShowTextInquiry(new TextInquiryData(new TextObject("{=player_settlement_39}Rebuild Player Settlement").ToString(), new TextObject("{=player_settlement_03}What would you like to name your settlement?").ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
                 (string settlementName) =>
@@ -2502,6 +2701,38 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     {
                                         node.Attributes["gate_posY"].Value = gPos.Y.ToString();
                                     }
+                                }
+
+                                if (portSupported && Main.IsWarSails && portPlacementFrame != null)
+                                {
+                                    var pPos = portPlacementFrame?.origin != null ? portPlacementFrame.Value.origin.AsVec2 : Vec2.Invalid;
+
+                                    if (pPos != Vec2.Invalid)
+                                    {
+                                        if (node.Attributes["port_posX"] == null)
+                                        {
+                                            XmlAttribute portPosXAttribute = node.OwnerDocument.CreateAttribute("port_posX");
+                                            portPosXAttribute.Value = pPos.X.ToString();
+                                            node.Attributes.SetNamedItem(portPosXAttribute);
+                                        }
+                                        else
+                                        {
+                                            node.Attributes["port_posX"].Value = pPos.X.ToString();
+                                        }
+
+                                        if (node.Attributes["port_posY"] == null)
+                                        {
+                                            XmlAttribute portPosYAttribute = node.OwnerDocument.CreateAttribute("port_posY");
+                                            portPosYAttribute.Value = pPos.Y.ToString();
+                                            node.Attributes.SetNamedItem(portPosYAttribute);
+                                        }
+                                        else
+                                        {
+                                            node.Attributes["port_posY"].Value = pPos.Y.ToString();
+                                        }
+
+                                    }
+
                                 }
                             }
 
@@ -2769,6 +3000,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         private void BuildCastle()
         {
+            PlacementSupported = false;
             gateSupported = true;
             Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
 
@@ -3032,6 +3264,11 @@ namespace BannerlordPlayerSettlement.Behaviours
             {
                 BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
             }
+
+            if (dailyDefault != null)
+            {
+                dailyDefault.IsCurrentlyDefault = true;
+            }
         }
 
         private Settlement CreateCastle(string settlementName, CultureObject culture, out PlayerSettlementItem castleItem)
@@ -3151,6 +3388,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         private void BuildVillage()
         {
+            PlacementSupported = false;
             gateSupported = false;
             if (Main.Settings!.AutoDetermineVillageOwner)
             {
@@ -3708,7 +3946,9 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         private void BuildTown()
         {
+            PlacementSupported = false;
             gateSupported = true;
+            portSupported = Main.IsWarSails;
             Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
 
             InformationManager.ShowTextInquiry(new TextInquiryData(new TextObject("{=player_settlement_02}Create Player Settlement").ToString(), new TextObject("{=player_settlement_03}What would you like to name your settlement?").ToString(), true, true, GameTexts.FindText("str_ok", null).ToString(), GameTexts.FindText("str_cancel", null).ToString(),
@@ -3840,6 +4080,44 @@ namespace BannerlordPlayerSettlement.Behaviours
                         if (rc is RecruitmentCampaignBehavior recruitmentCampaignBehavior)
                         {
                             recruitmentCampaignBehavior.NewSettlementBuilt(townSettlement);
+                        }
+
+                        if (portSupported && townSettlement.HasPort)
+                        {
+                            if (ShipProductionCampaignBehaviorType == null)
+                            {
+                                if (WarSailsAssembly == null)
+                                {
+                                    WarSailsAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.StartsWith("NavalDLC, ", StringComparison.InvariantCultureIgnoreCase));
+
+                                }
+                                if (WarSailsAssembly != null)
+                                {
+                                    ShipProductionCampaignBehaviorType = WarSailsAssembly.GetType("NavalDLC.CampaignBehaviors.ShipProductionCampaignBehavior", false, true);
+
+                                }
+
+                            }
+
+                            if (ShipProductionCampaignBehaviorType != null)
+                            {
+                                var ShipProductionCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(c => c.GetType() == ShipProductionCampaignBehaviorType);
+
+                                if (DailyTickTownMethod == null)
+                                {
+                                    DailyTickTownMethod = AccessTools.Method(ShipProductionCampaignBehaviorType, "DailyTickTown");
+
+                                }
+                                if (DailyTickTownMethod != null && ShipProductionCampaignBehavior != null)
+                                {
+                                    DailyTickTownMethod.Invoke(ShipProductionCampaignBehavior, new object[] { town });
+                                }
+                            }
+
+                            if (town.AvailableShips != null && town.AvailableShips.Count == 0)
+                            {
+                                ForceAddTownShips(town);
+                            }
                         }
 
 
@@ -3980,6 +4258,24 @@ namespace BannerlordPlayerSettlement.Behaviours
             return templates;
         }
 
+        private void ForceAddTownShips(Town town, int count = 5)
+        {
+            if (!Main.IsWarSails)
+            {
+                return;
+            }
+
+            MBList<ShipHull> mBList = Kingdom.All.SelectMany<Kingdom, ShipHull>((Kingdom x) => x.Culture.AvailableShipHulls).ToMBList<ShipHull>();
+            string item = String.Empty;
+            int num = count;
+            ShipHull randomElement = mBList.GetRandomElement<ShipHull>();
+            for (int i = 0; i < num; i++)
+            {
+                Ship ship = new Ship(randomElement);
+                town.AvailableShips.Add(ship);
+            }
+        }
+
         private void StartSettlementPlacement()
         {
             UpdateSettlementVisualEntity(true, retry: true);
@@ -4063,6 +4359,11 @@ namespace BannerlordPlayerSettlement.Behaviours
             {
                 BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
             }
+
+            if (dailyDefault != null)
+            {
+                dailyDefault.IsCurrentlyDefault = true;
+            }
         }
 
         private Settlement CreateTown(string settlementName, CultureObject culture, out PlayerSettlementItem townItem)
@@ -4114,6 +4415,38 @@ namespace BannerlordPlayerSettlement.Behaviours
                 {
                     node.Attributes["gate_posY"].Value = gPos.Y.ToString();
                 }
+            }
+
+            if (portSupported && Main.IsWarSails && portPlacementFrame != null)
+            {
+                var pPos = portPlacementFrame?.origin != null ? portPlacementFrame.Value.origin.AsVec2 : Vec2.Invalid;
+
+                if (pPos != Vec2.Invalid)
+                {
+                    if (node.Attributes["port_posX"] == null)
+                    {
+                        XmlAttribute portPosXAttribute = node.OwnerDocument.CreateAttribute("port_posX");
+                        portPosXAttribute.Value = pPos.X.ToString();
+                        node.Attributes.SetNamedItem(portPosXAttribute);
+                    }
+                    else
+                    {
+                        node.Attributes["port_posX"].Value = pPos.X.ToString();
+                    }
+
+                    if (node.Attributes["port_posY"] == null)
+                    {
+                        XmlAttribute portPosYAttribute = node.OwnerDocument.CreateAttribute("port_posY");
+                        portPosYAttribute.Value = pPos.Y.ToString();
+                        node.Attributes.SetNamedItem(portPosYAttribute);
+                    }
+                    else
+                    {
+                        node.Attributes["port_posY"].Value = pPos.Y.ToString();
+                    }
+
+                }
+
             }
 
 
@@ -4239,7 +4572,18 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                 string prefabId = template.Id;
                 string entityId = GhostSettlementEntityId;
-                settlementVisualEntity = Campaign.Current.MapSceneWrapper.AddPrefabEntityToMapScene(ref mapScene, ref entityId, ref position2D, ref prefabId);
+
+                Exception addError = null;
+                settlementVisualEntity = Campaign.Current.MapSceneWrapper.AddPrefabEntityToMapScene(ref mapScene, ref entityId, ref position2D, ref prefabId, (ex) =>
+                {
+                    addError = ex;
+                });
+
+                if (addError != null && addError is AccessViolationException)
+                {
+                    throw new AccessViolationException(addError.Message, addError);
+                }
+
                 var settlementVisualEntity2 = mapScene.GetCampaignEntityWithName(GhostSettlementEntityId);
                 if (settlementVisualEntity != settlementVisualEntity2)
                 {
@@ -4328,6 +4672,59 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
         }
 
+        private void ShowGhostPortVisualEntity(bool retry = false)
+        {
+            try
+            {
+                LogManager.EventTracer.Trace($"ShowGhostPortVisualEntity noRetry={retry}");
+
+                //ClearEntities();
+                portPlacementFrame = null;
+
+                Debug.Print($"Requesting swap model for port ghost build to: {GhostPortEntityId}", 2, Debug.DebugColor.Purple);
+                LogManager.EventTracer.Trace($"Requesting swap model for port ghost build to: {GhostPortEntityId}");
+
+                var mapScene = ((MapScene) Campaign.Current.MapSceneWrapper).Scene;
+                Vec2 position2D = MobileParty.MainParty.GetPosition2D;
+
+                string prefabId = GhostPortPrefabId;
+                string entityId = GhostPortEntityId;
+                ghostPortVisualEntity = Campaign.Current.MapSceneWrapper.AddPrefabEntityToMapScene(ref mapScene, ref entityId, ref position2D, ref prefabId);
+                var ghostEntity2 = mapScene.GetCampaignEntityWithName(GhostPortEntityId);
+                if (ghostPortVisualEntity != ghostEntity2)
+                {
+                    LogManager.EventTracer.Trace($"settlementVisualEntity != settlementVisualEntity2 - Prefab: '{prefabId}', Entity: '{entityId}'");
+                }
+                ghostPortVisualEntity?.AddBodyFlags(BodyFlags.DoNotCollideWithRaycast | BodyFlags.DontCollideWithCamera | BodyFlags.DontTransferToPhysicsEngine | BodyFlags.CommonCollisionExcludeFlagsForEditor | BodyFlags.CommonCollisionExcludeFlags | BodyFlags.CommonFocusRayCastExcludeFlags | BodyFlags.CommonFlagsThatDoNotBlockRay);
+                previousVisualUpdateException = null;
+
+                if (ghostPortVisualEntity == null)
+                {
+                    // Cannot place port, going straight to apply
+                    ClearEntities();
+                    ApplyNow();
+                }
+            }
+            catch (Exception e)
+            {
+                bool rethrow = previousVisualUpdateException != null;
+                if (!rethrow)
+                {
+                    previousVisualUpdateException = e;
+                }
+                LogManager.Log.NotifyBad(e);
+                if (retry)
+                {
+                    // Retry once without allowing another retry to avoid stackoverflow loops
+                    ShowGhostPortVisualEntity(retry: false);
+                }
+                else if (rethrow)
+                {
+                    throw;
+                }
+            }
+        }
+
         private void ShowGhostGateVisualEntity(bool retry = false)
         {
             try
@@ -4405,6 +4802,49 @@ namespace BannerlordPlayerSettlement.Behaviours
             inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VineYard, DefaultVillageTypes.VineYard.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VineYard.PrimaryProduction), true, DefaultVillageTypes.VineYard.ShortName.ToString()));
             inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VlandianHorseRanch, DefaultVillageTypes.VlandianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction.Name.ToString()));
             inquiryElements.Add(new InquiryElement(DefaultVillageTypes.WheatFarm, DefaultVillageTypes.WheatFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.WheatFarm.PrimaryProduction), true, DefaultVillageTypes.WheatFarm.PrimaryProduction.Name.ToString()));
+
+            // Naval Village types seem to be unsupported, and cause crashes
+            //if (Main.IsWarSails)
+            //{
+            //    if (NavalVillageTypesType == null)
+            //    {
+            //        if (WarSailsAssembly == null)
+            //        {
+            //            WarSailsAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.StartsWith("NavalDLC, ", StringComparison.InvariantCultureIgnoreCase));
+
+            //        }
+            //        if (WarSailsAssembly != null)
+            //        {
+            //            NavalVillageTypesType = WarSailsAssembly.GetType("NavalDLC.Settlements.NavalVillageTypes", false, true);
+            //        }
+            //    }
+
+            //    if (NavalVillageTypesType != null)
+            //    {
+            //        System.Reflection.PropertyInfo[] staticProperties = NavalVillageTypesType.GetProperties(System.Reflection.BindingFlags.Public |
+            //                                                                  System.Reflection.BindingFlags.NonPublic |
+            //                                                                  System.Reflection.BindingFlags.Static);
+
+            //        foreach (System.Reflection.PropertyInfo property in staticProperties)
+            //        {
+            //            if (property.CanRead && property.PropertyType == typeof(VillageType))
+            //            {
+            //                try
+            //                {
+            //                    var extraVillageType = property.GetValue(null);
+            //                    if (extraVillageType != null && extraVillageType is VillageType navalVillageType)
+            //                    {
+            //                        inquiryElements.Add(new InquiryElement(navalVillageType, navalVillageType.ShortName.ToString(), new ItemImageIdentifier(navalVillageType.PrimaryProduction), true, navalVillageType.PrimaryProduction.Name.ToString()));
+            //                    }
+            //                }
+            //                catch (Exception e)
+            //                {
+            //                    LogManager.Log.NotifyBad(e);
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             return inquiryElements;
         }

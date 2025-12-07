@@ -74,11 +74,12 @@ namespace BannerlordPlayerSettlement.Patches
             if (__instance.SceneLayer.Input.IsHotKeyReleased("ToggleEscapeMenu") &&
                     PlayerSettlementBehaviour.Instance != null &&
                     (PlayerSettlementBehaviour.Instance.IsPlacingSettlement ||
+                    PlayerSettlementBehaviour.Instance.IsPlacingPort ||
                         PlayerSettlementBehaviour.Instance.IsPlacingGate))
             {
                 if (!____mapViewsContainer.IsThereAnyViewIsEscaped())
                 {
-                    if (PlayerSettlementBehaviour.Instance.IsPlacingGate)
+                    if (PlayerSettlementBehaviour.Instance.IsPlacingGate || PlayerSettlementBehaviour.Instance.IsPlacingPort)
                     {
                         PlayerSettlementBehaviour.Instance.RefreshVisualSelection();
                         return false;
@@ -96,12 +97,17 @@ namespace BannerlordPlayerSettlement.Patches
         public static bool HandleLeftMouseButtonClick(ref MapScreen __instance, MapEntityVisual visualOfSelectedEntity, CampaignVec2 intersectionPoint, PathFaceRecord mouseOverFaceIndex, bool isDoubleClick)
         {
 
-            if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingGate && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingPort && !intersectionPoint.IsOnLand && mouseOverFaceIndex.IsValid() && PlayerSettlementBehaviour.Instance.PlacementSupported)
             {
                 PlayerSettlementBehaviour.Instance.ApplyNow();
                 return false;
             }
-            else if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement && __instance.SceneLayer.ActiveCursor == TaleWorlds.ScreenSystem.CursorType.Default)
+            else if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingGate && intersectionPoint.IsOnLand && PlayerSettlementBehaviour.Instance.PlacementSupported)
+            {
+                PlayerSettlementBehaviour.Instance.StartPortPlacement();
+                return false;
+            }
+            else if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null && PlayerSettlementBehaviour.Instance.IsPlacingSettlement && intersectionPoint.IsOnLand && PlayerSettlementBehaviour.Instance.PlacementSupported)
             {
                 if (PlayerSettlementBehaviour.Instance.IsDeepEdit)
                 {
@@ -112,5 +118,19 @@ namespace BannerlordPlayerSettlement.Patches
                 return false;
             }
             return true;
-        } }
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(CheckCursorState))]
+        public static void CheckCursorState(ref MapScreen __instance)
+        {
+            if (__instance.SceneLayer.Input.GetIsMouseActive() && PlayerSettlementBehaviour.Instance != null)
+            {
+                if (PlayerSettlementBehaviour.Instance.IsPlacingPort || PlayerSettlementBehaviour.Instance.IsPlacingGate || PlayerSettlementBehaviour.Instance.IsPlacingSettlement)
+                {
+                    __instance.SceneLayer.ActiveCursor = PlayerSettlementBehaviour.Instance.PlacementSupported ? TaleWorlds.ScreenSystem.CursorType.Default : TaleWorlds.ScreenSystem.CursorType.Disabled;
+                }
+            }
+        }
+    }
 }

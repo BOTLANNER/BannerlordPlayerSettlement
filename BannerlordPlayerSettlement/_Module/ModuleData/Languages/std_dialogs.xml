@@ -48,6 +48,12 @@
         <string id="player_settlement_40" text="We should rebuild this settlement." />
         <string id="player_settlement_41" text="Rebuild Settlement" />
         <string id="player_settlement_42" text="Rebuild {SETTLEMENT}" />
-    
+      
+      <!-- V7 War Sails texts -->
+      <string id="player_settlement_43" text="Choose your port position. \r\nPress {HELP_KEY} for help. \r\nClick {MOUSE_CLICK} anywhere to apply or press {ESC_KEY} to go back to previous." />
+      <string id="player_settlement_44" text="Add a Port" />
+      <string id="player_settlement_45" text="Do you want to add a port to this settlement?" />
+
+
     </strings>
 </base>

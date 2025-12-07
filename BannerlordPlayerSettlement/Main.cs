@@ -142,6 +142,8 @@ namespace BannerlordPlayerSettlement
 
         private static readonly MBList<string?> _blacklistedTemplates = new();
 
+        public static bool IsWarSails => ModuleHelper.IsModuleActive(CampaignData.NavalDLCStringId);
+
         public Main()
         {
             //Ctor
@@ -482,6 +484,7 @@ namespace BannerlordPlayerSettlement
                                 doc.Load(subModuleFile);
 
                                 var templatesDir = doc.SelectSingleNode("descendant::PlayerSettlementsTemplates")?.Attributes?["path"]?.Value;
+                                var warSailsTemplatesDir = doc.SelectSingleNode("descendant::PlayerSettlementsWarSailsTemplates")?.Attributes?["path"]?.Value;
                                 var blacklistFile = doc.SelectSingleNode("descendant::PlayerSettlementsTemplatesBlacklist")?.Attributes?["path"]?.Value;
                                 if (!string.IsNullOrEmpty(blacklistFile) && File.Exists(Path.Combine(modulePath, blacklistFile)))
                                 {
@@ -534,6 +537,49 @@ namespace BannerlordPlayerSettlement
 
                                     }
                                     LogManager.Log.NotifyGood($"Loaded '{addOnModule!.Name}' Templates");
+                                }
+                                if (IsWarSails && !string.IsNullOrEmpty(warSailsTemplatesDir) && Directory.Exists(Path.Combine(modulePath, warSailsTemplatesDir)))
+                                {
+                                    warSailsTemplatesDir = Path.Combine(modulePath, warSailsTemplatesDir);
+                                    foreach (var templateFile in Directory.GetFiles(warSailsTemplatesDir))
+                                    {
+                                        try
+                                        {
+                                            if (!string.IsNullOrEmpty(templateFile) && File.Exists(templateFile))
+                                            {
+                                                var templateDoc = new XmlDocument();
+                                                try
+                                                {
+                                                    templateDoc.Load(templateFile);
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    LogManager.EventTracer.Trace(new List<string> { e.Message, e.StackTrace });
+                                                    continue;
+                                                }
+                                                var cultureSettlementInfo = new CultureSettlementTemplate
+                                                {
+                                                    FromModule = addOnModule!.Id,
+                                                    Document = templateDoc,
+                                                    TemplateModifier = templateDoc.ChildNodes?[0]?.Attributes?["template_modifier"]?.Value ?? "",
+                                                    CultureId = templateDoc.ChildNodes?[0]?.Attributes?["culture_template"]?.Value ?? ""
+
+                                                };
+
+                                                if (!templates.ContainsKey(cultureSettlementInfo.CultureId))
+                                                {
+                                                    templates[cultureSettlementInfo.CultureId] = new List<CultureSettlementTemplate>();
+                                                }
+                                                templates[cultureSettlementInfo.CultureId].Add(cultureSettlementInfo);
+                                            }
+                                        }
+                                        catch (System.Exception e)
+                                        {
+                                            LogManager.Log.NotifyBad(e);
+                                        }
+
+                                    }
+                                    LogManager.Log.NotifyGood($"Loaded '{addOnModule!.Name}' Templates for War Sails DLC");
                                 }
                             }
                         }

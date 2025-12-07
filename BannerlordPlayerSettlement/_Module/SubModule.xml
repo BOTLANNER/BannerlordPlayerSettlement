@@ -1,7 +1,7 @@
 ﻿<Module>
   <Name value="Player Settlement"/>
   <Id value="PlayerSettlement"/>
-  <Version value="v7.1.0"/>
+  <Version value="v7.2.0"/>
   <Url value="https://www.nexusmods.com/mountandblade2bannerlord/mods/7298" />
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
@@ -12,6 +12,7 @@
   <UpdateInfo value="NexusMods:7298" />
   <!-- Used by PlayerSettlement to dynamically add more settlement variants -->
   <PlayerSettlementsTemplates path="ModuleData/Player_Settlement_Templates" />
+  <PlayerSettlementsWarSailsTemplates path="ModuleData/Player_Settlement_Templates_War_Sails" />
   <!-- Used by PlayerSettlement to dynamically blacklist settlement variants -->
   <PlayerSettlementsTemplatesBlacklist path="ModuleData/template_blacklist.txt" />
   <DependedModules>
@@ -35,6 +36,7 @@
     <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="1.0.0.*" />
     <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="1.0.0.*" />
     <DependedModuleMetadata id="CustomBattle" order="LoadBeforeThis" version="1.0.0.*" optional="true" />
+    <DependedModuleMetadata id="NavalDLC" order="LoadBeforeThis" version="v1.0.5"  optional="true"  />
   </DependedModuleMetadatas>
   <SubModules>
     <SubModule>

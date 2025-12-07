@@ -31,7 +31,7 @@ namespace BannerlordPlayerSettlement.Patches
             {
                 PlayerSettlementItem? playerSettlementItem = null;
                 OverwriteSettlementItem? overwriteSettlements = null;
-                if (entityId?.IsPlayerBuiltStringId(out playerSettlementItem)  ?? false)
+                if (entityId?.IsPlayerBuiltStringId(out playerSettlementItem) ?? false)
                 {
                     if (entityId != null && entityId.StartsWith("player_settlement_town_"))
                     {
@@ -73,7 +73,7 @@ namespace BannerlordPlayerSettlement.Patches
             return true;
         }
 
-        public static GameEntity? AddPrefabEntityToMapScene(this IMapScene __instance, ref Scene ____scene, ref string entityId, ref Vec2 position, ref string prefabId)
+        public static GameEntity? AddPrefabEntityToMapScene(this IMapScene __instance, ref Scene ____scene, ref string entityId, ref Vec2 position, ref string prefabId, Action<Exception> onError = null)
         {
             try
             {
@@ -93,7 +93,11 @@ namespace BannerlordPlayerSettlement.Patches
                     return gameEntity;
                 }
             }
-            catch (System.Exception e) { LogManager.Log.NotifyBad(e); }
+            catch (System.Exception e)
+            {
+                LogManager.Log.NotifyBad(e);
+                onError?.Invoke(e);
+            }
             return null;
         }
 

@@ -136,6 +136,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="_Module\ModuleData\Player_Settlement_Templates_War_Sails\" />
+  </ItemGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy /s /y &quot;$(ProjectDir)_Module\&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.dll&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\bin\Win64_Shipping_Client\&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.pdb&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\bin\Win64_Shipping_Client\&quot;&#xD;&#xA;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.dll&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\bin\Gaming.Desktop.x64_Shipping_Client\&quot;&#xD;&#xA;xcopy /y &quot;$(TargetDir)*.pdb&quot; &quot;$(GameFolder)\Modules\PlayerSettlement\bin\Gaming.Desktop.x64_Shipping_Client\&quot;" />
   </Target>

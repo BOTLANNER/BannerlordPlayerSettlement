@@ -3019,8 +3019,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                 castle.BuildingsInProgress.Enqueue(building1);
             }
 
-            Building dailyDefault = castleSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
-            if (dailyDefault == null)
+            Building dailyDefault = castleSettlement.Town.Buildings.FirstOrDefault(b => b.IsCurrentlyDefault);
+            if (dailyDefault == null || !dailyDefault.BuildingType.IsDailyProject)
             {
                 dailyDefault = castleSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
                 BuildingHelper.ChangeDefaultBuilding(dailyDefault, castleSettlement.Town);
@@ -3028,7 +3028,7 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
 
 
-            if (castleSettlement.Town.CurrentDefaultBuilding == null)
+            if (castleSettlement.Town.BuildingsInProgress.IsEmpty() && castleSettlement.Town.CurrentDefaultBuilding == null)
             {
                 BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
             }
@@ -4059,7 +4059,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 dailyDefault.IsCurrentlyDefault = true;
             }
 
-            if (townSettlement.Town.CurrentDefaultBuilding == null)
+            if (townSettlement.Town.BuildingsInProgress.IsEmpty() && townSettlement.Town.CurrentDefaultBuilding == null)
             {
                 BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
             }

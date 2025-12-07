@@ -3028,10 +3028,10 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
 
 
-            if (castleSettlement.Town.BuildingsInProgress.IsEmpty() && castleSettlement.Town.CurrentDefaultBuilding == null)
-            {
-                BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
-            }
+            //if (castleSettlement.Town.BuildingsInProgress.IsEmpty() && castleSettlement.Town.CurrentDefaultBuilding == null)
+            //{
+            //    BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
+            //}
         }
 
         private Settlement CreateCastle(string settlementName, CultureObject culture, out PlayerSettlementItem castleItem)
@@ -4051,18 +4051,18 @@ namespace BannerlordPlayerSettlement.Behaviours
                 town.BuildingsInProgress.Enqueue(building1);
             }
 
-            Building dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
-            if (dailyDefault == null)
+            Building dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.IsCurrentlyDefault);
+            if (dailyDefault == null || !dailyDefault.BuildingType.IsDailyProject)
             {
                 dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
                 BuildingHelper.ChangeDefaultBuilding(dailyDefault, townSettlement.Town);
                 dailyDefault.IsCurrentlyDefault = true;
             }
 
-            if (townSettlement.Town.BuildingsInProgress.IsEmpty() && townSettlement.Town.CurrentDefaultBuilding == null)
-            {
-                BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
-            }
+            //if (townSettlement.Town.BuildingsInProgress.IsEmpty() && townSettlement.Town.CurrentDefaultBuilding == null)
+            //{
+            //    BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
+            //}
         }
 
         private Settlement CreateTown(string settlementName, CultureObject culture, out PlayerSettlementItem townItem)

@@ -4051,8 +4051,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                 town.BuildingsInProgress.Enqueue(building1);
             }
 
-            Building dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
-            if (dailyDefault == null)
+            Building dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.IsCurrentlyDefault);
+            if (dailyDefault == null || !dailyDefault.BuildingType.IsDailyProject)
             {
                 dailyDefault = townSettlement.Town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
                 BuildingHelper.ChangeDefaultBuilding(dailyDefault, townSettlement.Town);

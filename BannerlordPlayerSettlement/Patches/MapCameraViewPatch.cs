@@ -29,6 +29,7 @@ namespace BannerlordPlayerSettlement.Patches
         {
             if (PlayerSettlementBehaviour.Instance != null && 
                 !PlayerSettlementBehaviour.Instance.IsPlacingGate && 
+                !PlayerSettlementBehaviour.Instance.IsPlacingPort && 
                 PlayerSettlementBehaviour.Instance.IsPlacingSettlement && 
                 Game.Current.GameStateManager.ActiveState is MapState mapState && 
                 mapState.Handler is MapScreen mapScreen &&

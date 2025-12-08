@@ -4,6 +4,10 @@
       "commandName": "Project",
       "commandLineArgs": "\"Modules/SandBox/ModuleData/settlements.xml\" \"Modules/SandBox/SceneObj/Main_map/scene.xscene\" 10 5 15 4 \"_default\""
     },
+    "WarSails": {
+      "commandName": "Project",
+      "commandLineArgs": "\"Modules/NavalDLC/ModuleData/settlements.xml\" \"Modules/NavalDLC/SceneObj/Main_map/scene.xscene\" 10 5 15 4 \"_warsails\" true \"nord\" "
+    },
     "RoT": {
       "commandName": "Project",
       "commandLineArgs": "\"Modules/ROT-Map/ModuleData/settlements.xml\" \"Modules/ROT-Map/SceneObj/modded_main_map/scene.xscene\" 10 5 15 4 \"_RoT\""

@@ -4,16 +4,22 @@ using System.IO;
 using System.Xml;
 
 using System.Linq;
+using System.Text;
+using System.Xml.Linq;
 
 namespace PlayerSettlementPrefabGenerator
 {
-    class Program
+    static class Program
     {
         private static int townCount;
         private static int villagePerTownCount;
         private static int castleCount;
         private static int villagePerCastleCount;
         private static string modifier;
+
+        private static bool noPretty = false;
+        private static bool portsOnly = false;
+        private static string[] fullCultureOverride = Array.Empty<string>();
 
         static void Main(string[] args)
         {
@@ -35,7 +41,18 @@ namespace PlayerSettlementPrefabGenerator
                 modifier = args[6];
             }
 
+            if (args.Length > 7)
+            {
+                bool.TryParse(args[7], out portsOnly);
+            }
+
+            if (portsOnly && args.Length > 8)
+            {
+                fullCultureOverride = args[8].Split('|');
+            }
+
             bool prependGameDir = !args.Contains("--no-prepend");
+            noPretty = !args.Contains("--pretty");
 
             List<XmlDocument> settlementsDescriptors = new();
             foreach (var item in settlementsDescriptorsFiles.Split("|"))
@@ -124,12 +141,12 @@ namespace PlayerSettlementPrefabGenerator
                 templateModifier.Value = modifier;
                 root.Attributes.SetNamedItem(templateModifier);
 
-                File.WriteAllText(Path.Combine(templatesOutDir, $"{item.Key}_settlements_templates{modifier}.xml"), item.Value.Settlements.OuterXml);
+                File.WriteAllText(Path.Combine(templatesOutDir, $"{item.Key}_settlements_templates{modifier}.xml"), item.Value.Settlements.OuterXml.PrettyXml());
 
-                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_town_prefabs{modifier}.xml"), item.Value.TownPrefabs.OuterXml);
-                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_town_village_prefabs{modifier}.xml"), item.Value.TownVillagePrefabs.OuterXml);
-                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_castle_prefabs{modifier}.xml"), item.Value.CastlePrefabs.OuterXml);
-                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_castle_village_prefabs{modifier}.xml"), item.Value.CastleVillagePrefabs.OuterXml);
+                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_town_prefabs{modifier}.xml"), item.Value.TownPrefabs.OuterXml.PrettyXml());
+                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_town_village_prefabs{modifier}.xml"), item.Value.TownVillagePrefabs.OuterXml.PrettyXml());
+                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_castle_prefabs{modifier}.xml"), item.Value.CastlePrefabs.OuterXml.PrettyXml());
+                File.WriteAllText(Path.Combine(prefabsOutDir, $"{item.Key}_player_settlements_castle_village_prefabs{modifier}.xml"), item.Value.CastleVillagePrefabs.OuterXml.PrettyXml());
             }
 
             Console.WriteLine();
@@ -217,6 +234,14 @@ namespace PlayerSettlementPrefabGenerator
                                 continue;
                             }
 
+                            if (portsOnly && !fullCultureOverride.Contains(culture.ToLower(), StringComparer.InvariantCultureIgnoreCase))
+                            {
+                                if (i.Attributes["port_posX"] == null)
+                                {
+                                    continue;
+                                }
+                            }
+
                             if (!infos.ContainsKey(culture))
                             {
                                 var info0 = new CultureSettlementInfo
@@ -288,6 +313,15 @@ namespace PlayerSettlementPrefabGenerator
                                 if (i.Attributes["gate_posY"] != null)
                                 {
                                     i.Attributes["gate_posY"].Value = "{{G_POS_Y}}";
+                                }
+
+                                if (i.Attributes["port_posX"] != null)
+                                {
+                                    i.Attributes.Remove(i.Attributes["port_posX"]);
+                                }
+                                if (i.Attributes["port_posY"] != null)
+                                {
+                                    i.Attributes.Remove(i.Attributes["port_posY"]);
                                 }
                             }
 
@@ -571,5 +605,28 @@ namespace PlayerSettlementPrefabGenerator
             doc.Load(xmlReader);
             return doc;
         }
+
+        // Source - https://stackoverflow.com/a
+        // Posted by Kind Contributor, modified by community. See post 'Timeline' for change history
+        // Retrieved 2025-12-06, License - CC BY-SA 4.0
+        static string PrettyXml(this string xml)
+        {
+            if (noPretty)
+            {
+                return xml;
+            }
+            StringBuilder stringBuilder = new();
+            XElement element = XElement.Parse(xml);
+            XmlWriterSettings settings = new()
+            {
+                OmitXmlDeclaration = true,
+                Indent = true,
+                NewLineOnAttributes = true
+            };
+            using XmlWriter xmlWriter = XmlWriter.Create(stringBuilder, settings);
+            element.Save(xmlWriter);
+            return stringBuilder.ToString();
+        }
+
     }
 }

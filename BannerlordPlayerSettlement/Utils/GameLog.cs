@@ -40,6 +40,17 @@ namespace BannerlordPlayerSettlement.Utils
             Print(e.Message, Colours.Red, onlyDisplay: true);
             ToFile(new List<string> { e.Message, e.StackTrace });
         }
+
+        public void SilentException(Exception e)
+        {
+            LogManager.EventTracer.Trace(e.Message, 2);
+
+            TaleWorldsDebug.SetCrashReportCustomString(e.Message);
+            TaleWorldsDebug.SetCrashReportCustomStack(e.StackTrace);
+
+            ToFile(new List<string> { e.Message, e.StackTrace });
+        }
+
         public void NotifyBad(string text) => Print(text, Colours.Red);
         public void NotifyBad(List<string> text) => Print(text, Colours.Red);
         public void NotifyNeutral(string text) => Print(text, Colours.SkyBlue);

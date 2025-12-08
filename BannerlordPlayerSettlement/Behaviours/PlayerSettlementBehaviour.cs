@@ -85,6 +85,25 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
         }
 
+        private readonly MbEvent<Settlement> _settlementRebuild = new MbEvent<Settlement>();
+
+        public static IMbEvent<Settlement>? SettlementRebuildEvent
+        {
+            get
+            {
+                return PlayerSettlementBehaviour.Instance?._settlementRebuild;
+            }
+        }
+        private readonly MbEvent<Settlement> _settlementOverwrite = new MbEvent<Settlement>();
+
+        public static IMbEvent<Settlement>? SettlementOverwriteEvent
+        {
+            get
+            {
+                return PlayerSettlementBehaviour.Instance?._settlementOverwrite;
+            }
+        }
+
         private readonly MbEvent _onReset = new MbEvent();
 
         public static IMbEvent? OnResetEvent
@@ -2453,7 +2472,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     break;
                             }
 
-                            // TODO: On overwrite post event to allow for port checks and fixes
+                            _settlementOverwrite?.Invoke(settlement);
+
                             OnResetEvent?.ClearListeners(target);
                             SaveHandler.SaveLoad(!Main.Settings!.CreateNewSave);
                         }
@@ -2835,7 +2855,8 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     break;
                             }
 
-                            // TODO: On rebuild post event to allow for port checks and fixes
+                            _settlementRebuild?.Invoke(settlement);
+
                             OnResetEvent?.ClearListeners(target);
                             SaveHandler.SaveLoad(!Main.Settings!.CreateNewSave);
                         }

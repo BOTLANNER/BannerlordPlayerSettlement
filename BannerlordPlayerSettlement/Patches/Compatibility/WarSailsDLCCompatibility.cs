@@ -174,6 +174,8 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
             public override void RegisterEvents()
             {
                 PlayerSettlementBehaviour.SettlementCreatedEvent?.AddNonSerializedListener(this, this.SettlementCreated);
+                PlayerSettlementBehaviour.SettlementRebuildEvent?.AddNonSerializedListener(this, this.SettlementRebuilt);
+                PlayerSettlementBehaviour.SettlementOverwriteEvent?.AddNonSerializedListener(this, this.SettlementOverwritten);
 
                 CampaignEvents.OnNewGameCreatedEvent.AddNonSerializedListener(this, new Action<CampaignGameStarter>(this.OnNewGameCreated));
                 CampaignEvents.OnGameEarlyLoadedEvent.AddNonSerializedListener(this, new Action<CampaignGameStarter>(this.OnGameEarlyLoaded));
@@ -185,6 +187,21 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
             }
 
             private void SettlementCreated(Settlement settlement)
+            {
+                CheckSettlementPort(settlement, true);
+            }
+
+            private void SettlementRebuilt(Settlement settlement)
+            {
+                CheckSettlementPort(settlement, false);
+            }
+
+            private void SettlementOverwritten(Settlement settlement)
+            {
+                CheckSettlementPort(settlement, false);
+            }
+
+            private void CheckSettlementPort(Settlement settlement,bool forceShips)
             {
                 try
                 {
@@ -236,7 +253,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                             }
                         }
 
-                        if (town.AvailableShips != null && town.AvailableShips.Count == 0)
+                        if (town.AvailableShips != null && town.AvailableShips.Count == 0 && forceShips)
                         {
                             // Even though the ShipTradeCampaignBehavior would over time fill available ships, it should be prepopulated at first build.
                             ForceAddTownShips(town);

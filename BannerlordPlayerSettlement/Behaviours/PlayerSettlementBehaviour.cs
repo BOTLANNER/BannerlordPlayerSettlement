@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Xml;
 
 using BannerlordPlayerSettlement.Descriptors;
@@ -27,8 +26,6 @@ using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Extensions;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.GameState;
-using TaleWorlds.CampaignSystem.Map;
-using TaleWorlds.CampaignSystem.Naval;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
@@ -41,8 +38,6 @@ using TaleWorlds.Localization;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.ObjectSystem;
 using TaleWorlds.ScreenSystem;
-
-using GameOverlays = TaleWorlds.CampaignSystem.GameMenus.GameMenu;
 
 namespace BannerlordPlayerSettlement.Behaviours
 {
@@ -170,11 +165,6 @@ namespace BannerlordPlayerSettlement.Behaviours
         public bool IsDeepEdit => deepEdit && currentDeepTarget != null && IsPlacingSettlement && !IsPlacingGate && !IsPlacingPort;
         public bool IsPlacingGate => ghostGateVisualEntity != null && applyPending != null;
         public bool IsPlacingPort => ghostPortVisualEntity != null && applyPending != null;
-
-        private Assembly WarSailsAssembly = null;
-        private Type ShipProductionCampaignBehaviorType = null;
-        private MethodInfo DailyTickTownMethod = null;
-        private Type NavalVillageTypesType = null;
 
         public bool PlacementSupported { get; set; }
 
@@ -2435,6 +2425,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     break;
                             }
 
+                            // TODO: On overwrite post event to allow for port checks and fixes
                             OnResetEvent?.ClearListeners(target);
                             SaveHandler.SaveLoad(!Main.Settings!.CreateNewSave);
                         }
@@ -2785,7 +2776,6 @@ namespace BannerlordPlayerSettlement.Behaviours
                             target.BuiltAt = Campaign.CurrentTime;
                             target.BuildComplete = false;
 
-
                             // Rebuild cost when enabled
                             switch (settlementType)
                             {
@@ -2817,6 +2807,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                                     break;
                             }
 
+                            // TODO: On rebuild post event to allow for port checks and fixes
                             OnResetEvent?.ClearListeners(target);
                             SaveHandler.SaveLoad(!Main.Settings!.CreateNewSave);
                         }
@@ -3260,10 +3251,10 @@ namespace BannerlordPlayerSettlement.Behaviours
             }
 
 
-            if (castleSettlement.Town.CurrentDefaultBuilding == null)
-            {
-                BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
-            }
+            //if (castleSettlement.Town.CurrentDefaultBuilding == null)
+            //{
+            //    BuildingHelper.ChangeDefaultBuilding(castleSettlement.Town.Buildings.FirstOrDefault(), castleSettlement.Town);
+            //}
 
             if (dailyDefault != null)
             {
@@ -4082,45 +4073,6 @@ namespace BannerlordPlayerSettlement.Behaviours
                             recruitmentCampaignBehavior.NewSettlementBuilt(townSettlement);
                         }
 
-                        if (portSupported && townSettlement.HasPort)
-                        {
-                            if (ShipProductionCampaignBehaviorType == null)
-                            {
-                                if (WarSailsAssembly == null)
-                                {
-                                    WarSailsAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.StartsWith("NavalDLC, ", StringComparison.InvariantCultureIgnoreCase));
-
-                                }
-                                if (WarSailsAssembly != null)
-                                {
-                                    ShipProductionCampaignBehaviorType = WarSailsAssembly.GetType("NavalDLC.CampaignBehaviors.ShipProductionCampaignBehavior", false, true);
-
-                                }
-
-                            }
-
-                            if (ShipProductionCampaignBehaviorType != null)
-                            {
-                                var ShipProductionCampaignBehavior = campaignGameStarter.CampaignBehaviors.FirstOrDefault(c => c.GetType() == ShipProductionCampaignBehaviorType);
-
-                                if (DailyTickTownMethod == null)
-                                {
-                                    DailyTickTownMethod = AccessTools.Method(ShipProductionCampaignBehaviorType, "DailyTickTown");
-
-                                }
-                                if (DailyTickTownMethod != null && ShipProductionCampaignBehavior != null)
-                                {
-                                    DailyTickTownMethod.Invoke(ShipProductionCampaignBehavior, new object[] { town });
-                                }
-                            }
-
-                            if (town.AvailableShips != null && town.AvailableShips.Count == 0)
-                            {
-                                ForceAddTownShips(town);
-                            }
-                        }
-
-
                         _settlementCreated.Invoke(townItem.Settlement);
 
                         //Reset();
@@ -4258,24 +4210,6 @@ namespace BannerlordPlayerSettlement.Behaviours
             return templates;
         }
 
-        private void ForceAddTownShips(Town town, int count = 5)
-        {
-            if (!Main.IsWarSails)
-            {
-                return;
-            }
-
-            MBList<ShipHull> mBList = Kingdom.All.SelectMany<Kingdom, ShipHull>((Kingdom x) => x.Culture.AvailableShipHulls).ToMBList<ShipHull>();
-            string item = String.Empty;
-            int num = count;
-            ShipHull randomElement = mBList.GetRandomElement<ShipHull>();
-            for (int i = 0; i < num; i++)
-            {
-                Ship ship = new Ship(randomElement);
-                town.AvailableShips.Add(ship);
-            }
-        }
-
         private void StartSettlementPlacement()
         {
             UpdateSettlementVisualEntity(true, retry: true);
@@ -4355,10 +4289,10 @@ namespace BannerlordPlayerSettlement.Behaviours
                 dailyDefault.IsCurrentlyDefault = true;
             }
 
-            if (townSettlement.Town.CurrentDefaultBuilding == null)
-            {
-                BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
-            }
+            //if (townSettlement.Town.CurrentDefaultBuilding == null)
+            //{
+            //    BuildingHelper.ChangeDefaultBuilding(townSettlement.Town.Buildings.FirstOrDefault<Building>(), townSettlement.Town);
+            //}
 
             if (dailyDefault != null)
             {
@@ -4802,49 +4736,6 @@ namespace BannerlordPlayerSettlement.Behaviours
             inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VineYard, DefaultVillageTypes.VineYard.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VineYard.PrimaryProduction), true, DefaultVillageTypes.VineYard.ShortName.ToString()));
             inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VlandianHorseRanch, DefaultVillageTypes.VlandianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction.Name.ToString()));
             inquiryElements.Add(new InquiryElement(DefaultVillageTypes.WheatFarm, DefaultVillageTypes.WheatFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.WheatFarm.PrimaryProduction), true, DefaultVillageTypes.WheatFarm.PrimaryProduction.Name.ToString()));
-
-            // Naval Village types seem to be unsupported, and cause crashes
-            //if (Main.IsWarSails)
-            //{
-            //    if (NavalVillageTypesType == null)
-            //    {
-            //        if (WarSailsAssembly == null)
-            //        {
-            //            WarSailsAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName.StartsWith("NavalDLC, ", StringComparison.InvariantCultureIgnoreCase));
-
-            //        }
-            //        if (WarSailsAssembly != null)
-            //        {
-            //            NavalVillageTypesType = WarSailsAssembly.GetType("NavalDLC.Settlements.NavalVillageTypes", false, true);
-            //        }
-            //    }
-
-            //    if (NavalVillageTypesType != null)
-            //    {
-            //        System.Reflection.PropertyInfo[] staticProperties = NavalVillageTypesType.GetProperties(System.Reflection.BindingFlags.Public |
-            //                                                                  System.Reflection.BindingFlags.NonPublic |
-            //                                                                  System.Reflection.BindingFlags.Static);
-
-            //        foreach (System.Reflection.PropertyInfo property in staticProperties)
-            //        {
-            //            if (property.CanRead && property.PropertyType == typeof(VillageType))
-            //            {
-            //                try
-            //                {
-            //                    var extraVillageType = property.GetValue(null);
-            //                    if (extraVillageType != null && extraVillageType is VillageType navalVillageType)
-            //                    {
-            //                        inquiryElements.Add(new InquiryElement(navalVillageType, navalVillageType.ShortName.ToString(), new ItemImageIdentifier(navalVillageType.PrimaryProduction), true, navalVillageType.PrimaryProduction.Name.ToString()));
-            //                    }
-            //                }
-            //                catch (Exception e)
-            //                {
-            //                    LogManager.Log.NotifyBad(e);
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
 
             return inquiryElements;
         }

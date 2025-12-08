@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Linq;
 
 using BannerlordPlayerSettlement.Extensions;
 using BannerlordPlayerSettlement.Utils;
@@ -51,8 +52,55 @@ namespace BannerlordPlayerSettlement.Patches
             return true;
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(TickCurrentBuildingForTown))]
+        public static bool PreTickCurrentBuildingForTown(ref BuildingsCampaignBehavior __instance, Town town)
+        {
+            if (town.BuildingsInProgress.Count == 0)
+            {
+                Building dailyDefault = town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
+                if (dailyDefault == null)
+                {
+                    dailyDefault = town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
+                }
+                if (dailyDefault != null)
+                {
+                    BuildingHelper.ChangeDefaultBuilding(dailyDefault, town);
+                    dailyDefault.IsCurrentlyDefault = true;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        [HarmonyFinalizer]
+        [HarmonyPatch(nameof(TickCurrentBuildingForTown))]
+        public static Exception? FixTickCurrentBuildingForTown(Exception? __exception, ref BuildingsCampaignBehavior __instance)
+        {
+            if (__exception != null)
+            {
+                var e = __exception;
+                LogManager.Log.NotifyBad(e);
+            }
+            return null;
+        }
+
         private static void TickCurrentBuildingForTown(Town town)
         {
+            if (town.BuildingsInProgress.Count == 0)
+            {
+                Building dailyDefault = town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject && b.IsCurrentlyDefault);
+                if (dailyDefault == null)
+                {
+                    dailyDefault = town.Buildings.FirstOrDefault(b => b.BuildingType.IsDailyProject);
+                }
+                if (dailyDefault != null)
+                {
+                    BuildingHelper.ChangeDefaultBuilding(dailyDefault, town);
+                    dailyDefault.IsCurrentlyDefault = true;
+                }
+                return;
+            }
             if (town.BuildingsInProgress.Peek().CurrentLevel == 3)
             {
                 town.BuildingsInProgress.Dequeue();

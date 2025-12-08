@@ -25,12 +25,12 @@ namespace BannerlordPlayerSettlement.Patches
                     if (e is Exception ex)
                     {
 
-                        LogManager.Log.NotifyBad(ex);
+                        LogManager.Log.SilentException(ex);
                     }
                     else
                     {
 
-                        LogManager.Log.NotifyBad(e.ToString());
+                        LogManager.Log.ToFile(e.ToString());
                     }
 
                     __result = false;

@@ -17,6 +17,7 @@ using TaleWorlds.CampaignSystem.ComponentInterfaces;
 using TaleWorlds.CampaignSystem.Naval;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.CampaignSystem.Settlements.Buildings;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 
@@ -30,6 +31,9 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
         private Assembly? assembly;
         private Type? ShipTradeCampaignBehaviorType;
         private Type? NavalDLCShipCostModelType;
+
+        private Type? NavalBuildingTypesType;
+        private Type? NavalDLCExtensionsType;
 
         public void AddBehaviors(CampaignGameStarter gameInitializer)
         {
@@ -71,6 +75,19 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                     harmony.Patch(AccessTools.Method(NavalDLCShipCostModelType, nameof(GetShipTradeValue)), prefix: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(GetShipTradeValue)), finalizer: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(FixExceptions)));
                     harmony.Patch(AccessTools.Method(NavalDLCShipCostModelType, nameof(GetShipBaseValue)), prefix: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(GetShipBaseValue)), finalizer: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(FixExceptions)));
 
+                }
+
+                NavalBuildingTypesType = assembly.GetType("NavalDLC.Settlements.Building.NavalBuildingTypes", false, true);
+                if (NavalBuildingTypesType != null)
+                {
+                    NavalDLCExtensions.SettlementShipyardProp = AccessTools.Property(NavalBuildingTypesType, nameof(NavalDLCExtensions.SettlementShipyard));
+                }
+
+                NavalDLCExtensionsType = assembly.GetType("NavalDLC.NavalDLCExtensions", false, true);
+                if (NavalDLCExtensionsType != null)
+                {
+                    NavalDLCExtensions.GetShipyardMethod = AccessTools.Method(NavalDLCExtensionsType, nameof(NavalDLCExtensions.GetShipyard));
+                    NavalDLCExtensions.GetAvailableShipUpgradePiecesMethod = AccessTools.Method(NavalDLCExtensionsType, nameof(NavalDLCExtensions.GetAvailableShipUpgradePieces));
                 }
             }
         }
@@ -194,6 +211,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
             private void SettlementRebuilt(Settlement settlement)
             {
                 CheckSettlementPort(settlement, false);
+                CheckShipyard(settlement);
             }
 
             private void SettlementOverwritten(Settlement settlement)
@@ -201,7 +219,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                 CheckSettlementPort(settlement, false);
             }
 
-            private void CheckSettlementPort(Settlement settlement,bool forceShips)
+            private void CheckSettlementPort(Settlement settlement, bool forceShips)
             {
                 try
                 {
@@ -301,6 +319,8 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                 if (settlement != null && settlement.HasPort && settlement.IsTown && settlement.Town?.AvailableShips != null)
                 {
                     FixSettlementPortAndShips(settlement);
+
+                    CheckShipyard(settlement);
                 }
             }
 
@@ -368,12 +388,30 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                     {
                         var portSettlement = playerBuiltPorts[i];
                         FixSettlementPortAndShips(portSettlement);
+
+                        CheckShipyard(portSettlement);
                     }
                     catch (Exception e)
                     {
                         LogManager.Log.NotifyBad(e);
                     }
                 }
+            }
+
+            private static void CheckShipyard(Settlement portSettlement)
+            {
+                if (!portSettlement.HasPort || !portSettlement.IsTown)
+                {
+                    return;
+                }
+
+                // This extension adds a shipyard if not found
+                var shipyard = portSettlement.Town.GetShipyard();
+                if (shipyard == null)
+                {
+                    LogManager.Log.NotifyBad($"{portSettlement} has a port but not a shipyard!");
+                }
+
             }
 
             private static void FixSettlementPortAndShips(Settlement portSettlement)
@@ -420,16 +458,193 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                     return;
                 }
 
-                MBList<ShipHull> mBList = Kingdom.All.SelectMany<Kingdom, ShipHull>((Kingdom x) => x.Culture.AvailableShipHulls).ToMBList<ShipHull>();
-                string item = String.Empty;
-                int num = count;
-                ShipHull randomElement = mBList.GetRandomElement<ShipHull>();
-                for (int i = 0; i < num; i++)
+                try
                 {
-                    Ship ship = new Ship(randomElement);
-                    town.AvailableShips.Add(ship);
+                    MBList<ShipHull> mBList = Kingdom.All.SelectMany<Kingdom, ShipHull>((Kingdom x) => x.Culture.AvailableShipHulls).ToMBList<ShipHull>();
+                    string item = String.Empty;
+                    int num = count;
+                    //ShipHull randomElement = mBList.GetRandomElement<ShipHull>();
+                    for (int i = 0; i < num; i++)
+                    {
+                        try
+                        {
+                            ShipHull randomShipHull = GetRandomShipHull(town);
+                            if (randomShipHull == null)
+                            {
+                                continue;
+                            }
+                            Ship ship = new Ship(randomShipHull);
+                            List<ShipUpgradePiece> availableShipUpgradePieces = town.GetAvailableShipUpgradePieces();
+                            availableShipUpgradePieces.Shuffle();
+                            foreach (KeyValuePair<string, ShipSlot> availableSlot in ship.ShipHull.AvailableSlots)
+                            {
+                                if (!(MBRandom.RandomFloat > 0.5f))
+                                {
+                                    continue;
+                                }
+
+                                int numSub = MBRandom.RandomInt(availableShipUpgradePieces.Count);
+                                for (int iSub = 0; iSub < availableShipUpgradePieces.Count; iSub++)
+                                {
+                                    ShipUpgradePiece shipUpgradePiece = availableShipUpgradePieces[(iSub + numSub) % availableShipUpgradePieces.Count];
+                                    if (shipUpgradePiece.DoesPieceMatchSlot(availableSlot.Value))
+                                    {
+                                        ship.SetPieceAtSlot(availableSlot.Key, shipUpgradePiece);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            ChangeShipOwnerAction.ApplyByProduction(town.Settlement.Party, ship);
+                            CampaignEventDispatcher.Instance.OnShipCreated(ship, town.Settlement);
+                        }
+                        catch (Exception e)
+                        {
+                            LogManager.Log.NotifyBad(e);
+                        }
+                    }
+
+                    ExplainedNumber result = default(ExplainedNumber);
+                    town.AddEffectOfBuildings(BuildingEffectEnum.MaximumShipCount, ref result);
+
+                    int idealShipCountForTown = (int) result.ResultNumber;
+                    if (town.AvailableShips.Count >= idealShipCountForTown)
+                    {
+                        TryRemoveExcessShipsFromTown(town, idealShipCountForTown);
+                    }
+                }
+                catch (Exception e)
+                {
+                    // Prefer defensive coding to avoid crashes. Ignoring failures are fine here as it just means less available ships.
+                    LogManager.Log.NotifyBad(e);
                 }
             }
+
+            private static void TryRemoveExcessShipsFromTown(Town town, int idealShipCountForTown)
+            {
+                int num = town.AvailableShips.Count - idealShipCountForTown;
+                if (num <= 0)
+                {
+                    return;
+                }
+
+                List<Ship> shipsOfOtherCulture = town.AvailableShips.Where((Ship x) => !town.Culture.AvailableShipHulls.Contains(x.ShipHull)).ToList();
+                foreach (Ship item in shipsOfOtherCulture)
+                {
+                    if (MBRandom.RandomFloat < 0.7f)
+                    {
+                        DestroyShipAction.Apply(item);
+                        num--;
+                        if (num < 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (num <= 0)
+                {
+                    return;
+                }
+
+                foreach (Ship item2 in town.AvailableShips.Where((Ship x) => !shipsOfOtherCulture.Contains(x)).ToList())
+                {
+                    if (MBRandom.RandomFloat < 0.3f)
+                    {
+                        DestroyShipAction.Apply(item2);
+                        num--;
+                        if (num < 0)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            private static ShipHull GetRandomShipHull(Town town)
+            {
+                MBList<(ShipHull, float)> availableShipHullsForTown = GetAvailableShipHullsForTown(town);
+                if (availableShipHullsForTown.Count == 0)
+                {
+                    Debug.FailedAssert("Could not find ships to create.", "C:\\BuildAgent\\work\\mb3\\Source\\Bannerlord\\NavalDLC\\CampaignBehaviors\\ShipProductionCampaignBehavior.cs", "GetRandomShipHull", 231);
+                }
+
+                return MBRandom.ChooseWeighted(availableShipHullsForTown);
+            }
+
+            private static MBList<(ShipHull, float)> GetAvailableShipHullsForTown(Town town)
+            {
+                MBList<(ShipHull, float)> mBList = new MBList<(ShipHull, float)>();
+                foreach (ShipHull availableShipHull in town.Culture.AvailableShipHulls)
+                {
+                    if (CanTownCreateShipFromHull(town, availableShipHull))
+                    {
+                        mBList.Add((availableShipHull, availableShipHull.ProductionBuildWeight));
+                    }
+                }
+
+                return mBList;
+            }
+
+            private static bool CanTownCreateShipFromHull(Town town, ShipHull shipHull)
+            {
+                return shipHull.Type switch
+                {
+                    ShipHull.ShipType.Light => town.GetShipyard().CurrentLevel > 0,
+                    ShipHull.ShipType.Medium => town.GetShipyard().CurrentLevel > 1,
+                    ShipHull.ShipType.Heavy => town.GetShipyard().CurrentLevel == 3,
+                    _ => false,
+                };
+            }
+        }
+
+    }
+    static class NavalDLCExtensions
+    {
+        internal static MethodInfo GetShipyardMethod = null;
+        internal static MethodInfo GetAvailableShipUpgradePiecesMethod = null;
+
+        internal static PropertyInfo SettlementShipyardProp = null;
+
+
+        internal static BuildingType SettlementShipyard => SettlementShipyardProp != null ? SettlementShipyardProp.GetValue(null) as BuildingType : null;
+
+        public static Building GetShipyard(this Town town)
+        {
+            Building shipyard = null;
+            try
+            {
+                if (GetShipyardMethod != null)
+                {
+                    shipyard = GetShipyardMethod.Invoke(null, new object[] { town }) as Building;
+                }
+
+                if (shipyard == null)
+                {
+                    shipyard = town.Buildings.FirstOrDefault(b => b.BuildingType == SettlementShipyard);
+                }
+
+                if (shipyard == null && SettlementShipyard != null)
+                {
+                    shipyard = new Building(SettlementShipyard, town, 0f, SettlementShipyard.StartLevel);
+                    town.Buildings.Add(shipyard);
+                }
+            }
+            catch (Exception e)
+            {
+                LogManager.Log.NotifyBad(e);
+            }
+            return shipyard;
+        }
+
+
+        public static List<ShipUpgradePiece> GetAvailableShipUpgradePieces(this Town town)
+        {
+            if (GetAvailableShipUpgradePiecesMethod != null)
+            {
+                return GetAvailableShipUpgradePiecesMethod.Invoke(null, new object[] { town }) as List<ShipUpgradePiece>;
+            }
+            return new();
         }
     }
 }

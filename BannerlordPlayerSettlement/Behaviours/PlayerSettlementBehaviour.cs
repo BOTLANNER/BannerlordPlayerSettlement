@@ -3275,7 +3275,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     continue;
                 }
 
-                castle.Buildings.Add(new Building(all2, castle, 0f, num1));
+                castle.Buildings.Add(new Building(all2, castle, 0f, Math.Max(num1, all2.StartLevel)));
             }
 
 
@@ -4308,14 +4308,17 @@ namespace BannerlordPlayerSettlement.Behaviours
                 {
                     continue;
                 }
-                // TODO: add check has harbor and add as possible building: building_shipyard
-                if (!all1.StringId.StartsWith("building_settlement"))
+
+                bool isSettlement = all1.StringId.StartsWith("building_settlement");
+                bool isShipyard = all1.StringId.StartsWith("building_shipyard");
+                if (!isSettlement &&
+                    !(townSettlement.HasPort && isShipyard && Main.IsWarSails))
                 {
                     continue;
                 }
 
 
-                town.Buildings.Add(new Building(all1, town, 0f, all1.IsDailyProject ? 1 : num1));
+                town.Buildings.Add(new Building(all1, town, 0f, all1.IsDailyProject ? 1 : Math.Max(num1, all1.StartLevel)));
             }
 
             foreach (Building building1 in

@@ -208,12 +208,33 @@ namespace BannerlordPlayerSettlement.Behaviours
                     _playerSettlementInfo = PlayerSettlementInfo.Instance ?? new PlayerSettlementInfo();
                     _metaV3 = MetaV3.Create(_playerSettlementInfo);
                 }
+
                 dataStore.SyncData("PlayerSettlement_PlayerSettlementInfo", ref _playerSettlementInfo);
                 dataStore.SyncData("PlayerSettlement_MetaV3", ref _metaV3);
                 _playerSettlementInfo ??= new PlayerSettlementInfo();
 
                 if (!dataStore.IsSaving)
                 {
+                    if (_playerSettlementInfo.OverwriteSettlements != null)
+                    {
+                        var distinct = _playerSettlementInfo.OverwriteSettlements.Distinct().ToList();
+                        if (distinct.Count != _playerSettlementInfo.OverwriteSettlements.Count)
+                        {
+                            LogManager.Log.ToFile($"Duplicate overwrites found! {distinct.Count}/{_playerSettlementInfo.OverwriteSettlements.Count} are unique.");
+                            _playerSettlementInfo.OverwriteSettlements = distinct;
+                        }
+                    }
+
+                    if (_metaV3.OverwriteSettlements != null)
+                    {
+                        var distinct = _metaV3.OverwriteSettlements.DistinctBy(o => o.StringId).ToList();
+                        if (distinct.Count != _metaV3.OverwriteSettlements.Count)
+                        {
+                            LogManager.Log.ToFile($"Duplicate overwrites found! {distinct.Count}/{_metaV3.OverwriteSettlements.Count} are unique.");
+                            _metaV3.OverwriteSettlements = distinct;
+                        }
+                    }
+
                     OnLoad();
                 }
             }
@@ -2369,7 +2390,14 @@ namespace BannerlordPlayerSettlement.Behaviours
                                 PlayerSettlementInfo.Instance.OverwriteSettlements = new();
                             }
 
-                            PlayerSettlementInfo.Instance!.OverwriteSettlements.Add(overwriteItem);
+                            if (!PlayerSettlementInfo.Instance!.OverwriteSettlements.Contains(overwriteItem))
+                            {
+                                PlayerSettlementInfo.Instance!.OverwriteSettlements.Add(overwriteItem);
+                            }
+                            else
+                            {
+                                LogManager.Log.ToFile($"Overwriting a previous overwrite settlement: {overwriteItem.Settlement} - {overwriteItem.StringId}", true);
+                            }
 
                             var doc = new XmlDocument();
                             doc.LoadXml(xml);

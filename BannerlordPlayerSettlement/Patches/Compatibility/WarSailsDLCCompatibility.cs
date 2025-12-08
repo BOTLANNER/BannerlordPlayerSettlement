@@ -238,6 +238,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
 
                         if (town.AvailableShips != null && town.AvailableShips.Count == 0)
                         {
+                            // Even though the ShipTradeCampaignBehavior would over time fill available ships, it should be prepopulated at first build.
                             ForceAddTownShips(town);
                         }
 
@@ -364,11 +365,11 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                 {
                     var town = portSettlement.Town;
 
-
-                    if (town.AvailableShips != null && town.AvailableShips.Count == 0)
-                    {
-                        ForceAddTownShips(town);
-                    }
+                    // Don't forcibly add available ships here. The ShipTradeCampaignBehavior will over time fill it.
+                    //if (town.AvailableShips != null && town.AvailableShips.Count == 0)
+                    //{
+                    //    ForceAddTownShips(town);
+                    //}
 
                     if (town.AvailableShips != null)
                     {

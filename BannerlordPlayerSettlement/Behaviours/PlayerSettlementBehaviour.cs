@@ -1920,7 +1920,8 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         public void StartPortPlacement()
         {
-
+            // Ensure no previous port frame gets used. If a port was opted into and then backed out off, the frame might still exist
+            portPlacementFrame = null;
             if (Main.Settings == null || !Main.IsWarSails || !portSupported)
             {
                 ApplyNow();

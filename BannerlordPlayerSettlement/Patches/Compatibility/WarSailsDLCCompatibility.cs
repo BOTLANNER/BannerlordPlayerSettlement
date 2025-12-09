@@ -34,6 +34,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
 
         private Type? NavalBuildingTypesType;
         private Type? NavalDLCExtensionsType;
+        private Type? NavalDLCMapDistanceModelType;
 
         public void AddBehaviors(CampaignGameStarter gameInitializer)
         {
@@ -69,6 +70,12 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
 
                 }
 
+                NavalDLCMapDistanceModelType = assembly.GetType("NavalDLC.GameComponents.NavalDLCMapDistanceModel", false, true);
+                if (NavalDLCMapDistanceModelType != null)
+                {
+                    harmony.Patch(AccessTools.Method(NavalDLCMapDistanceModelType, nameof(GetDistance), new Type[] { typeof(Settlement), typeof(Settlement), typeof(bool), typeof(bool), typeof(MobileParty.NavigationType) }), prefix: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(GetDistance)), postfix: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(PostGetDistance)), finalizer: new HarmonyMethod(typeof(WarSailsDLCCompatibility), nameof(FixGetDistanceExceptions)));
+
+                }
                 NavalDLCShipCostModelType = assembly.GetType("NavalDLC.GameComponents.NavalDLCShipCostModel", false, true);
                 if (NavalDLCShipCostModelType != null)
                 {
@@ -90,6 +97,73 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                     NavalDLCExtensions.GetAvailableShipUpgradePiecesMethod = AccessTools.Method(NavalDLCExtensionsType, nameof(NavalDLCExtensions.GetAvailableShipUpgradePieces));
                 }
             }
+        }
+
+        private static void PostGetDistance(ref float __result, ref MapDistanceModel __instance, Settlement fromSettlement, Settlement toSettlement, bool isFromPort, bool isTargetingPort, MobileParty.NavigationType navigationCapability)
+        {
+            if (fromSettlement.IsOverwritten(out OverwriteSettlementItem overwriteFromSettlementItem))
+            {
+                return;
+            }
+            if (toSettlement.IsOverwritten(out OverwriteSettlementItem overwriteToSettlementItem))
+            {
+                return;
+            }
+            if (fromSettlement.IsPlayerBuilt())
+            {
+                return;
+            }
+            if (toSettlement.IsPlayerBuilt())
+            {
+                return;
+            }
+
+            return;
+        }
+        private static bool GetDistance(ref float __result, ref MapDistanceModel __instance, Settlement fromSettlement, Settlement toSettlement, bool isFromPort, bool isTargetingPort, MobileParty.NavigationType navigationCapability)
+        {
+            if (fromSettlement.IsOverwritten(out OverwriteSettlementItem overwriteFromSettlementItem))
+            {
+                return true;
+            }
+            if (toSettlement.IsOverwritten(out OverwriteSettlementItem overwriteToSettlementItem))
+            {
+                return true;
+            }
+            if (fromSettlement.IsPlayerBuilt())
+            {
+                return true;
+            }
+            if (toSettlement.IsPlayerBuilt())
+            {
+                return true;
+            }
+
+            return true;
+        }
+
+        public static Exception FixGetDistanceExceptions(ref float __result, object __exception, ref MapDistanceModel __instance, Settlement fromSettlement, Settlement toSettlement, bool isFromPort, bool isTargetingPort, MobileParty.NavigationType navigationCapability)
+        {
+            if (__exception != null)
+            {
+                var e = __exception;
+                if (e != null)
+                {
+                    LogManager.Log.NotifyBad($"Failed for from: {fromSettlement} (HasPort: {fromSettlement.HasPort}, isFromPort: {isFromPort}), to: {toSettlement} (HasPort: {toSettlement.HasPort}, isTargetingPort: {isTargetingPort}), navigationCapability: {(int) navigationCapability} - {navigationCapability.ToString()}, __result: {__result}");
+                    if (e is Exception ex)
+                    {
+
+                        LogManager.Log.NotifyBad(ex);
+                    }
+                    else
+                    {
+
+                        LogManager.Log.NotifyBad(e.ToString());
+                    }
+                    __result = float.MaxValue;
+                }
+            }
+            return null;
         }
 
         private static bool GetShipTradeValue(ShipCostModel __instance, Ship ship, PartyBase seller, PartyBase buyer)

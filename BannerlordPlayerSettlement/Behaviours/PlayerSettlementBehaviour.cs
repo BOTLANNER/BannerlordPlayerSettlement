@@ -4513,6 +4513,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         private void UpdateSettlementVisualEntity(bool forward, bool retry = false)
         {
+        UpdateSettlementVisualEntityInternal:
             try
             {
                 LogManager.EventTracer.Trace($"UpdateSettlementVisualEntity forward={forward} noRetry={retry}");
@@ -4601,6 +4602,26 @@ namespace BannerlordPlayerSettlement.Behaviours
                     previousVisualUpdateException = e;
                 }
                 LogManager.Log.NotifyBad(e);
+
+                var alwaysBlacklistEnv = Environment.GetEnvironmentVariable("ALWAYS_BLACKLIST");
+                if (alwaysBlacklistEnv != null && bool.TryParse(alwaysBlacklistEnv, out bool alwaysBlacklist) && alwaysBlacklist)
+                {
+                    LogManager.Log.NotifyNeutral("Always blacklist is enabled. If exception is AccessViolationException, model will be blacklisted and next will be attempted");
+                    if (e is AccessViolationException)
+                    {
+                        try
+                        {
+                            var a = availableModels[currentModelOptionIdx];
+                            LogManager.Log.NotifyBad($"\r\n\r\nTemplate: {a.Id} - Culture: '{a.Culture}', Type: '{a.Type}'");
+                            Main.Submodule?.UpdateBlacklist(a.Id);
+                        }
+                        catch (Exception) { }
+
+                        // goto to avoid stackoverflow loops
+                        goto UpdateSettlementVisualEntityInternal;
+                    }
+                }
+
                 if (retry)
                 {
                     // Retry once without allowing another retry to avoid stackoverflow loops

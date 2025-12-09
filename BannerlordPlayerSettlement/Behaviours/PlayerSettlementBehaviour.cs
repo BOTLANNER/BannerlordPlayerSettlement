@@ -3758,7 +3758,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                     List<InquiryElement> source = args;
                     //InformationManager.HideInquiry();
 
-                    string villageType = (args?.FirstOrDefault()?.Identifier as VillageType)?.MeshName ?? AutoCalculateVillageType(villageNumber);
+                    string villageType = (args?.FirstOrDefault()?.Identifier as VillageType)?.StringId ?? AutoCalculateVillageType(villageNumber);
 
                     Apply(settlementName, culture, villageType);
                 },
@@ -4513,6 +4513,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
         private void UpdateSettlementVisualEntity(bool forward, bool retry = false)
         {
+        UpdateSettlementVisualEntityInternal:
             try
             {
                 LogManager.EventTracer.Trace($"UpdateSettlementVisualEntity forward={forward} noRetry={retry}");
@@ -4601,6 +4602,26 @@ namespace BannerlordPlayerSettlement.Behaviours
                     previousVisualUpdateException = e;
                 }
                 LogManager.Log.NotifyBad(e);
+
+                var alwaysBlacklistEnv = Environment.GetEnvironmentVariable("ALWAYS_BLACKLIST");
+                if (alwaysBlacklistEnv != null && bool.TryParse(alwaysBlacklistEnv, out bool alwaysBlacklist) && alwaysBlacklist)
+                {
+                    LogManager.Log.NotifyNeutral("Always blacklist is enabled. If exception is AccessViolationException, model will be blacklisted and next will be attempted");
+                    if (e is AccessViolationException)
+                    {
+                        try
+                        {
+                            var a = availableModels[currentModelOptionIdx];
+                            LogManager.Log.NotifyBad($"\r\n\r\nTemplate: {a.Id} - Culture: '{a.Culture}', Type: '{a.Type}'");
+                            Main.Submodule?.UpdateBlacklist(a.Id);
+                        }
+                        catch (Exception) { }
+
+                        // goto to avoid stackoverflow loops
+                        goto UpdateSettlementVisualEntityInternal;
+                    }
+                }
+
                 if (retry)
                 {
                     // Retry once without allowing another retry to avoid stackoverflow loops
@@ -4767,27 +4788,29 @@ namespace BannerlordPlayerSettlement.Behaviours
         private List<InquiryElement> GetVillageTypeInquiry()
         {
             List<InquiryElement> inquiryElements = new();
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.BattanianHorseRanch, DefaultVillageTypes.BattanianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.BattanianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.BattanianHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.CattleRange, DefaultVillageTypes.CattleRange.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.CattleRange.PrimaryProduction), true, DefaultVillageTypes.CattleRange.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.ClayMine, DefaultVillageTypes.ClayMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.ClayMine.PrimaryProduction), true, DefaultVillageTypes.ClayMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.DateFarm, DefaultVillageTypes.DateFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.DateFarm.PrimaryProduction), true, DefaultVillageTypes.DateFarm.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.DesertHorseRanch, DefaultVillageTypes.DesertHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.DesertHorseRanch.PrimaryProduction), true, DefaultVillageTypes.DesertHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.EuropeHorseRanch, DefaultVillageTypes.EuropeHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.EuropeHorseRanch.PrimaryProduction), true, DefaultVillageTypes.EuropeHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.Fisherman, DefaultVillageTypes.Fisherman.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.Fisherman.PrimaryProduction), true, DefaultVillageTypes.Fisherman.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.FlaxPlant, DefaultVillageTypes.FlaxPlant.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.FlaxPlant.PrimaryProduction), true, DefaultVillageTypes.FlaxPlant.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.HogFarm, DefaultVillageTypes.HogFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.HogFarm.PrimaryProduction), true, DefaultVillageTypes.HogFarm.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.IronMine, DefaultVillageTypes.IronMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.IronMine.PrimaryProduction), true, DefaultVillageTypes.IronMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.Lumberjack, DefaultVillageTypes.Lumberjack.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.Lumberjack.PrimaryProduction), true, DefaultVillageTypes.Lumberjack.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.OliveTrees, DefaultVillageTypes.OliveTrees.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.OliveTrees.PrimaryProduction), true, DefaultVillageTypes.OliveTrees.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SaltMine, DefaultVillageTypes.SaltMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SaltMine.PrimaryProduction), true, DefaultVillageTypes.SaltMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SheepFarm, DefaultVillageTypes.SheepFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SheepFarm.PrimaryProduction), true, DefaultVillageTypes.SheepFarm.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SilkPlant, DefaultVillageTypes.SilkPlant.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SilkPlant.PrimaryProduction), true, DefaultVillageTypes.SilkPlant.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SilverMine, DefaultVillageTypes.SilverMine.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SilverMine.PrimaryProduction), true, DefaultVillageTypes.SilverMine.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SteppeHorseRanch, DefaultVillageTypes.SteppeHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SteppeHorseRanch.PrimaryProduction), true, DefaultVillageTypes.SteppeHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.SturgianHorseRanch, DefaultVillageTypes.SturgianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.SturgianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.SturgianHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VineYard, DefaultVillageTypes.VineYard.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VineYard.PrimaryProduction), true, DefaultVillageTypes.VineYard.ShortName.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.VlandianHorseRanch, DefaultVillageTypes.VlandianHorseRanch.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction), true, DefaultVillageTypes.VlandianHorseRanch.PrimaryProduction.Name.ToString()));
-            inquiryElements.Add(new InquiryElement(DefaultVillageTypes.WheatFarm, DefaultVillageTypes.WheatFarm.ShortName.ToString(), new ItemImageIdentifier(DefaultVillageTypes.WheatFarm.PrimaryProduction), true, DefaultVillageTypes.WheatFarm.PrimaryProduction.Name.ToString()));
+
+            // Get all registered village types. This can include custom types from DLC or mods
+            var villageTypes = Game.Current.ObjectManager.GetObjects<VillageType>(v =>
+            {
+                // TODO: Blacklist types here if needed
+                return v is VillageType;
+            });
+
+            for (int i = 0; i < villageTypes.Count; i++)
+            {
+                try
+                {
+                    VillageType villageType = villageTypes[i];
+                    if (villageType != null)
+                    {
+                        inquiryElements.Add(new InquiryElement(villageType, villageType.ShortName.ToString(), new ItemImageIdentifier(villageType.PrimaryProduction), true, villageType.PrimaryProduction.Name.ToString()));
+                    }
+                }
+                catch (Exception e)
+                {
+                    LogManager.Log.NotifyBad(e);
+                }
+            }
 
             return inquiryElements;
         }
@@ -4802,7 +4825,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
                 if (villageType != null)
                 {
-                    return villageType.MeshName;
+                    return villageType.StringId;
                 }
             }
             catch (Exception e)

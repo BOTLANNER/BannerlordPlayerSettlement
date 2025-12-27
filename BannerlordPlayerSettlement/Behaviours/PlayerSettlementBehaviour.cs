@@ -747,7 +747,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                 if (PlayerSettlementBehaviour.TriggerSaveLoadAfterUpgrade)
                 {
                     PlayerSettlementBehaviour.TriggerSaveLoadAfterUpgrade = false;
-                    SaveHandler.SaveLoad(overwrite: true);
+                    SaveHandler.SaveLoad(SaveHandler.SaveMechanism.Overwrite);
                     return;
                 }
                 if (PlayerSettlementBehaviour.TriggerSaveAfterUpgrade)
@@ -2476,7 +2476,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             _settlementOverwrite?.Invoke(settlement);
 
                             OnResetEvent?.ClearListeners(target);
-                            SaveHandler.SaveLoad(!Main.Settings!.CreateNewSave);
+                            SaveHandler.SaveLoad(Main.Settings!.SaveMechanism);
                         }
 
 
@@ -2859,7 +2859,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             _settlementRebuild?.Invoke(settlement);
 
                             OnResetEvent?.ClearListeners(target);
-                            SaveHandler.SaveLoad(!Main.Settings!.CreateNewSave);
+                            SaveHandler.SaveLoad(Main.Settings!.SaveMechanism);
                         }
 
 
@@ -3119,7 +3119,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         }
 
                         _settlementCreated.Invoke(castleSettlement);
-                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
+                        SaveHandler.SaveLoad(Main.Settings!.SaveMechanism);
                     }
 
                     void Apply(string settlementName, CultureObject culture)
@@ -3589,7 +3589,7 @@ namespace BannerlordPlayerSettlement.Behaviours
 
 
                         _settlementCreated.Invoke(villageItem.Settlement!);
-                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
+                        SaveHandler.SaveLoad(Main.Settings!.SaveMechanism);
                     }
 
                     void Apply(string settlementName, CultureObject culture, string villageType)
@@ -4126,7 +4126,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                         _settlementCreated.Invoke(townItem.Settlement);
 
                         //Reset();
-                        SaveHandler.SaveLoad(!Main.Settings.CreateNewSave);
+                        SaveHandler.SaveLoad(Main.Settings!.SaveMechanism);
                     }
 
 
@@ -4665,7 +4665,7 @@ namespace BannerlordPlayerSettlement.Behaviours
                             InformationManager.HideInquiry();
                             if (!CampaignOptions.IsIronmanMode)
                             {
-                                SaveHandler.SaveLoad(overwrite: false);
+                                SaveHandler.SaveLoad(SaveHandler.SaveMechanism.Auto);
                             }
                             else
                             {

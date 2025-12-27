@@ -680,6 +680,7 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
 
         internal static PropertyInfo SettlementShipyardProp = null;
 
+        internal static MethodInfo SetPieceAtSlotMethod = null;
 
         internal static BuildingType SettlementShipyard => SettlementShipyardProp != null ? SettlementShipyardProp.GetValue(null) as BuildingType : null;
 
@@ -719,6 +720,19 @@ namespace BannerlordPlayerSettlement.Patches.Compatibility
                 return GetAvailableShipUpgradePiecesMethod.Invoke(null, new object[] { town }) as List<ShipUpgradePiece>;
             }
             return new();
+        }
+
+        public static void SetPieceAtSlot(this Ship ship, string slotTag, ShipUpgradePiece upgradePiece)
+        {
+            if (SetPieceAtSlotMethod == null)
+            {
+                SetPieceAtSlotMethod = AccessTools.Method(typeof(Ship), nameof(SetPieceAtSlot));
+            }
+
+            if (SetPieceAtSlotMethod != null)
+            {
+                SetPieceAtSlotMethod.Invoke(ship, new object[] { slotTag, upgradePiece });
+            }
         }
     }
 }

@@ -143,5 +143,11 @@
         <string id="player_settlement_n_132" text="During player settlement placement when building in deep edit mode, will delete the selected model." />
         <string id="player_settlement_n_133" text="Un-Delete Mode" />
         <string id="player_settlement_n_134" text="During player settlement placement when building in deep edit mode, when held, the 'Delete Selection' button will instead undo the previous delete." />
+      
+      
+        <!-- Temp save support -->
+      <string id="player_settlement_n_135" text="Create a new save when building. By default, a temporary save will be made, or if the below is disabled, the current active save will be overwritten instead.  [ Default: OFF ]" />
+      <string id="player_settlement_n_136" text="Make a temporary save and remove after load. When disabled, will overwrite the current save unless the above is enabled.  [ Default: ON ]" />
+      <string id="player_settlement_n_137" text="Use a temporary save for build and load" />
     </strings>
 </base>

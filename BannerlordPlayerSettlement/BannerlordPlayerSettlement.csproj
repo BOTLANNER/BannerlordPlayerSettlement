@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>7.4.1</Version>
+    <Version>7.5.0</Version>
     <ModuleName>$(MSBuildProjectName)</ModuleName>
   </PropertyGroup>
   

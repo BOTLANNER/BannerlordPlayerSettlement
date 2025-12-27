@@ -16,11 +16,19 @@ namespace BannerlordPlayerSettlement
         public override string FolderName => Main.Name;
         public override string FormatType => "json";
 
-        private const string CreateNewSave_Hint = "{=player_settlement_n_03}Create a new save when building. By default, the current active save will be overwritten instead.  [ Default: OFF ]";
+        private const string CreateNewSave_Hint = "{=player_settlement_n_135}Create a new save when building. By default, a temporary save will be made, or if the below is disabled, the current active save will be overwritten instead.  [ Default: OFF ]";
 
         [SettingPropertyBool("{=player_settlement_n_04}Create new save on build", HintText = CreateNewSave_Hint, RequireRestart = false, Order = 0, IsToggle = false)]
         [SettingPropertyGroup("{=player_settlement_n_66}Saves", GroupOrder = 0)]
         public bool CreateNewSave { get; set; } = false;
+
+        private const string UseTempSave_Hint = "{=player_settlement_n_136}Make a temporary save and remove after load. When disabled, will overwrite the current save unless the above is enabled.  [ Default: ON ]";
+
+        [SettingPropertyBool("{=player_settlement_n_137}Use a temporary save for build and load", HintText = UseTempSave_Hint, RequireRestart = false, Order = 1, IsToggle = false)]
+        [SettingPropertyGroup("{=player_settlement_n_66}Saves")]
+        public bool UseTempSave { get; set; } = true;
+
+        internal SaveHandler.SaveMechanism SaveMechanism => CreateNewSave ? SaveHandler.SaveMechanism.Auto : UseTempSave ? SaveHandler.SaveMechanism.Temporary : SaveHandler.SaveMechanism.Overwrite;
 
         private const string HideButtonUntilReady_Hint = @"{=player_settlement_n_05}Always hides the build panel until requirements are met for at least one build option. 
 When using dialogue options, only available options will show, otherwise the unavailable ones will have hints describing why they are not available.  [ Default: OFF ]";
@@ -281,7 +289,7 @@ Default cycle and scale keys are 'Q' and 'E', unless remapped.  [ Default: 50% ]
         // These numbers may only be increased after releases, never decreased as that WILL break backwards compatibility!
         public const int HardMaxTowns = 150;
         public const int HardMaxVillagesPerTown = 50;
-               
+
         public const int HardMaxCastles = 150;
         public const int HardMaxVillagesPerCastle = 50;
 

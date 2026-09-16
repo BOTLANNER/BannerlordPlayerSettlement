@@ -1,7 +1,7 @@
 ﻿<Module>
   <Name value="Player Settlement"/>
   <Id value="PlayerSettlement"/>
-  <Version value="v7.5.0"/>
+  <Version value="v7.5.1"/>
   <Url value="https://www.nexusmods.com/mountandblade2bannerlord/mods/7298" />
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
@@ -17,26 +17,26 @@
   <PlayerSettlementsTemplatesBlacklist path="ModuleData/template_blacklist.txt" />
   <DependedModules>
     <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2" />
-    <DependedModule Id="Bannerlord.ButterLib" DependentVersion="v2.10.2" />
-    <DependedModule Id="Bannerlord.UIExtenderEx" DependentVersion="v2.13.2" />
-    <DependedModule Id="Bannerlord.MBOptionScreen" DependentVersion="v5.11.3" />
-    <DependedModule Id="Native" DependentVersion="v1.3.9"/>
-    <DependedModule Id="SandBoxCore" DependentVersion="v1.3.9"/>
-    <DependedModule Id="Sandbox" DependentVersion="v1.3.9"/>
-    <DependedModule Id="StoryMode" DependentVersion="v1.3.9" />
+    <DependedModule Id="Bannerlord.ButterLib" DependentVersion="v2.12.0" />
+    <DependedModule Id="Bannerlord.UIExtenderEx" DependentVersion="v2.13.3" />
+    <DependedModule Id="Bannerlord.MBOptionScreen" DependentVersion="v5.12.3" />
+    <DependedModule Id="Native" DependentVersion="v1.4.8"/>
+    <DependedModule Id="SandBoxCore" DependentVersion="v1.4.8"/>
+    <DependedModule Id="Sandbox" DependentVersion="v1.4.8"/>
+    <DependedModule Id="StoryMode" DependentVersion="v1.4.8" />
   </DependedModules>
   <!-- Community Metadata -->
   <DependedModuleMetadatas>
     <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" version="v2.4.2" />
-    <DependedModuleMetadata id="Bannerlord.ButterLib" order="LoadBeforeThis" version="v2.10.2" />
-    <DependedModuleMetadata id="Bannerlord.UIExtenderEx" order="LoadBeforeThis" version="v2.13.2" />
-    <DependedModuleMetadata id="Bannerlord.MBOptionScreen" order="LoadBeforeThis" version="v5.11.3" />
-    <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="1.0.0.*" />
-    <DependedModuleMetadata id="SandBoxCore" order="LoadBeforeThis" version="1.0.0.*" />
-    <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="1.0.0.*" />
-    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="1.0.0.*" />
-    <DependedModuleMetadata id="CustomBattle" order="LoadBeforeThis" version="1.0.0.*" optional="true" />
-    <DependedModuleMetadata id="NavalDLC" order="LoadBeforeThis" version="v1.0.5"  optional="true"  />
+    <DependedModuleMetadata id="Bannerlord.ButterLib" order="LoadBeforeThis" version="v2.12.0" />
+    <DependedModuleMetadata id="Bannerlord.UIExtenderEx" order="LoadBeforeThis" version="v2.13.3" />
+    <DependedModuleMetadata id="Bannerlord.MBOptionScreen" order="LoadBeforeThis" version="v5.12.3" />
+    <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="1.4.8.*" />
+    <DependedModuleMetadata id="SandBoxCore" order="LoadBeforeThis" version="1.4.8.*" />
+    <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="1.4.8.*" />
+    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="1.4.8.*" />
+    <DependedModuleMetadata id="CustomBattle" order="LoadBeforeThis" version="1.4.8.*" optional="true" />
+    <DependedModuleMetadata id="NavalDLC" order="LoadBeforeThis" version="v1.2.8"  optional="true"  />
   </DependedModuleMetadatas>
   <SubModules>
     <SubModule>

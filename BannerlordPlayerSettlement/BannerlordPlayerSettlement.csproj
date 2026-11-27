@@ -21,7 +21,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <MCMVersion Condition="$(MCM_V5) == 'true'">5.12.3</MCMVersion>
+    <MCMVersion Condition="$(MCM_V5) == 'true'">5.13.1</MCMVersion>
   </PropertyGroup>
 
   <!-- Game Versions for Stable and Beta -->

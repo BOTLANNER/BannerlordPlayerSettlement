@@ -55,7 +55,7 @@ namespace BannerlordPlayerSettlement.Extensions
                     {
                         if (craftingCampaignBehavior.CraftingOrders[settlement.Town].GetAvailableSlot() > -1)
                         {
-                            craftingCampaignBehavior.CreateTownOrder(mBList.GetRandomElement<Hero>(), i);
+                            craftingCampaignBehavior.CreateTownOrder(settlement.Town, mBList.GetRandomElement<Hero>(), i);
                         }
                     }
                 }

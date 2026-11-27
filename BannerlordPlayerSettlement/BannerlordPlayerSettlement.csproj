@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>7.5.1</Version>
+    <Version>7.5.2</Version>
     <ModuleName>$(MSBuildProjectName)</ModuleName>
   </PropertyGroup>
   
@@ -21,7 +21,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <MCMVersion Condition="$(MCM_V5) == 'true'">5.12.3</MCMVersion>
+    <MCMVersion Condition="$(MCM_V5) == 'true'">5.13.1</MCMVersion>
   </PropertyGroup>
 
   <!-- Game Versions for Stable and Beta -->
